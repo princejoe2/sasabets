@@ -8,3 +8,5 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 export function createClient() {
   return createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 }
+
+export const _v = 1
