@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { settleMarket } from '@/lib/settle-market'
 import UpDownClient from './UpDownClient'
 
 export const revalidate = 30
@@ -18,16 +19,61 @@ async function getLivePrices(): Promise<Record<string, number>> {
   }
 }
 
+// Settle any expired updown markets immediately so users always see current state,
+// rather than waiting for the daily cron.
+async function autoSettle() {
+  try {
+    const admin = createAdminClient()
+    const { data: expired } = await admin
+      .from('markets')
+      .select('id, metadata, options')
+      .eq('status', 'open')
+      .lt('closes_at', new Date().toISOString())
+
+    const updownExpired = (expired ?? []).filter(
+      m => (m.metadata as Record<string, unknown>)?.type === 'updown'
+    )
+    if (updownExpired.length === 0) return
+
+    const assetIds = [...new Set(updownExpired.map(m => String((m.metadata as Record<string, unknown>).asset)))]
+    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${assetIds.join(',')}&vs_currencies=usd`)
+    const priceData = await r.json()
+    const prices: Record<string, number> = Object.fromEntries(
+      Object.entries(priceData).map(([k, v]) => [k, (v as { usd: number }).usd])
+    )
+
+    for (const market of updownExpired) {
+      const meta       = market.metadata as Record<string, unknown>
+      const assetId    = String(meta.asset)
+      const entryPrice = Number(meta.entry_price ?? 0)
+      const current    = prices[assetId]
+      if (!current || !entryPrice) continue
+
+      const opts    = market.options as Array<{ id: string; label: string }>
+      const upOpt   = opts.find(o => o.id === 'opt-up')
+      const downOpt = opts.find(o => o.id === 'opt-down')
+      if (!upOpt || !downOpt) continue
+
+      const winningOptionId = current > entryPrice ? upOpt.id : downOpt.id
+      await settleMarket(admin, market.id, winningOptionId)
+    }
+  } catch (err) {
+    console.error('[autoSettle]', err)
+  }
+}
+
 export default async function UpDownPage() {
   const supabase = createClient()
 
   const [{ data: markets }, prices] = await Promise.all([
-    supabase
-      .from('markets')
-      .select('id, title, description, total_pool, options, closes_at, status, rake_pct, metadata')
-      .eq('status', 'open')
-      .order('created_at', { ascending: false })
-      .limit(50),
+    autoSettle().then(() =>
+      supabase
+        .from('markets')
+        .select('id, title, description, total_pool, options, closes_at, status, rake_pct, metadata')
+        .eq('status', 'open')
+        .order('created_at', { ascending: false })
+        .limit(50)
+    ),
     getLivePrices(),
   ])
 
