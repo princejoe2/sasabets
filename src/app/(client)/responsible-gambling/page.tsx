@@ -221,7 +221,7 @@ export default function ResponsibleGamblingPage() {
           <p className="font-bold text-slate-400">Need help?</p>
           <p>Gambling should be fun. If you feel it is affecting your life, please reach out:</p>
           <p>• Uganda: <strong className="text-slate-300">Mental Health Uganda</strong> — 0800 222 177 (toll-free)</p>
-          <p>• Email us at <a href="mailto:joelukwago1@gmail.com" className="text-violet-400 hover:text-violet-300">joelukwago1@gmail.com</a> to request account closure.</p>
+          <p>• Email us at <a href="mailto:support@sabula256.com" className="text-violet-400 hover:text-violet-300">support@sabula256.com</a> to request account closure.</p>
         </div>
 
       </div>

@@ -4,7 +4,7 @@ export const metadata = {
 }
 
 const EFFECTIVE = '19 June 2026'
-const CONTACT_EMAIL = 'joelukwago1@gmail.com'
+const CONTACT_EMAIL = 'support@sabula256.com'
 const CONTACT_PHONE = '+256 783 033 457'
 const COMPANY = 'Sabula 256'
 const MIN_AGE = 18
