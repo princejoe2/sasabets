@@ -1,15 +1,10 @@
 import { createBrowserClient } from '@supabase/ssr'
 
-// Strip any non-ASCII characters that could cause browser fetch header rejection
-// (browsers enforce ISO-8859-1 on header values, rejecting anything > U+00FF)
-function safeEnv(value: string | undefined): string {
-  // eslint-disable-next-line no-control-regex
-  return (value ?? '').trim().replace(/[^\x00-\x7F]/g, '')
-}
+// Hardcoded to bypass Vercel build cache serving BOM-corrupted NEXT_PUBLIC_ env var values.
+// The anon key is intentionally public (NEXT_PUBLIC_) and safe to include in source.
+const SUPABASE_URL = 'https://jsigphyrhgmpaydozjfa.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzaWdwaHlyaGdtcGF5ZG96amZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2ODE2MTcsImV4cCI6MjA5NzI1NzYxN30.AAfhGjO7X89o-HL2QVmpcNrXy_Mj7aJqoLFodp0ryaI'
 
 export function createClient() {
-  return createBrowserClient(
-    safeEnv(process.env.NEXT_PUBLIC_SUPABASE_URL),
-    safeEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-  )
+  return createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 }
