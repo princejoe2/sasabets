@@ -1,0 +1,11 @@
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import CreateUpDownClient from './CreateUpDownClient'
+
+export default async function AdminUpDownPage() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth')
+
+  return <CreateUpDownClient />
+}

@@ -4,7 +4,8 @@ create extension if not exists "pgcrypto";
 -- Profiles (extends auth.users)
 create table public.profiles (
   id uuid references auth.users on delete cascade primary key,
-  email text not null,
+  phone text not null,
+  full_name text,
   is_admin boolean default false,
   created_at timestamptz default now()
 );
@@ -64,8 +65,12 @@ create table public.transactions (
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer as $$
 begin
-  insert into public.profiles (id, email)
-  values (new.id, new.email);
+  insert into public.profiles (id, phone, full_name)
+  values (
+    new.id,
+    coalesce(new.phone, new.raw_user_meta_data->>'phone', ''),
+    coalesce(new.raw_user_meta_data->>'full_name', '')
+  );
   insert into public.wallets (user_id)
   values (new.id);
   return new;
@@ -85,6 +90,7 @@ alter table public.transactions enable row level security;
 
 -- Profiles
 create policy "Users see own profile" on public.profiles for select using (auth.uid() = id);
+create policy "Users update own profile" on public.profiles for update using (auth.uid() = id);
 create policy "Admins see all profiles" on public.profiles for select using (
   exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
 );
@@ -112,5 +118,5 @@ create policy "Admins see all transactions" on public.transactions for select us
   exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
 );
 
--- Grant admin to your account
-update public.profiles set is_admin = true where email = 'joelukwago1@gmail.com';
+-- NOTE: After running this schema, grant yourself admin with:
+-- update public.profiles set is_admin = true where phone = '+256YOUR_NUMBER';
