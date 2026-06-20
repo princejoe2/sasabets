@@ -21,7 +21,7 @@ const ASSET_META: Record<string, { sym: string; color: string; bg: string; borde
   ripple:      { sym: 'XRP', color: '#00aae4', bg: 'rgba(0,170,228,0.08)',   border: 'rgba(0,170,228,0.25)' },
 }
 
-function useTimeLeft(closesAt: string | null): string {
+function getTimeLeft(closesAt: string | null): string {
   if (!closesAt) return ''
   const diff = new Date(closesAt).getTime() - Date.now()
   if (diff <= 0) return 'Closed'
@@ -53,10 +53,9 @@ export default function UpDownClient({ markets, prices }: { markets: Market[]; p
         const pctMove = entry && current ? ((current - entry) / entry) * 100 : null
         const opts    = m.options
         const upPool  = Number(opts.find(o => o.label.toLowerCase().includes('up'))?.total_pool ?? 0)
-        const dnPool  = Number(opts.find(o => o.label.toLowerCase().includes('down'))?.total_pool ?? 0)
         const total   = Number(m.total_pool)
         const upPct   = total > 0 ? (upPool / total) * 100 : 50
-        const timeLeft = useTimeLeft(m.closes_at)
+        const timeLeft = getTimeLeft(m.closes_at)
 
         return (
           <Link

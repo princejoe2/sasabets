@@ -71,7 +71,7 @@ export default function ProposalsList({
       body: JSON.stringify({ proposalId: id, remove: hasVoted }),
     })
     if (res.ok) {
-      setVoted(v => { const s = new Set(v); hasVoted ? s.delete(id) : s.add(id); return s })
+      setVoted(v => { const s = new Set(v); if (hasVoted) { s.delete(id) } else { s.add(id) }; return s })
       setVotes(v => ({ ...v, [id]: (v[id] ?? 0) + (hasVoted ? -1 : 1) }))
     }
     setLoading(null)

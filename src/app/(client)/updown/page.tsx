@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import Link from 'next/link'
 import UpDownClient from './UpDownClient'
 
 export const revalidate = 30
