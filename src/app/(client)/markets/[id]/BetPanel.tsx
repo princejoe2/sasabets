@@ -112,6 +112,20 @@ export default function BetPanel({
     return () => clearInterval(id)
   }, [isUpDown, assetId])
 
+  // Auto-settle expired Up/Down markets on page load
+  useEffect(() => {
+    if (!isUpDown || !isOpen) return
+    const closesAt = market.closes_at ? new Date(market.closes_at) : null
+    if (!closesAt || closesAt > new Date()) return
+    fetch('/api/market/auto-settle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ marketId: market.id }),
+    }).then(r => r.ok && r.json()).then(d => {
+      if (d?.settled) router.refresh()
+    }).catch(() => {})
+  }, [isUpDown, isOpen, market.id, market.closes_at, router])
+
   const selectedOpt_init = initialPick ?? null
   const [selectedOpt, setSelectedOpt] = useState<string | null>(selectedOpt_init)
   const [amount, setAmount] = useState('')
