@@ -14,22 +14,36 @@ export default function ProfilePage() {
   const router   = useRouter()
 
   const [name,        setName]        = useState('')
+  const [email,       setEmail]       = useState('')
   const [phone,       setPhone]       = useState('')
   const [balance,     setBalance]     = useState<number | null>(null)
   const [stats,       setStats]       = useState<Stats | null>(null)
   const [memberSince, setMemberSince] = useState('')
+  const [has2fa,      setHas2fa]      = useState(false)
+  const [userId,      setUserId]      = useState('')
+
+  // 2FA management state
+  const [show2faSetup,  setShow2faSetup]  = useState(false)
+  const [show2faDisable, setShow2faDisable] = useState(false)
+  const [qrDataUrl,     setQrDataUrl]     = useState('')
+  const [setupCode,     setSetupCode]     = useState('')
+  const [disableCode,   setDisableCode]   = useState('')
+  const [twoFaLoading,  setTwoFaLoading]  = useState(false)
+  const [twoFaMsg,      setTwoFaMsg]      = useState<{ text: string; ok: boolean } | null>(null)
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.replace('/auth'); return }
 
+      setUserId(user.id)
+      setEmail(user.email ?? '')
       setMemberSince(new Date(user.created_at).toLocaleDateString('en-UG', {
         day: 'numeric', month: 'long', year: 'numeric',
       }))
 
       const [{ data: profile }, { data: wallet }, { data: bets }, { data: txns }] = await Promise.all([
-        supabase.from('profiles').select('phone, full_name').eq('id', user.id).single(),
+        supabase.from('profiles').select('phone, full_name, totp_enabled').eq('id', user.id).single(),
         supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
         supabase.from('bets').select('amount, potential_payout, status').eq('user_id', user.id),
         supabase.from('transactions').select('amount').eq('user_id', user.id).eq('type', 'payout').eq('status', 'completed'),
@@ -37,11 +51,12 @@ export default function ProfilePage() {
 
       if (profile?.full_name) setName(profile.full_name)
       else if (user.user_metadata?.full_name) setName(user.user_metadata.full_name as string)
-      if (profile?.phone) setPhone(profile.phone)
+      if (profile?.phone)       setPhone(profile.phone)
+      if (profile?.totp_enabled) setHas2fa(true)
       if (wallet) setBalance(Number(wallet.balance))
 
       if (bets) {
-        const won    = bets.filter(b => b.status === 'won')
+        const won     = bets.filter(b => b.status === 'won')
         const paidOut = txns?.reduce((s, t) => s + Number(t.amount), 0) ?? 0
         setStats({
           total:  bets.length,
@@ -55,6 +70,55 @@ export default function ProfilePage() {
     }
     load()
   }, [])
+
+  // ── 2FA management ──────────────────────────────────────────────────────────
+
+  async function start2faSetup() {
+    setTwoFaLoading(true); setTwoFaMsg(null)
+    const res = await fetch('/api/auth/2fa/setup')
+    const data = await res.json()
+    if (!res.ok) { setTwoFaMsg({ text: data.error ?? 'Failed', ok: false }); setTwoFaLoading(false); return }
+    setQrDataUrl(data.qrDataUrl)
+    setShow2faSetup(true)
+    setSetupCode('')
+    setTwoFaLoading(false)
+  }
+
+  async function confirm2faEnable() {
+    if (setupCode.length !== 6) { setTwoFaMsg({ text: 'Enter the 6-digit code from your app', ok: false }); return }
+    setTwoFaLoading(true); setTwoFaMsg(null)
+    const res = await fetch('/api/auth/2fa/enable', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: setupCode }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      setTwoFaMsg({ text: data.error ?? 'Invalid code', ok: false })
+    } else {
+      setHas2fa(true); setShow2faSetup(false)
+      setTwoFaMsg({ text: '2FA enabled successfully.', ok: true })
+    }
+    setTwoFaLoading(false)
+  }
+
+  async function confirm2faDisable() {
+    if (disableCode.length !== 6) { setTwoFaMsg({ text: 'Enter your current 6-digit code to confirm', ok: false }); return }
+    setTwoFaLoading(true); setTwoFaMsg(null)
+    const res = await fetch('/api/auth/2fa/disable', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: disableCode }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      setTwoFaMsg({ text: data.error ?? 'Invalid code', ok: false })
+    } else {
+      setHas2fa(false); setShow2faDisable(false)
+      setTwoFaMsg({ text: '2FA disabled.', ok: true })
+    }
+    setTwoFaLoading(false)
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   const netReturn = stats ? stats.paidOut - stats.staked : 0
   const winRate   = stats && (stats.won + stats.lost) > 0
@@ -71,7 +135,6 @@ export default function ProfilePage() {
       {/* ── Profile hero ── */}
       <div className="border-b border-[#1e1e2e] bg-gradient-to-b from-violet-950/30 to-transparent px-4 py-10">
         <div className="mx-auto max-w-3xl flex items-center gap-5">
-          {/* Avatar */}
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 text-xl font-black text-white shadow-xl shadow-violet-900/40">
             {initials}
           </div>
@@ -87,7 +150,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl px-4 py-8">
+      <div className="mx-auto max-w-3xl px-4 py-8 space-y-5">
         <div className="grid gap-5 sm:grid-cols-2">
 
           {/* ── Account card ── */}
@@ -108,31 +171,29 @@ export default function ProfilePage() {
               </Link>
             </div>
 
-            {/* Name (read-only display) */}
+            {/* Name */}
             <div>
               <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Full Name</p>
-              <div className="flex items-center gap-3 rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3">
+              <div className="rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3">
                 <span className="text-sm font-semibold text-slate-200">{name || '—'}</span>
               </div>
             </div>
 
-            {/* Phone — locked, read-only */}
+            {/* Email */}
             <div>
-              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Mobile Number</p>
-              <div className="flex items-center justify-between rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3">
-                <span className="text-sm text-slate-300">
-                  {phone ? `+${phone}` : '—'}
-                </span>
-                <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-600">
-                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd"/>
-                  </svg>
-                  locked
-                </span>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Email</p>
+              <div className="rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3">
+                <span className="text-sm text-slate-300">{email || '—'}</span>
               </div>
-              <p className="mt-1.5 text-[11px] text-slate-600">
-                Your phone number is your login ID and cannot be changed.
-              </p>
+            </div>
+
+            {/* Phone */}
+            <div>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Mobile Money Number</p>
+              <div className="rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3">
+                <span className="text-sm text-slate-300">{phone ? `+${phone}` : '—'}</span>
+              </div>
+              <p className="mt-1.5 text-[11px] text-slate-600">Used for MTN Mobile Money deposits and withdrawals.</p>
             </div>
           </div>
 
@@ -146,10 +207,10 @@ export default function ProfilePage() {
               <>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { value: stats.total,  label: 'Predictions', color: 'text-slate-200'  },
-                    { value: stats.active, label: 'Active',      color: 'text-sky-400'    },
+                    { value: stats.total,  label: 'Predictions', color: 'text-slate-200'   },
+                    { value: stats.active, label: 'Active',      color: 'text-sky-400'     },
                     { value: stats.won,    label: 'Won',         color: 'text-emerald-400' },
-                    { value: stats.lost,   label: 'Lost',        color: 'text-red-400'    },
+                    { value: stats.lost,   label: 'Lost',        color: 'text-red-400'     },
                   ].map(({ value, label, color }) => (
                     <div key={label} className="rounded-xl bg-[#0a0a0f] p-3 text-center">
                       <p className={`text-2xl font-black ${color}`}>{value}</p>
@@ -193,9 +254,7 @@ export default function ProfilePage() {
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-center">
                 <p className="text-3xl">🎯</p>
-                <p className="mt-3 text-sm text-slate-500">
-                  {name ? `${name.split(' ')[0]} hasn't placed any predictions yet.` : 'No predictions yet.'}
-                </p>
+                <p className="mt-3 text-sm text-slate-500">No predictions yet.</p>
                 <Link href="/markets" className="mt-3 text-sm text-violet-400 hover:text-violet-300 transition-colors">
                   Browse markets →
                 </Link>
@@ -206,10 +265,142 @@ export default function ProfilePage() {
               href="/bets"
               className="block w-full rounded-xl border border-[#1e1e2e] py-2.5 text-center text-sm font-semibold text-slate-400 hover:border-violet-700/50 hover:text-white transition-colors"
             >
-              View all {name ? `${name.split(' ')[0]}'s` : 'my'} predictions →
+              View all predictions →
             </Link>
           </div>
 
+        </div>
+
+        {/* ── 2FA Security ── */}
+        <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-6">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="font-bold text-slate-200">Two-Factor Authentication</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Add an extra layer of security with a one-time code from your authenticator app.
+              </p>
+            </div>
+            <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${has2fa ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-800/40' : 'bg-slate-800/50 text-slate-500 border border-slate-700/40'}`}>
+              {has2fa ? '✓ Enabled' : 'Disabled'}
+            </span>
+          </div>
+
+          {twoFaMsg && (
+            <div className={`mt-4 rounded-xl px-4 py-3 text-sm font-semibold ${twoFaMsg.ok ? 'bg-emerald-900/20 border border-emerald-800/40 text-emerald-400' : 'bg-red-900/20 border border-red-800/40 text-red-400'}`}>
+              {twoFaMsg.text}
+            </div>
+          )}
+
+          {/* Setup flow */}
+          {!has2fa && !show2faSetup && (
+            <button
+              onClick={start2faSetup}
+              disabled={twoFaLoading}
+              className="mt-5 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-violet-500 disabled:opacity-50 transition-colors"
+            >
+              {twoFaLoading ? 'Loading…' : 'Enable 2FA'}
+            </button>
+          )}
+
+          {!has2fa && show2faSetup && qrDataUrl && (
+            <div className="mt-5 space-y-4">
+              <p className="text-sm text-slate-400">
+                Scan this QR code with <strong className="text-slate-200">Google Authenticator</strong> or any TOTP app, then enter the 6-digit code to confirm.
+              </p>
+              <div className="flex justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qrDataUrl} alt="2FA QR code" className="rounded-xl" width={180} height={180} />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  Confirmation code
+                </label>
+                <input
+                  className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-center text-xl font-bold tracking-widest text-slate-200 outline-none focus:border-violet-600"
+                  value={setupCode}
+                  onChange={e => setSetupCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  maxLength={6}
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={confirm2faEnable}
+                  disabled={twoFaLoading}
+                  className="flex-1 rounded-xl bg-violet-600 py-2.5 text-sm font-bold text-white hover:bg-violet-500 disabled:opacity-50 transition-colors"
+                >
+                  {twoFaLoading ? 'Enabling…' : 'Confirm & enable'}
+                </button>
+                <button
+                  onClick={() => { setShow2faSetup(false); setSetupCode(''); setTwoFaMsg(null) }}
+                  className="flex-1 rounded-xl border border-[#1e1e2e] py-2.5 text-sm text-slate-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Disable flow */}
+          {has2fa && !show2faDisable && (
+            <button
+              onClick={() => { setShow2faDisable(true); setDisableCode(''); setTwoFaMsg(null) }}
+              className="mt-5 rounded-xl border border-red-800/40 bg-red-900/10 px-5 py-2.5 text-sm font-bold text-red-400 hover:bg-red-900/20 transition-colors"
+            >
+              Disable 2FA
+            </button>
+          )}
+
+          {has2fa && show2faDisable && (
+            <div className="mt-5 space-y-4">
+              <p className="text-sm text-slate-400">
+                Enter your current authenticator code to disable 2FA.
+              </p>
+              <input
+                className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-center text-xl font-bold tracking-widest text-slate-200 outline-none focus:border-red-600"
+                value={disableCode}
+                onChange={e => setDisableCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000"
+                maxLength={6}
+                autoFocus
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={confirm2faDisable}
+                  disabled={twoFaLoading}
+                  className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-bold text-white hover:bg-red-500 disabled:opacity-50 transition-colors"
+                >
+                  {twoFaLoading ? 'Disabling…' : 'Disable 2FA'}
+                </button>
+                <button
+                  onClick={() => { setShow2faDisable(false); setDisableCode(''); setTwoFaMsg(null) }}
+                  className="flex-1 rounded-xl border border-[#1e1e2e] py-2.5 text-sm text-slate-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Navigation shortcuts ── */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { href: '/markets',              label: 'Browse Markets',  icon: '🎯' },
+            { href: '/bets',                 label: 'My Predictions',  icon: '📊' },
+            { href: '/wallet',               label: 'Wallet',          icon: '💳' },
+            { href: '/responsible-gambling', label: 'Safe Play Tools', icon: '🛡️' },
+          ].map(({ href, label, icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className="flex flex-col items-center gap-2 rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-4 text-center text-xs font-semibold text-slate-400 hover:border-violet-700/40 hover:text-white transition-colors"
+            >
+              <span className="text-2xl">{icon}</span>
+              {label}
+            </Link>
+          ))}
         </div>
       </div>
     </div>

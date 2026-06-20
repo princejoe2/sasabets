@@ -1,25 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
+// Called after email OTP verification to persist phone + name to the profile.
 export async function POST(req: NextRequest) {
-  const { phone, password, name } = await req.json()
-  if (!phone || !password) {
-    return NextResponse.json({ error: 'Phone and password required' }, { status: 400 })
-  }
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { phone, name } = await req.json()
 
   const admin = createAdminClient()
+  const update: Record<string, string> = {}
+  if (phone) update.phone = phone
+  if (name)  update.full_name = name
 
-  const { data, error } = await admin.auth.admin.createUser({
-    phone,
-    password,
-    phone_confirm: true,
-    user_metadata: { full_name: name || null, phone },
-  })
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
-
-  if (name && data.user) {
-    await admin.from('profiles').update({ full_name: name, phone }).eq('id', data.user.id)
+  if (Object.keys(update).length > 0) {
+    await admin.from('profiles').update(update).eq('id', user.id)
   }
 
   return NextResponse.json({ success: true })
