@@ -6,7 +6,8 @@ import { settleMarket } from '@/lib/settle-market'
 // Add to vercel.json: { "crons": [{ "path": "/api/cron/settle-updown", "schedule": "* * * * *" }] }
 export async function GET(req: NextRequest) {
   const secret = req.nextUrl.searchParams.get('secret')
-  if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret || secret !== cronSecret) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

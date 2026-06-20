@@ -4,7 +4,8 @@ const COOKIE_NAME = 'sb_admin_2fa'
 const TTL_MS = 8 * 60 * 60 * 1000 // 8 hours
 
 function secret() {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY!
+  // Dedicated signing key — falls back to service role key only if not set
+  return process.env.TOTP_SIGNING_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY!
 }
 
 function sign(userId: string, ts: number): string {

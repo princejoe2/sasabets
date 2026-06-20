@@ -20,10 +20,10 @@ export async function POST(req: NextRequest) {
 
   const { amount, phone } = await req.json()
 
-  if (!amount || amount < MIN_WITHDRAWAL) {
+  if (typeof amount !== 'number' || !Number.isFinite(amount) || amount < MIN_WITHDRAWAL || amount > 100_000_000) {
     return NextResponse.json({ error: `Minimum withdrawal is UGX ${MIN_WITHDRAWAL.toLocaleString()}` }, { status: 400 })
   }
-  if (!phone) {
+  if (!phone || typeof phone !== 'string' || phone.length > 20) {
     return NextResponse.json({ error: 'Phone number is required' }, { status: 400 })
   }
 

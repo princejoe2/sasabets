@@ -4,13 +4,25 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: false },
   generateBuildId: async () => `build-${Date.now()}`,
   webpack: (config, { buildId }) => {
-    // Tie the webpack filesystem cache version to the build ID so the cache is
-    // fully busted on every Vercel deployment (prevents stale compiled chunks
-    // from being served after source changes).
     if (config.cache && typeof config.cache === 'object') {
       config.cache.version = buildId
     }
     return config
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options',    value: 'nosniff' },
+          { key: 'X-Frame-Options',            value: 'DENY' },
+          { key: 'X-XSS-Protection',           value: '1; mode=block' },
+          { key: 'Referrer-Policy',            value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy',         value: 'camera=(), microphone=(), geolocation=()' },
+          { key: 'Strict-Transport-Security',  value: 'max-age=63072000; includeSubDomains; preload' },
+        ],
+      },
+    ]
   },
 }
 

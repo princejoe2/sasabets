@@ -6,6 +6,12 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const orderTrackingId = searchParams.get('orderTrackingId')
   const orderNotificationType = searchParams.get('orderNotificationType')
+  const secret = searchParams.get('secret')
+
+  const expected = process.env.PESAPAL_WEBHOOK_SECRET
+  if (!expected || secret !== expected) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   if (!orderTrackingId || orderNotificationType !== 'IPNCHANGE') {
     return NextResponse.json({ error: 'Invalid IPN' }, { status: 400 })

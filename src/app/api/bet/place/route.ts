@@ -10,8 +10,11 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { marketId, optionId, amount } = await req.json()
-  if (!marketId || !optionId || !amount || amount <= 0) {
+  if (!marketId || !optionId) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  }
+  if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0 || amount > 100_000_000) {
+    return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
   }
 
   // Fetch market
