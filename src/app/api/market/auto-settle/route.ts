@@ -44,6 +44,6 @@ export async function POST(req: NextRequest) {
   const winner  = options.find(o => isUp ? o.label.toLowerCase().includes('up') : o.label.toLowerCase().includes('down'))
   if (!winner) return NextResponse.json({ skipped: true, reason: 'no matching option' })
 
-  await settleMarket(market.id, winner.id, admin)
+  await settleMarket(admin, market.id, winner.id)
   return NextResponse.json({ settled: true, asset: assetId, entryPrice, currentPrice, winner: winner.label })
 }
