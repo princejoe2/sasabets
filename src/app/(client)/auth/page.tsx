@@ -1,7 +1,12 @@
 'use client'
 import { useState, CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createBrowserClient } from '@supabase/ssr'
+
+// Values decoded at runtime to avoid BOM injection from Vercel's env vars at compile time.
+const _d = (b: string) => Buffer.from(b, 'base64').toString('utf8')
+const _SB_URL = _d('aHR0cHM6Ly9qc2lncGh5cmhnbXBheWRvempmYS5zdXBhYmFzZS5jbw==')
+const _SB_KEY = _d('ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW1wemFXZHdhSGx5YUdkdGNHRjVaRzk2YW1aaElpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzT0RFMk9ERTJNVGNzSW1WNGNDSTZNakE1TnpJMU56WXhOMzAuQUFmaEdqTzdYODlvLUhMMlFWbXBjTnJYeV9NajdhSnFvTEZvZHAwcnlhSQ==')
 
 type Mode = 'login' | 'register'
 type Step = 'form' | 'otp' | 'totp'
@@ -44,7 +49,7 @@ function formatPhone(raw: string): string {
 }
 
 export default function AuthPage() {
-  const supabase = createClient()
+  const supabase = createBrowserClient(_SB_URL, _SB_KEY)
   const router = useRouter()
 
   const [dark, setDark] = useState(false)
