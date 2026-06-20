@@ -5,9 +5,12 @@ import { settleMarket } from '@/lib/settle-market'
 // Called by Vercel Cron or manually: GET /api/cron/settle-updown
 // Add to vercel.json: { "crons": [{ "path": "/api/cron/settle-updown", "schedule": "* * * * *" }] }
 export async function GET(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get('secret')
   const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret || secret !== cronSecret) {
+  if (!cronSecret) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // Vercel cron sends Authorization: Bearer <CRON_SECRET>; manual calls use ?secret=
+  const authHeader = req.headers.get('authorization')
+  const urlSecret  = req.nextUrl.searchParams.get('secret')
+  if (authHeader !== `Bearer ${cronSecret}` && urlSecret !== cronSecret) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
