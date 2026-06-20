@@ -35,7 +35,8 @@ async function autoSettle() {
     )
     if (updownExpired.length === 0) return
 
-    const assetIds = [...new Set(updownExpired.map(m => String((m.metadata as Record<string, unknown>).asset)))]
+    const assetSet = new Set(updownExpired.map(m => String((m.metadata as Record<string, unknown>).asset)))
+    const assetIds = Array.from(assetSet)
     const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${assetIds.join(',')}&vs_currencies=usd`)
     const priceData = await r.json()
     const prices: Record<string, number> = Object.fromEntries(
