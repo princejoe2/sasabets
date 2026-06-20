@@ -40,6 +40,7 @@ export default function AuthPage() {
   const [phone,       setPhone]       = useState('')
   const [password,    setPassword]    = useState('')
   const [confirm,     setConfirm]     = useState('')
+  const [otp,         setOtp]         = useState('')
   const [totp,        setTotp]        = useState('')
   const [isAdmin,     setIsAdmin]     = useState(false)
 
@@ -48,7 +49,7 @@ export default function AuthPage() {
 
   function switchMode(m: Mode) {
     setMode(m); setStep('form')
-    setError(''); setTotp('')
+    setError(''); setOtp(''); setTotp('')
     setPassword(''); setConfirm('')
   }
 
@@ -84,9 +85,29 @@ export default function AuthPage() {
       return
     }
 
-    // Supabase sends a confirmation email with a magic link — show "check email" step
+    // Email with 6-digit OTP sent via Zoho SMTP — show code entry step
     setStep('otp')
     setLoading(false)
+  }
+
+  async function handleOtpVerify() {
+    setError('')
+    if (otp.length !== 6) { setError('Enter the 6-digit code from your email'); return }
+    setLoading(true)
+
+    const { error: verifyErr } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: otp,
+      type: 'signup',
+    })
+
+    if (verifyErr) {
+      setError(verifyErr.message)
+      setLoading(false)
+      return
+    }
+
+    router.push('/markets')
   }
 
   // ─── Login ─────────────────────────────────────────────────────────────────
@@ -209,47 +230,54 @@ export default function AuthPage() {
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
-  // ── Email sent step (after registration) ───────────────────────────────
+  // ── OTP verification step (after registration) ──────────────────────────
   if (step === 'otp') {
     return (
       <div style={wrap}>
         <div style={card}>
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>📧</div>
-            <h1 style={{ color: T.text, fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>Check your email</h1>
-            <p style={{ color: T.muted, fontSize: '14px', margin: 0, lineHeight: 1.6 }}>
-              We sent a confirmation link to<br />
-              <strong style={{ color: T.text }}>{email}</strong>
+            <div style={{ fontSize: '32px', marginBottom: '8px' }}>📧</div>
+            <h1 style={{ color: T.text, fontSize: '20px', fontWeight: 800, margin: '0 0 6px' }}>Check your email</h1>
+            <p style={{ color: T.muted, fontSize: '14px', margin: 0 }}>
+              We sent a 6-digit code to <strong style={{ color: T.text }}>{email}</strong>
             </p>
           </div>
 
-          <div style={{ background: T.input, border: `1px solid ${T.inputBorder}`, borderRadius: '10px', padding: '16px', marginBottom: '20px' }}>
-            <p style={{ color: T.muted, fontSize: '13px', margin: 0, lineHeight: 1.6 }}>
-              Click the link in the email to confirm your account and get started. The link expires in 24 hours.
-            </p>
+          <div style={fieldGap}>
+            <label style={label}>Verification code</label>
+            <input
+              style={{ ...inputStyle, letterSpacing: '0.25em', textAlign: 'center', fontSize: '22px' }}
+              value={otp}
+              onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000"
+              autoFocus
+              maxLength={6}
+            />
           </div>
 
           {error && <p style={{ color: T.error, fontSize: '13px', margin: '0 0 12px' }}>{error}</p>}
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <button style={{ ...btn, opacity: loading ? 0.6 : 1 }} disabled={loading} onClick={handleOtpVerify}>
+            {loading ? 'Verifying…' : 'Verify & continue'}
+          </button>
+
+          <div style={{ marginTop: '16px', textAlign: 'center' }}>
             <button
               onClick={async () => {
                 setError(''); setLoading(true)
-                const { error: e } = await supabase.auth.resend({
-                  type: 'signup', email: email.trim().toLowerCase(),
-                  options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/markets` },
-                })
+                const { error: e } = await supabase.auth.resend({ type: 'signup', email: email.trim().toLowerCase() })
                 if (e) setError(e.message)
                 setLoading(false)
               }}
               disabled={loading}
-              style={{ flex: 1, background: 'none', border: `1px solid ${T.inputBorder}`, color: T.accent, borderRadius: '10px', padding: '11px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
+              style={{ background: 'none', border: 'none', color: T.accent, fontSize: '13px', cursor: 'pointer' }}
             >
-              {loading ? 'Sending…' : 'Resend link'}
+              Resend code
             </button>
+            <span style={{ color: T.muted, fontSize: '13px', margin: '0 8px' }}>·</span>
             <button
-              onClick={() => { setStep('form'); setError('') }}
-              style={{ flex: 1, background: 'none', border: `1px solid ${T.inputBorder}`, color: T.muted, borderRadius: '10px', padding: '11px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
+              onClick={() => { setStep('form'); setOtp(''); setError('') }}
+              style={{ background: 'none', border: 'none', color: T.muted, fontSize: '13px', cursor: 'pointer' }}
             >
               Back
             </button>
