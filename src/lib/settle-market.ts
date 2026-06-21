@@ -6,7 +6,7 @@ export async function settleMarket(
   winningOptionId: string,
 ): Promise<{ success: boolean; error?: string }> {
   // Atomically claim the market for settlement — prevents double-payout under concurrency
-  const { data: claimed, error: claimErr } = await admin
+  const { data: claimedRaw, error: claimErr } = await admin
     .from('markets')
     .update({ status: 'settling' })
     .eq('id', marketId)
@@ -14,10 +14,14 @@ export async function settleMarket(
     .select('*')
     .single()
 
-  if (claimErr || !claimed) {
+  if (claimErr || !claimedRaw) {
     return { success: false, error: 'Market already being settled or not found' }
   }
 
+  const claimed = claimedRaw as {
+    id: string; title: string; status: string; options: unknown
+    total_pool: number; rake_pct: number; winning_option_id: string | null
+  }
   const opts = claimed.options as Array<{ id: string; label: string; total_pool: number }>
   const winningOption = opts.find(o => o.id === winningOptionId)
   if (!winningOption) {
