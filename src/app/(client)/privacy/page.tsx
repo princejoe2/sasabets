@@ -3,7 +3,7 @@ export const metadata = {
   description: 'Sabula 256 Privacy Policy — how we collect, use, and protect your personal data.',
 }
 
-const EFFECTIVE = '19 June 2026'
+const EFFECTIVE = '21 June 2026'
 const CONTACT_EMAIL = 'support@sabula256.com'
 const COMPANY = 'Sabula 256'
 
@@ -72,7 +72,7 @@ export default function PrivacyPage() {
               <li>Wallet balance (UGX)</li>
               <li>Deposit and withdrawal amounts, timestamps, and statuses</li>
               <li>Mobile Money number used for payment (may differ from registered number)</li>
-              <li>Relworx internal reference numbers for each transaction</li>
+              <li>MarzPay internal reference numbers for each transaction</li>
               <li>Stakes placed, market selections, amounts, and outcomes</li>
             </ul>
 
@@ -86,14 +86,16 @@ export default function PrivacyPage() {
 
             <SubH>2.4 Communications Data</SubH>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-400">
-              <li>SMS OTP delivery logs (via Twilio) — we do not store the OTP codes themselves</li>
+              <li>SMS OTP delivery logs — we do not store the OTP codes themselves</li>
+              <li>Email notifications via Resend</li>
               <li>Support emails or messages you send to us</li>
             </ul>
 
             <SubH>2.5 Data We Do Not Collect</SubH>
             <p className="mt-2 text-sm text-slate-400">
-              We do not collect national ID numbers, passport details, physical addresses, or payment card details.
-              We do not knowingly collect data from persons under 18.
+              We do not collect passport details, physical addresses, or payment card details.
+              We do not collect national ID data unless you voluntarily submit KYC, in which case it is used solely for
+              identity verification. We do not knowingly collect data from persons under 18.
             </p>
           </section>
 
@@ -112,9 +114,9 @@ export default function PrivacyPage() {
                 </thead>
                 <tbody className="divide-y divide-[#1e1e2e] text-slate-400">
                   <Row a="Account creation and authentication via phone OTP" b="Performance of contract" />
-                  <Row a="Processing deposits and withdrawals via Relworx" b="Performance of contract" />
+                  <Row a="Processing deposits and withdrawals via MarzPay" b="Performance of contract" />
                   <Row a="Calculating and distributing market payouts" b="Performance of contract" />
-                  <Row a="Sending SMS OTP codes for login (via Twilio)" b="Performance of contract" />
+                  <Row a="Sending SMS OTP codes for login" b="Performance of contract" />
                   <Row a="Detecting fraud, abuse, and money laundering" b="Legitimate interest / legal obligation" />
                   <Row a="Complying with Ugandan financial regulations and tax obligations" b="Legal obligation" />
                   <Row a="Improving Platform features and fixing bugs" b="Legitimate interest" />
@@ -137,35 +139,28 @@ export default function PrivacyPage() {
               We share your personal data only as described below. We do not sell your data.
             </p>
 
-            <SubH>4.1 Relworx (Payment Processor)</SubH>
+            <SubH>4.1 MarzPay (Payment Processor)</SubH>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
-              We share your Mobile Money number and transaction amounts with Relworx to process deposits and disbursements.
-              Relworx acts as a data processor on our behalf and is contractually bound to protect your data and use it only
-              for payment processing. Relworx is regulated as a payment service provider and complies with the Uganda
+              We share your Mobile Money number and transaction amounts with MarzPay to process deposits and disbursements.
+              MarzPay acts as a data processor on our behalf and is contractually bound to protect your data and use it only
+              for payment processing. MarzPay is regulated as a payment service provider and complies with the Uganda
               National Payment Systems Act, 2020.
             </p>
 
-            <SubH>4.2 Twilio (SMS Provider)</SubH>
-            <p className="mt-2 text-sm leading-relaxed text-slate-400">
-              Your phone number is shared with Twilio Inc. (USA) solely for the purpose of delivering OTP SMS messages.
-              Twilio processes data in the United States. We rely on Twilio&apos;s standard contractual protections for
-              international transfers.
-            </p>
-
-            <SubH>4.3 Supabase (Infrastructure)</SubH>
+            <SubH>4.2 Supabase (Infrastructure)</SubH>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
               Your account, wallet, and transaction data is stored in Supabase&apos;s cloud database. Supabase Inc. acts
               as a data processor under our instructions. Data may be stored in servers located outside Uganda. We rely on
               appropriate contractual safeguards for these transfers.
             </p>
 
-            <SubH>4.4 Legal &amp; Regulatory Disclosure</SubH>
+            <SubH>4.3 Legal &amp; Regulatory Disclosure</SubH>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
               We may disclose your data to government authorities, law enforcement, the Uganda Revenue Authority, or
               financial regulators where required by law or court order.
             </p>
 
-            <SubH>4.5 Business Transfer</SubH>
+            <SubH>4.4 Business Transfer</SubH>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
               If {COMPANY} is acquired, merged, or its assets are transferred, your data may be transferred as part of that
               transaction. We will notify you if this occurs and your data will remain subject to this Policy.
@@ -179,7 +174,7 @@ export default function PrivacyPage() {
             <H2 n="5">International Data Transfers</H2>
             <p className="mt-4 text-sm leading-relaxed text-slate-400">
               Your data may be transferred to and processed in countries outside Uganda, including the United States
-              (Twilio, Supabase). Where we make such transfers, we ensure appropriate safeguards are in place, including
+              (Supabase). Where we make such transfers, we ensure appropriate safeguards are in place, including
               contractual clauses that require the recipient to protect data to a standard equivalent to that required
               under the DPPA.
             </p>

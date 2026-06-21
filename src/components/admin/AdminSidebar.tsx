@@ -38,6 +38,7 @@ const NAV_GROUPS = [
       { href: '/admin/transactions',icon: '💳', label: 'Transactions' },
       { href: '/admin/withdrawals', icon: '💸', label: 'Withdrawals' },
       { href: '/admin/funds',       icon: '🏦', label: 'Funds & Rake' },
+      { href: '/admin/aml',         icon: '🚨', label: 'AML Monitoring' },
     ],
   },
   {
