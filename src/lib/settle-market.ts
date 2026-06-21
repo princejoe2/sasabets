@@ -60,7 +60,14 @@ export async function settleMarket(
       await admin.from('transactions').insert({
         user_id: bet.user_id, type: 'payout', amount: payout,
         balance_after: newBalance, status: 'completed',
-        metadata: { marketId, winningOptionId, betId: bet.id },
+        metadata: {
+          marketId,
+          winningOptionId,
+          betId: bet.id,
+          market_title: claimed.title,
+          option_label: winningOption.label,
+          stake: betAmt,
+        },
       })
     }
   }
