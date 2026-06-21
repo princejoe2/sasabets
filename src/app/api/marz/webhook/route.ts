@@ -3,9 +3,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { sendSms } from '@/lib/sms'
 
 function validSecret(req: NextRequest): boolean {
-  const secret = req.nextUrl.searchParams.get('secret')
-  const raw    = process.env.MARZ_WEBHOOK_SECRET ?? ''
-  const expected = (raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw).trim()
+  const secret   = req.nextUrl.searchParams.get('secret')
+  const expected = (process.env.MARZ_WEBHOOK_SECRET ?? '').replace(/[^\x20-\x7E]/g, '').trim()
   return !!expected && secret === expected
 }
 
