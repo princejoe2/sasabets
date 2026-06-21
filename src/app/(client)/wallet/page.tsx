@@ -38,6 +38,7 @@ function WalletPageContent() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [tab, setTab] = useState<'deposit' | 'withdraw'>('deposit')
   const [amount, setAmount] = useState('')
+  const [depositPhone, setDepositPhone] = useState('')
   const [withdrawPhone, setWithdrawPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -65,6 +66,7 @@ function WalletPageContent() {
     if (txns) setTransactions(txns)
     if (profile?.phone) {
       setPhone(profile.phone)
+      setDepositPhone('+' + profile.phone)
       setWithdrawPhone('+' + profile.phone)
     }
     return txns
@@ -115,11 +117,12 @@ function WalletPageContent() {
   async function handleDeposit() {
     const amtNum = parseFloat(amount)
     if (!amtNum || amtNum < 1000) { setError('Minimum deposit is UGX 1,000'); return }
+    if (!depositPhone) { setError('Enter a phone number to receive the USSD prompt'); return }
     setLoading(true); setError(''); setSuccess('')
     const res = await fetch('/api/marz/deposit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: amtNum }),
+      body: JSON.stringify({ amount: amtNum, phone: depositPhone }),
     })
     const data = await res.json()
     if (!res.ok) {
@@ -219,6 +222,16 @@ function WalletPageContent() {
                         </button>
                       ))}
                     </div>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-500">Mobile Money number</label>
+                    <input
+                      type="tel"
+                      value={depositPhone}
+                      onChange={e => setDepositPhone(e.target.value)}
+                      placeholder="+256 700 000 000"
+                      className="w-full rounded-lg border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm outline-none focus:border-violet-600 transition-colors"
+                    />
                   </div>
                   {error && <p className="text-sm text-red-400">{error}</p>}
                   <button onClick={handleDeposit} disabled={loading}
