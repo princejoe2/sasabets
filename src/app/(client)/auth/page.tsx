@@ -63,8 +63,8 @@ export default function AuthPage() {
 
     // Basic Uganda phone format
     const ph = phone.replace(/[\s\-()]/g, '')
-    if (!/^(0|256|\+256)7\d{8}$/.test(ph)) {
-      setError('Enter a valid Ugandan phone number (e.g. 0712345678)')
+    if (!/^(\+256|256|0)(7\d{8}|39\d{7})$/.test(ph)) {
+      setError('Enter a valid Ugandan mobile number (MTN or Airtel, e.g. 0771234567)')
       return
     }
 
@@ -137,7 +137,16 @@ export default function AuthPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),
     })
-    const { isAdmin: admin, has2fa } = await res.json()
+    const userInfo = await res.json()
+
+    if (userInfo.suspended) {
+      await supabase.auth.signOut()
+      setError(userInfo.suspend_reason ?? 'Your account has been suspended. Contact support.')
+      setLoading(false)
+      return
+    }
+
+    const { isAdmin: admin, has2fa } = userInfo
 
     if (admin || has2fa) {
       setIsAdmin(!!admin)

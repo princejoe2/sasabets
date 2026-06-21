@@ -106,28 +106,29 @@ export async function getCollectionStatus(marzUuid: string): Promise<MarzResult>
   return res.json()
 }
 
+// Uganda operator prefixes (NCC Uganda):
+//   MTN:    076x 077x 078x 039x
+//   Airtel: 070x 074x 075x
+//   UTL:    071x
+//   Africell/Lyca: 079x
+// Accepts: 07XXXXXXXX | 039XXXXXXX | +256 equivalents
+const UG_PHONE_RE = /^(\+256|256|0)(7\d{8}|39\d{7})$/
+
+function detectProvider(intl: string): string {
+  const n = intl.replace(/^\+256/, '')
+  if (/^(76|77|78|39)\d/.test(n)) return 'MTN'
+  if (/^(70|74|75)\d/.test(n)) return 'Airtel'
+  if (/^71\d/.test(n)) return 'UTL'
+  return 'Mobile Money'
+}
+
 export async function verifyPhone(phone_number: string): Promise<{
   valid: boolean
   name?: string
   provider?: string
 }> {
-  try {
-    const res = await fetch(`${BASE}/verify-phone`, {
-      method: 'POST',
-      headers: requestHeaders(),
-      body: jsonBody({ phone_number, country: 'UG' }),
-    })
-    const data = await res.json()
-    // Sandbox mode: API can't verify — fall through and trust local regex
-    if (data.status === 'sandbox') return { valid: true }
-    if (data.status !== 'success') return { valid: false }
-    return {
-      valid: true,
-      name: data.data?.name,
-      provider: data.data?.provider,
-    }
-  } catch {
-    // Network failure — don't block registration
-    return { valid: true }
-  }
+  const raw = phone_number.replace(/[\s\-()]/g, '')
+  if (!UG_PHONE_RE.test(raw)) return { valid: false }
+  const provider = detectProvider(raw.startsWith('+') ? raw : '+256' + raw.replace(/^(256|0)/, ''))
+  return { valid: true, provider }
 }

@@ -1,13 +1,25 @@
 const BASE = 'https://payments.relworx.com/api'
-const API_KEY = process.env.RELWORX_API_KEY!
-const ACCOUNT_NO = process.env.RELWORX_ACCOUNT_NO!
+
+function stripBom(s: string): string {
+  let out = ''
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i)
+    if (c >= 0x20 && c <= 0x7E) out += s[i]
+  }
+  return out.trim()
+}
 
 function headers() {
+  const key = stripBom(process.env.RELWORX_API_KEY ?? '')
   return {
-    Authorization: `Bearer ${API_KEY}`,
+    Authorization: `Bearer ${key}`,
     Accept: 'application/vnd.relworx.v2',
     'Content-Type': 'application/json',
   }
+}
+
+function accountNo() {
+  return stripBom(process.env.RELWORX_ACCOUNT_NO ?? '')
 }
 
 export interface RelworxSendResult {
@@ -39,7 +51,7 @@ export async function requestPayment(opts: {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({
-      account_no: ACCOUNT_NO,
+      account_no: accountNo(),
       reference: opts.reference,
       msisdn: opts.msisdn,
       currency: 'UGX',
@@ -62,7 +74,7 @@ export async function sendPayment(opts: {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({
-      account_no: ACCOUNT_NO,
+      account_no: accountNo(),
       reference: opts.reference,
       msisdn: opts.msisdn,
       currency: 'UGX',
@@ -77,7 +89,7 @@ export async function sendPayment(opts: {
 
 export async function checkPaymentStatus(internalReference: string): Promise<RelworxStatusResult> {
   const url = new URL(`${BASE}/mobile-money/check-request-status`)
-  url.searchParams.set('account_no', ACCOUNT_NO)
+  url.searchParams.set('account_no', accountNo())
   url.searchParams.set('internal_reference', internalReference)
   const res = await fetch(url.toString(), { headers: headers() })
   return res.json()

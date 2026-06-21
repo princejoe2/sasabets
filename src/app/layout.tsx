@@ -5,6 +5,9 @@ import CursorEffects from '@/components/CursorEffects'
 const BASE = 'https://sabula256.com'
 
 export const metadata: Metadata = {
+  verification: {
+    google: 'keICCmUnIZ-6cdt2gUUGUimARGNTkuRT1iy-d2J-VJo',
+  },
   metadataBase: new URL(BASE),
   title: {
     default: 'Sabula 256 – Uganda Prediction Markets',
@@ -23,7 +26,7 @@ export const metadata: Metadata = {
     description: "East Africa's #1 prediction market. Predict real-world outcomes and win on MTN Mobile Money.",
     images: [
       {
-        url: '/og-image.png',
+        url: '/opengraph-image',
         width: 1200,
         height: 630,
         alt: 'Sabula 256 – Uganda Prediction Markets',
@@ -34,7 +37,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Sabula 256 – Uganda Prediction Markets',
     description: "East Africa's #1 prediction market. Predict outcomes, earn on mobile money.",
-    images: ['/og-image.png'],
+    images: ['/opengraph-image'],
     creator: '@sabula256',
   },
   robots: {

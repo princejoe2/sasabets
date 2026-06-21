@@ -53,11 +53,11 @@ export default function KycPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id_type: idType, id_number: idNumber.trim(), first_name: firstName.trim(), last_name: lastName.trim() }),
     })
+    const d = await res.json()
     if (res.ok) {
       setKycStatus('pending')
       setMsg({ text: "Submitted for review. We'll verify within 24 hours.", ok: true })
     } else {
-      const d = await res.json()
       setMsg({ text: d.error ?? 'Submission failed.', ok: false })
     }
     setLoading(false)

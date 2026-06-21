@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/settle-updown",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/notify-closing",
+      "schedule": "0 6 * * *"
     }
   ]
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { collectMoney, getCollectionStatus } from '@/lib/marz'
+import { requestPayment, checkPaymentStatus } from '@/lib/relworx'
 
 function toInternational(phone: string): string {
   let digits = phone.replace(/[\s\-()]/g, '')
@@ -9,14 +10,12 @@ function toInternational(phone: string): string {
   return digits
 }
 
-// POST — initiate deposit (sends USSD push to phone)
 export async function POST(req: NextRequest) {
   try {
     return await handleDeposit(req)
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    console.error('[deposit] unhandled:', msg)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    console.error('[deposit] unhandled:', err instanceof Error ? err.message : String(err))
+    return NextResponse.json({ error: 'Deposit failed. Please try again.' }, { status: 500 })
   }
 }
 
@@ -28,13 +27,29 @@ async function handleDeposit(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { amount, phone } = await req.json()
-  if (!amount || amount < 1000) {
-    return NextResponse.json({ error: 'Minimum deposit is UGX 1,000' }, { status: 400 })
+  if (typeof amount !== 'number' || !Number.isFinite(amount) || amount < 1000 || amount > 10_000_000) {
+    return NextResponse.json({ error: 'Deposit must be between UGX 1,000 and UGX 10,000,000' }, { status: 400 })
   }
 
   const { data: profile } = await admin.from('profiles')
-    .select('phone, self_excluded_until, daily_deposit_limit')
+    .select('phone, self_excluded_until, daily_deposit_limit, suspended')
     .eq('id', user.id).single()
+
+  if (profile?.suspended) {
+    return NextResponse.json({ error: 'Your account has been suspended. Contact support.' }, { status: 403 })
+  }
+
+  // Rate limit: 5 deposit requests per 10 minutes per user
+  const depositWindow = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+  const { count: recentDeposits } = await admin
+    .from('transactions')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('type', 'deposit')
+    .gte('created_at', depositWindow)
+  if ((recentDeposits ?? 0) >= 5) {
+    return NextResponse.json({ error: 'Too many deposit attempts. Please wait 10 minutes.' }, { status: 429 })
+  }
 
   const rawPhone = phone ?? profile?.phone ?? ''
   if (!rawPhone) return NextResponse.json({ error: 'No phone number on file' }, { status: 400 })
@@ -59,25 +74,43 @@ async function handleDeposit(req: NextRequest) {
   }
 
   const phone_number = toInternational(rawPhone)
-  // Marz requires UUID v4 references
   const reference = crypto.randomUUID()
 
-  let marzUuid: string
-  try {
-    const result = await collectMoney({ amount, phone_number, reference, description: 'Sabula 256 deposit' })
-    marzUuid = result.data.transaction.uuid
-  } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Payment request failed' }, { status: 502 })
-  }
-
+  // Insert transaction record BEFORE gateway call so we have an audit trail
+  // even if the server crashes mid-flight or the gateway response is never received.
   await admin.from('transactions').insert({
     user_id: user.id,
     type: 'deposit',
     amount,
     status: 'pending',
     reference,
-    metadata: { phone: phone_number, marz_uuid: marzUuid },
+    metadata: { phone: phone_number },
   })
+
+  let gateway: 'relworx' | 'marzpay'
+  let gatewayMeta: Record<string, string>
+
+  // MarzPay primary → Relworx fallback
+  try {
+    const result = await collectMoney({ phone_number, amount, reference, description: 'Sabula 256 deposit' })
+    gateway = 'marzpay'
+    gatewayMeta = { phone: phone_number, marz_uuid: result.data.transaction.uuid }
+  } catch {
+    try {
+      const result = await requestPayment({ msisdn: phone_number, amount, reference, description: 'Sabula 256 deposit' })
+      gateway = 'relworx'
+      gatewayMeta = { phone: phone_number, internal_reference: result.internal_reference }
+    } catch (err) {
+      // Both gateways failed — mark the pre-inserted transaction as failed
+      await admin.from('transactions').update({ status: 'failed' }).eq('reference', reference)
+      return NextResponse.json({ error: 'Payment request failed. Please try again.' }, { status: 502 })
+    }
+  }
+
+  // Update transaction with gateway metadata now that we have it
+  await admin.from('transactions').update({
+    metadata: { gateway, ...gatewayMeta },
+  }).eq('reference', reference)
 
   return NextResponse.json({ success: true, reference })
 }
@@ -97,27 +130,57 @@ export async function GET(req: NextRequest) {
     .select('*').eq('user_id', user.id).eq('reference', ref).single()
 
   if (!txn) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 })
-  if (txn.status === 'completed') return NextResponse.json({ status: 'completed', balance: txn.balance_after })
-  if (txn.status === 'failed')    return NextResponse.json({ status: 'failed' })
+  if (txn.status === 'completed')  return NextResponse.json({ status: 'completed', balance: txn.balance_after })
+  if (txn.status === 'failed')     return NextResponse.json({ status: 'failed' })
+  if (txn.status === 'processing') return NextResponse.json({ status: 'pending' })  // webhook in flight
 
-  const marzUuid = txn.metadata?.marz_uuid
-  if (!marzUuid) return NextResponse.json({ status: 'pending' })
+  const gateway = txn.metadata?.gateway ?? 'relworx'
 
   try {
-    const result = await getCollectionStatus(marzUuid)
-    const txStatus = result.data?.transaction?.status
+    let gatewaySuccess = false
+    let gatewayFailed  = false
 
-    if (txStatus === 'successful') {
+    if (gateway === 'marzpay') {
+      const marzUuid = txn.metadata?.marz_uuid
+      if (!marzUuid) return NextResponse.json({ status: 'pending' })
+      const result = await getCollectionStatus(marzUuid)
+      const txStatus = result.data?.transaction?.status
+      if (txStatus === 'successful')                        gatewaySuccess = true
+      if (txStatus === 'failed' || txStatus === 'cancelled') gatewayFailed = true
+    } else {
+      const internalRef = txn.metadata?.internal_reference
+      if (!internalRef) return NextResponse.json({ status: 'pending' })
+      const result = await checkPaymentStatus(internalRef)
+      if (result.request_status === 'success') gatewaySuccess = true
+      if (result.request_status === 'failed')  gatewayFailed  = true
+    }
+
+    if (gatewaySuccess) {
+      // Atomic idempotency flip: only one winner (webhook vs polling) credits the wallet
+      const { data: claimed } = await admin
+        .from('transactions')
+        .update({ status: 'processing' })
+        .eq('id', txn.id)
+        .eq('status', 'pending')
+        .select('amount')
+        .single()
+      if (!claimed) {
+        // Webhook already handled it — re-fetch current balance
+        const { data: fresh } = await admin.from('transactions').select('status, balance_after').eq('id', txn.id).single()
+        if (fresh?.status === 'completed') return NextResponse.json({ status: 'completed', balance: fresh.balance_after })
+        return NextResponse.json({ status: 'pending' })
+      }
       const { data: wallet } = await admin.from('wallets').select('balance').eq('user_id', user.id).single()
-      const newBalance = Number(wallet?.balance ?? 0) + Number(txn.amount)
+      const newBalance = Number(wallet?.balance ?? 0) + Number(claimed.amount)
       await Promise.all([
         admin.from('wallets').update({ balance: newBalance, updated_at: new Date().toISOString() }).eq('user_id', user.id),
         admin.from('transactions').update({ status: 'completed', balance_after: newBalance }).eq('id', txn.id),
       ])
       return NextResponse.json({ status: 'completed', balance: newBalance })
     }
-    if (txStatus === 'failed' || txStatus === 'cancelled') {
-      await admin.from('transactions').update({ status: 'failed' }).eq('id', txn.id)
+
+    if (gatewayFailed) {
+      await admin.from('transactions').update({ status: 'failed' }).eq('id', txn.id).eq('status', 'pending')
       return NextResponse.json({ status: 'failed' })
     }
   } catch { /* keep polling */ }

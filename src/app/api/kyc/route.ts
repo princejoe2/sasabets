@@ -13,6 +13,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
+  const VALID_ID_TYPES = ['national_id', 'passport', 'drivers_license']
+  if (!VALID_ID_TYPES.includes(String(id_type))) {
+    return NextResponse.json({ error: 'Invalid ID type' }, { status: 400 })
+  }
+  if (String(id_number).length > 50 || String(first_name).length > 50) {
+    return NextResponse.json({ error: 'Input too long' }, { status: 400 })
+  }
+
   const { data: existing } = await admin.from('profiles')
     .select('kyc_status')
     .eq('id', user.id)
@@ -28,14 +36,17 @@ export async function POST(req: NextRequest) {
   const full_name = last_name ? `${first_name} ${last_name}` : first_name
 
   const { error } = await admin.from('profiles').update({
-    kyc_id_type:  id_type,
+    kyc_id_type:   id_type,
     kyc_id_number: id_number,
-    kyc_status:   'pending',
+    kyc_status:    'pending',
     full_name,
-    updated_at:   new Date().toISOString(),
+    updated_at:    new Date().toISOString(),
   }).eq('id', user.id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[kyc] update failed:', error.message)
+    return NextResponse.json({ error: 'Failed to submit KYC' }, { status: 500 })
+  }
 
   return NextResponse.json({ ok: true })
 }

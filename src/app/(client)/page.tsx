@@ -20,6 +20,19 @@ const WHY = [
   { icon: '🌍', color: '#f472b6', title: 'Built for East Africa', body: 'Local football, politics, economy. We cover what actually matters here in Uganda.' },
 ]
 
+const HOME_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Sabula 256',
+  url: 'https://sabula256.com',
+  description: "East Africa's prediction market. Predict Uganda politics, football, crypto and more. Win on MTN & Airtel Mobile Money.",
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: 'https://sabula256.com/markets?q={search_term_string}',
+    'query-input': 'required name=search_term_string',
+  },
+}
+
 export default async function HomePage() {
   const supabase = createClient()
 
@@ -39,6 +52,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(HOME_JSON_LD).replace(/</g, '\\u003c').replace(/>/g, '\\u003e') }} />
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden border-b border-[#1e1e2e]">

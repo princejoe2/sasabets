@@ -8,7 +8,10 @@ export async function GET() {
     .select('id, title, description, category, option_a, option_b, status, market_id, vote_count, created_at')
     .order('vote_count', { ascending: false })
     .limit(100)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[proposals] fetch failed:', error.message)
+    return NextResponse.json({ error: 'Failed to load proposals' }, { status: 500 })
+  }
   return NextResponse.json(data)
 }
 
@@ -22,6 +25,9 @@ export async function POST(req: NextRequest) {
   const { title, description, category, option_a, option_b, closes_suggestion } = await req.json()
   if (!title || !option_a || !option_b) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  }
+  if (String(title).length > 200 || String(option_a).length > 100 || String(option_b).length > 100) {
+    return NextResponse.json({ error: 'Input too long' }, { status: 400 })
   }
 
   // Rate limit: max 3 proposals per user per day
@@ -48,6 +54,9 @@ export async function POST(req: NextRequest) {
     vote_count:        0,
   })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[proposals] insert failed:', error.message)
+    return NextResponse.json({ error: 'Failed to submit proposal' }, { status: 500 })
+  }
   return NextResponse.json({ ok: true })
 }

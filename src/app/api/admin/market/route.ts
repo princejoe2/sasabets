@@ -11,9 +11,28 @@ export async function POST(req: NextRequest) {
   const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
   if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { title, description, closesAt, options, verificationType, verificationConfig } = await req.json()
+  const { title, description, closesAt, options, verificationType, verificationConfig, rakePct } = await req.json()
   if (!title || !options || options.length < 2) {
     return NextResponse.json({ error: 'Invalid market data' }, { status: 400 })
+  }
+
+  // rake_pct must be between 0% and 20% — default 8%
+  const rake = rakePct !== undefined ? Number(rakePct) : 0.08
+  if (!Number.isFinite(rake) || rake < 0 || rake > 0.20) {
+    return NextResponse.json({ error: 'rake_pct must be between 0 and 0.20' }, { status: 400 })
+  }
+
+  // Duplicate check — same title (case-insensitive) among open/upcoming markets
+  const { data: existing } = await admin
+    .from('markets')
+    .select('id')
+    .ilike('title', title.trim())
+    .in('status', ['open', 'upcoming'])
+    .limit(1)
+    .maybeSingle()
+
+  if (existing) {
+    return NextResponse.json({ error: 'A market with this title already exists.' }, { status: 409 })
   }
 
   const { data, error } = await admin.from('markets').insert({
@@ -24,11 +43,14 @@ export async function POST(req: NextRequest) {
     created_by:          user.id,
     status:              'open',
     total_pool:          0,
-    rake_pct:            0.08,
+    rake_pct:            rake,
     verification_type:   verificationType   ?? 'manual',
     verification_config: verificationConfig ?? {},
   }).select().single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[admin/market] insert failed:', error.message)
+    return NextResponse.json({ error: 'Failed to create market' }, { status: 500 })
+  }
   return NextResponse.json(data)
 }

@@ -61,8 +61,8 @@ export async function POST(req: NextRequest) {
     const result = await requestPayment({ msisdn, amount, reference, description: 'Sabula 256 deposit' })
     internalReference = result.internal_reference
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Payment request failed'
-    return NextResponse.json({ error: message }, { status: 502 })
+    console.error('[relworx/deposit] gateway error:', err instanceof Error ? err.message : String(err))
+    return NextResponse.json({ error: 'Payment request failed. Please try again.' }, { status: 502 })
   }
 
   const { error: txnErr } = await admin.from('transactions').insert({
@@ -101,12 +101,9 @@ export async function GET(req: NextRequest) {
     .single()
 
   if (!txn) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 })
-  if (txn.status === 'completed') {
-    return NextResponse.json({ status: 'completed', balance: txn.balance_after })
-  }
-  if (txn.status === 'failed') {
-    return NextResponse.json({ status: 'failed' })
-  }
+  if (txn.status === 'completed')  return NextResponse.json({ status: 'completed', balance: txn.balance_after })
+  if (txn.status === 'failed')     return NextResponse.json({ status: 'failed' })
+  if (txn.status === 'processing') return NextResponse.json({ status: 'pending' })  // webhook in flight
 
   // Still pending — check with Relworx
   const internalReference = txn.metadata?.internal_reference
@@ -115,8 +112,21 @@ export async function GET(req: NextRequest) {
   try {
     const relworxStatus = await checkPaymentStatus(internalReference)
     if (relworxStatus.request_status === 'success') {
+      // Atomic flip to prevent double-credit if webhook also fires
+      const { data: claimed } = await admin
+        .from('transactions')
+        .update({ status: 'processing' })
+        .eq('id', txn.id)
+        .eq('status', 'pending')
+        .select('amount')
+        .single()
+      if (!claimed) {
+        const { data: fresh } = await admin.from('transactions').select('status, balance_after').eq('id', txn.id).single()
+        if (fresh?.status === 'completed') return NextResponse.json({ status: 'completed', balance: fresh.balance_after })
+        return NextResponse.json({ status: 'pending' })
+      }
       const { data: wallet } = await admin.from('wallets').select('balance').eq('user_id', user.id).single()
-      const newBalance = Number(wallet?.balance ?? 0) + Number(txn.amount)
+      const newBalance = Number(wallet?.balance ?? 0) + Number(claimed.amount)
       await Promise.all([
         admin.from('wallets').update({ balance: newBalance, updated_at: new Date().toISOString() }).eq('user_id', user.id),
         admin.from('transactions').update({ status: 'completed', balance_after: newBalance }).eq('id', txn.id),
@@ -124,8 +134,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ status: 'completed', balance: newBalance })
     }
     if (relworxStatus.request_status === 'failed') {
-      await admin.from('transactions').update({ status: 'failed' }).eq('id', txn.id)
-      return NextResponse.json({ status: 'failed', message: relworxStatus.message })
+      await admin.from('transactions').update({ status: 'failed' }).eq('id', txn.id).eq('status', 'pending')
+      return NextResponse.json({ status: 'failed' })
     }
   } catch {
     // Relworx unreachable — return pending, keep polling

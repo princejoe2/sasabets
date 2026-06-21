@@ -97,10 +97,11 @@ function WalletPageContent() {
           clearInterval(interval)
         }
       } catch { /* keep polling */ }
-      if (attempts >= 20) {
+      if (attempts >= 36) {
         setProcessing(false)
         setPendingRef(null)
         await load()
+        setSuccess('Payment is being processed — your balance will update automatically once confirmed.')
         clearInterval(interval)
       }
     }, 5000)
@@ -150,7 +151,7 @@ function WalletPageContent() {
     if (!res.ok) {
       setError(data.error ?? 'Withdrawal failed')
     } else {
-      setSuccess('Withdrawal requested! We\'ll send UGX ' + amtNum.toLocaleString() + ' to ' + withdrawPhone + ' within 24 hours.')
+      setSuccess('Withdrawal submitted! UGX ' + amtNum.toLocaleString() + ' will be sent to ' + withdrawPhone + ' shortly.')
       setAmount('')
       await load()
     }

@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
       : new Date(Date.now() + 7 * 86400000)
 
     const options = [
-      { id: 'opt-0', label: p.option_a, total_pool: 0 },
-      { id: 'opt-1', label: p.option_b, total_pool: 0 },
+      { id: 'opt_a', label: p.option_a, total_pool: 0 },
+      { id: 'opt_b', label: p.option_b, total_pool: 0 },
     ]
 
     const { data: market } = await admin.from('markets').insert({

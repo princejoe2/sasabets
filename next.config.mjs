@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+    ],
+  },
   typescript: { ignoreBuildErrors: false },
   generateBuildId: async () => `build-${Date.now()}`,
   webpack: (config, { buildId }) => {

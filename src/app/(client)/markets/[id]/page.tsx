@@ -66,13 +66,34 @@ export default async function MarketPage({
     userBet = bets?.[0] ?? null
   }
 
+  const opts = market.options as Option[]
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: market.title,
+    description: market.description ?? `Prediction market: ${market.title}`,
+    url: `https://sabula256.com/markets/${market.id}`,
+    organizer: { '@type': 'Organization', name: 'Sabula 256', url: 'https://sabula256.com' },
+    ...(market.closes_at ? { endDate: market.closes_at } : {}),
+    offers: opts.map(o => ({
+      '@type': 'Offer',
+      name: o.label,
+      price: '0',
+      priceCurrency: 'UGX',
+      availability: market.status === 'open' ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
+    })),
+  }
+
   return (
-    <BetPanel
-      market={market as Market}
-      initialBalance={balance}
-      initialPick={searchParams.pick ?? null}
-      isLoggedIn={!!user}
-      userBet={userBet}
-    />
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c').replace(/>/g, '\\u003e') }} />
+      <BetPanel
+        market={market as Market}
+        initialBalance={balance}
+        initialPick={searchParams.pick ?? null}
+        isLoggedIn={!!user}
+        userBet={userBet}
+      />
+    </>
   )
 }

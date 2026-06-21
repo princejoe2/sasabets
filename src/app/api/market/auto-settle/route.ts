@@ -3,6 +3,14 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { settleMarket } from '@/lib/settle-market'
 
 export async function POST(req: NextRequest) {
+  // Require cron secret or admin session
+  const cronSecret = (process.env.CRON_SECRET ?? '').replace(/[^\x20-\x7E]/g, '').trim()
+  const auth = req.headers.get('authorization')
+  const urlSecret = req.nextUrl.searchParams.get('secret')
+  if (!cronSecret || (auth !== `Bearer ${cronSecret}` && urlSecret !== cronSecret)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const { marketId } = await req.json()
   if (!marketId) return NextResponse.json({ error: 'Missing marketId' }, { status: 400 })
 

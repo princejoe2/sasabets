@@ -1,5 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import MarketsClient from '@/components/MarketsClient'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Prediction Markets – Uganda Politics, Football & More',
+  description: 'Browse live prediction markets on Uganda elections, FUFA football, World Cup 2026, crypto prices and more. Bet with MTN or Airtel Mobile Money.',
+  keywords: ['Uganda prediction market', 'Uganda betting', 'MTN mobile money betting', 'Uganda elections prediction', 'FUFA betting Uganda', 'World Cup 2026 Uganda'],
+  openGraph: {
+    title: 'Prediction Markets | Sabula 256',
+    description: 'Live markets on Uganda politics, football, crypto & more. Win on Mobile Money.',
+    url: 'https://sabula256.com/markets',
+  },
+}
 
 export const revalidate = 30
 
