@@ -48,14 +48,14 @@ export async function settleMarket(
       const payout = (betAmt / winningPool) * prizePool
 
       // Idempotent per-bet: only credit if bet is still active
-      const { data: claimed } = await admin
+      const { data: claimedBet } = await admin
         .from('bets')
         .update({ status: 'won', settled_payout: payout })
         .eq('id', bet.id)
         .eq('status', 'active')
         .select('id')
 
-      if (!claimed || claimed.length === 0) continue  // already paid, skip
+      if (!claimedBet || claimedBet.length === 0) continue  // already paid, skip
 
       // Atomic credit: balance = balance + payout
       const { data: w } = await admin.from('wallets').select('balance').eq('user_id', bet.user_id).single()
