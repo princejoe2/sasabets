@@ -1,12 +1,18 @@
 const BASE = 'https://wallet.wearemarz.com/api/v1'
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://sabula256.com').replace(/^﻿/, '').trim()
 
-const e = (k: string) => (process.env[k] ?? '').replace(/﻿/g, '').trim()
+// Strip BOM (U+FEFF, charCode 0xFEFF = 65279) that Vercel injects at the start of env var values.
+// Using charCodeAt avoids any ambiguity with regex literal characters in source files.
+const e = (k: string) => {
+  const v = process.env[k] ?? ''
+  return (v.charCodeAt(0) === 0xFEFF ? v.slice(1) : v).trim()
+}
+
+const SITE_URL = e('NEXT_PUBLIC_SITE_URL') || 'https://sabula256.com'
 
 function headers() {
-  const key    = e('MARZ_API_KEY')
-  const secret = e('MARZ_API_SECRET')
-  const creds  = Buffer.from(`${key}:${secret}`, 'utf8').toString('base64')
+  // MARZ_AUTH_BASIC is the pre-computed base64 of "api_key:api_secret".
+  // Storing it pre-encoded avoids BOM corruption during Buffer.from() encoding.
+  const creds = e('MARZ_AUTH_BASIC')
   return {
     Authorization: `Basic ${creds}`,
     'Content-Type': 'application/json',
