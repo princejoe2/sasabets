@@ -11,6 +11,16 @@ function toInternational(phone: string): string {
 
 // POST — initiate deposit (sends USSD push to phone)
 export async function POST(req: NextRequest) {
+  try {
+    return await handleDeposit(req)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[deposit] unhandled:', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
+}
+
+async function handleDeposit(req: NextRequest) {
   const supabase = createClient()
   const admin    = createAdminClient()
 
