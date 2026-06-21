@@ -112,6 +112,8 @@ export async function verifyPhone(phone_number: string): Promise<{
       body: jsonBody({ phone_number, country: 'UG' }),
     })
     const data = await res.json()
+    // Sandbox mode: API can't verify — fall through and trust local regex
+    if (data.status === 'sandbox') return { valid: true }
     if (data.status !== 'success') return { valid: false }
     return {
       valid: true,
@@ -119,6 +121,7 @@ export async function verifyPhone(phone_number: string): Promise<{
       provider: data.data?.provider,
     }
   } catch {
-    return { valid: false }
+    // Network failure — don't block registration
+    return { valid: true }
   }
 }

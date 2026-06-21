@@ -69,6 +69,22 @@ export default function AuthPage() {
     }
 
     setLoading(true)
+
+    // Verify phone via MarzPay
+    try {
+      const vRes = await fetch('/api/auth/verify-phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: ph }),
+      })
+      const vData = await vRes.json()
+      if (!vData.valid) {
+        setError('Phone number could not be verified. Please enter an active MTN or Airtel Uganda number.')
+        setLoading(false)
+        return
+      }
+    } catch { /* network error — proceed without blocking */ }
+
     const { error: signUpErr } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
