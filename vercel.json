@@ -1,4 +1,5 @@
 {
+  "alias": ["sabula256.com"],
   "crons": [
     {
       "path": "/api/cron/settle-updown",
