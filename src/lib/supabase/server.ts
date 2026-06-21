@@ -2,8 +2,9 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
-// Strip BOM and whitespace — Vercel sometimes injects U+FEFF into env var values
-const e = (key: string) => (process.env[key] ?? '').replace(/^﻿/, '').trim()
+// Strip BOM and whitespace — Vercel injects U+FEFF (65279) into env var values at runtime.
+// Use hex escape range so the regex compiles cleanly regardless of source file encoding.
+const e = (key: string) => (process.env[key] ?? '').replace(/[^\x20-\x7E]/g, '').trim()
 
 const SB_URL  = e('NEXT_PUBLIC_SUPABASE_URL')
 const SB_ANON = e('NEXT_PUBLIC_SUPABASE_ANON_KEY')
