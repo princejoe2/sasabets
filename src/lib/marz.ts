@@ -1,9 +1,15 @@
 const BASE = 'https://wallet.wearemarz.com/api/v1'
 
-// Strip everything outside printable ASCII (0x20–0x7E).
-// This removes Vercel's BOM injection (U+FEFF = 65279) from env var values
-// regardless of where in the string it appears.
-const ascii = (s: string) => s.replace(/[^\x20-\x7E]/g, '').trim()
+// Strip BOM and non-printable-ASCII from env var values (Vercel injects U+FEFF at runtime).
+// Uses charCodeAt loop so SWC/webpack can't mangle a regex character class.
+function ascii(s: string): string {
+  let out = ''
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i)
+    if (c >= 0x20 && c <= 0x7E) out += s[i]
+  }
+  return out.trim()
+}
 
 const SITE_URL = ascii(process.env.NEXT_PUBLIC_SITE_URL ?? '') || 'https://sabula256.com'
 

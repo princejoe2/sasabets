@@ -1,6 +1,16 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Strip BOM and non-printable-ASCII — Vercel injects U+FEFF into env var values at runtime.
+function stripBom(s: string): string {
+  let out = ''
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i)
+    if (c >= 0x20 && c <= 0x7E) out += s[i]
+  }
+  return out.trim()
+}
+
 export async function middleware(request: NextRequest) {
   // Forward pathname so Server Component layouts can read it
   const requestHeaders = new Headers(request.headers)
@@ -9,8 +19,8 @@ export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    stripBom(process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''),
+    stripBom(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''),
     {
       cookies: {
         getAll() { return request.cookies.getAll() },
