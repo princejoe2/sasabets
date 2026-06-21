@@ -19,9 +19,10 @@ function webhookUrl(): string {
   return `${SITE_URL}/api/marz/webhook${secret ? `?secret=${secret}` : ''}`
 }
 
-// Pass body as Uint8Array so undici skips its ByteString validation on string bodies.
-function jsonBody(obj: unknown): Uint8Array {
-  return new TextEncoder().encode(JSON.stringify(obj))
+// Pass body as Buffer so undici treats it as bytes, not a string.
+// This avoids undici's ByteString (Latin1) validation that runs on string bodies.
+function jsonBody(obj: unknown): Buffer {
+  return Buffer.from(JSON.stringify(obj), 'utf8')
 }
 
 export interface MarzTransaction {
