@@ -4,7 +4,7 @@ import { sendSms } from '@/lib/sms'
 
 function validSecret(req: NextRequest): boolean {
   const secret   = req.nextUrl.searchParams.get('secret')
-  const expected = (process.env.MARZ_WEBHOOK_SECRET ?? '').replace(/^﻿/, '').trim()
+  const expected = (process.env.MARZ_WEBHOOK_SECRET ?? '').replace(/﻿/g, '').trim()
   return !!expected && secret === expected
 }
 

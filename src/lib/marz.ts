@@ -1,18 +1,21 @@
 const BASE = 'https://wallet.wearemarz.com/api/v1'
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://sabula256.com').replace(/^﻿/, '').trim()
 
+const e = (k: string) => (process.env[k] ?? '').replace(/﻿/g, '').trim()
+
 function headers() {
-  const key    = (process.env.MARZ_API_KEY    ?? '').replace(/^﻿/, '').trim()
-  const secret = (process.env.MARZ_API_SECRET ?? '').replace(/^﻿/, '').trim()
+  const key    = e('MARZ_API_KEY')
+  const secret = e('MARZ_API_SECRET')
+  const creds  = Buffer.from(`${key}:${secret}`, 'utf8').toString('base64')
   return {
-    Authorization: `Basic ${Buffer.from(`${key}:${secret}`).toString('base64')}`,
+    Authorization: `Basic ${creds}`,
     'Content-Type': 'application/json',
     Accept: 'application/json',
   }
 }
 
 function webhookUrl() {
-  const secret = (process.env.MARZ_WEBHOOK_SECRET ?? '').replace(/^﻿/, '').trim()
+  const secret = e('MARZ_WEBHOOK_SECRET')
   return `${SITE_URL}/api/marz/webhook${secret ? `?secret=${secret}` : ''}`
 }
 
