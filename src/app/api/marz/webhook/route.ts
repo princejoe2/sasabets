@@ -35,7 +35,11 @@ export async function POST(req: NextRequest) {
 
   if (!txn) return NextResponse.json({ received: true })
 
-  if (event_type === 'collection.completed' || event_type === 'collection.successful') {
+  const isCollectionSuccess = event_type === 'collection.completed' || event_type === 'collection.successful'
+  const isGenericSuccess    = event_type === 'success' && txn.type === 'deposit'
+  const isDisbursementOk    = event_type === 'success' && txn.type === 'withdrawal'
+
+  if (isCollectionSuccess || isGenericSuccess) {
     const creditAmount = transaction.amount?.raw ?? Number(txn.amount)
     const { data: wallet } = await admin.from('wallets').select('balance').eq('user_id', txn.user_id).single()
     const newBalance = Number(wallet?.balance ?? 0) + creditAmount
@@ -43,21 +47,8 @@ export async function POST(req: NextRequest) {
       admin.from('wallets').update({ balance: newBalance, updated_at: new Date().toISOString() }).eq('user_id', txn.user_id),
       admin.from('transactions').update({ status: 'completed', balance_after: newBalance }).eq('id', txn.id),
     ])
-  } else if (
-    event_type === 'collection.failed' || event_type === 'collection.cancelled' ||
-    event_type === 'disbursement.failed' || event_type === 'disbursement.cancelled'
-  ) {
-    if (txn.type === 'withdrawal') {
-      // Rollback wallet on failed disbursement
-      const { data: wallet } = await admin.from('wallets').select('balance').eq('user_id', txn.user_id).single()
-      const refundedBalance = Number(wallet?.balance ?? 0) + Math.abs(Number(txn.amount))
-      await admin.from('wallets').update({ balance: refundedBalance, updated_at: new Date().toISOString() }).eq('user_id', txn.user_id)
-    }
-    await admin.from('transactions').update({ status: 'failed' }).eq('id', txn.id)
-  } else if (event_type === 'disbursement.completed' || event_type === 'disbursement.successful') {
+  } else if (isDisbursementOk) {
     await admin.from('transactions').update({ status: 'completed' }).eq('id', txn.id)
-
-    // SMS notification for withdrawal completion
     try {
       const { data: profile } = await admin.from('profiles').select('phone').eq('id', txn.user_id).single()
       if (profile?.phone) {
@@ -66,6 +57,17 @@ export async function POST(req: NextRequest) {
         )
       }
     } catch { /* non-critical */ }
+  } else if (
+    event_type === 'collection.failed' || event_type === 'collection.cancelled' ||
+    event_type === 'failure'
+  ) {
+    if (txn.type === 'withdrawal') {
+      // Rollback wallet on failed disbursement
+      const { data: wallet } = await admin.from('wallets').select('balance').eq('user_id', txn.user_id).single()
+      const refundedBalance = Number(wallet?.balance ?? 0) + Math.abs(Number(txn.amount))
+      await admin.from('wallets').update({ balance: refundedBalance, updated_at: new Date().toISOString() }).eq('user_id', txn.user_id)
+    }
+    await admin.from('transactions').update({ status: 'failed' }).eq('id', txn.id)
   }
 
   return NextResponse.json({ received: true })
