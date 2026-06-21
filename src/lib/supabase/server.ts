@@ -15,9 +15,10 @@ function e(key: string): string {
   return out.trim()
 }
 
-const SB_URL  = e('NEXT_PUBLIC_SUPABASE_URL')
-const SB_ANON = e('NEXT_PUBLIC_SUPABASE_ANON_KEY')
-const SB_SVC  = e('SUPABASE_SERVICE_ROLE_KEY')
+// Supabase URL and anon key hardcoded (public values) to fully bypass Vercel BOM injection.
+// NEXT_PUBLIC_ vars get inlined at build time by webpack before our e() can strip them.
+const SB_URL  = 'https://jsigphyrhgmpaydozjfa.supabase.co'
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzaWdwaHlyaGdtcGF5ZG96amZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2ODE2MTcsImV4cCI6MjA5NzI1NzYxN30.AAfhGjO7X89o-HL2QVmpcNrXy_Mj7aJqoLFodp0ryaI'
 
 export function createClient() {
   const cookieStore = cookies()
@@ -36,7 +37,10 @@ export function createClient() {
 }
 
 export function createAdminClient() {
-  return createSupabaseClient(SB_URL, SB_SVC, {
+  // Read and strip at call time (not module load) to ensure BOM is removed
+  // regardless of when/how webpack evaluates the module.
+  const svc = e('SUPABASE_SERVICE_ROLE_KEY')
+  return createSupabaseClient(SB_URL, svc, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
 }
