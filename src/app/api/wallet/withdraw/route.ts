@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { sendPayment } from '@/lib/relworx'
+import { sendMoney } from '@/lib/marz'
 
 const MIN_WITHDRAWAL = 5000
 
@@ -49,8 +49,8 @@ export async function POST(req: NextRequest) {
   }
 
   const newBalance = Number(wallet.balance) - amount
-  const msisdn = toInternational(phone)
-  const reference = `WD-${user.id.slice(0, 8)}-${Date.now()}`
+  const phone_number = toInternational(phone)
+  const reference    = crypto.randomUUID()
 
   // Deduct balance first
   const { error: walletErr } = await admin
@@ -60,16 +60,15 @@ export async function POST(req: NextRequest) {
 
   if (walletErr) return NextResponse.json({ error: 'Wallet update failed' }, { status: 500 })
 
-  // Initiate Relworx disbursement
-  let internalReference: string | null = null
+  // Initiate Marz disbursement
+  let marzUuid: string | null = null
   try {
-    const result = await sendPayment({ msisdn, amount, reference, description: 'Sabula 256 withdrawal' })
-    internalReference = result.internal_reference
+    const result = await sendMoney({ phone_number, amount, reference, description: 'Sabula 256 withdrawal' })
+    marzUuid = result.data.transaction.uuid
   } catch (err) {
-    // Rollback wallet on Relworx failure
+    // Rollback wallet on Marz failure
     await admin.from('wallets').update({ balance: wallet.balance }).eq('user_id', user.id)
-    const message = err instanceof Error ? err.message : 'Disbursement failed'
-    return NextResponse.json({ error: message }, { status: 502 })
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Disbursement failed' }, { status: 502 })
   }
 
   // Record transaction
@@ -80,7 +79,7 @@ export async function POST(req: NextRequest) {
     balance_after: newBalance,
     status: 'pending',
     reference,
-    metadata: { phone: msisdn, internal_reference: internalReference },
+    metadata: { phone: phone_number, marz_uuid: marzUuid },
   })
 
   if (txnErr) {

@@ -79,7 +79,7 @@ function WalletPageContent() {
     const interval = setInterval(async () => {
       attempts++
       try {
-        const res = await fetch(`/api/relworx/deposit?ref=${pendingRef}`)
+        const res = await fetch(`/api/marz/deposit?ref=${pendingRef}`)
         const data = await res.json()
         if (data.status === 'completed') {
           setBalance(data.balance)
@@ -116,7 +116,7 @@ function WalletPageContent() {
     const amtNum = parseFloat(amount)
     if (!amtNum || amtNum < 1000) { setError('Minimum deposit is UGX 1,000'); return }
     setLoading(true); setError(''); setSuccess('')
-    const res = await fetch('/api/relworx/deposit', {
+    const res = await fetch('/api/marz/deposit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount: amtNum }),
