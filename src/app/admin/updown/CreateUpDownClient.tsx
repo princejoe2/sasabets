@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 const ASSETS = [
   { id: 'bitcoin',     sym: 'BTC', name: 'Bitcoin',  color: '#f7931a' },
@@ -18,6 +19,7 @@ const WINDOWS = [
 type LivePrice = Record<string, number>
 
 export default function CreateUpDownClient() {
+  const router = useRouter()
   const [prices,    setPrices]    = useState<LivePrice>({})
   const [asset,     setAsset]     = useState('bitcoin')
   const [window_h,  setWindowH]   = useState(1)
@@ -50,6 +52,7 @@ export default function CreateUpDownClient() {
     if (res.ok) {
       setMsg({ text: `Market created! ID: ${data.marketId}`, ok: true })
       setRecent(r => [{ id: data.marketId, title: data.title, closes_at: data.closes_at }, ...r])
+      router.refresh()
     } else {
       setMsg({ text: data.error ?? 'Failed to create.', ok: false })
     }

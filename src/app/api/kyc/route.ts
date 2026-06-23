@@ -40,7 +40,6 @@ export async function POST(req: NextRequest) {
     kyc_id_number: id_number,
     kyc_status:    'pending',
     full_name,
-    updated_at:    new Date().toISOString(),
   }).eq('id', user.id)
 
   if (error) {

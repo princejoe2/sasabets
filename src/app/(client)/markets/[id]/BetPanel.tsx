@@ -45,6 +45,94 @@ const CAT = {
   default:        { icon: '🔮', label: 'Prediction',     color: '#a78bfa', glow: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.28)', bar: '#8b5cf6', tag: { background: 'rgba(167,139,250,0.15)', color: '#ddd6fe' } },
 }
 
+const CRYPTO_ICONS: Record<string, string> = {
+  bitcoin:      'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
+  ethereum:     'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
+  solana:       'https://assets.coingecko.com/coins/images/4128/large/solana.png',
+  binancecoin:  'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png',
+  ripple:       'https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png',
+  cardano:      'https://assets.coingecko.com/coins/images/975/large/cardano.png',
+  dogecoin:     'https://assets.coingecko.com/coins/images/5/large/dogecoin.png',
+  polkadot:     'https://assets.coingecko.com/coins/images/12171/large/polkadot.png',
+  avalanche:    'https://assets.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png',
+  tether:       'https://assets.coingecko.com/coins/images/325/large/Tether.png',
+  'usd-coin':   'https://assets.coingecko.com/coins/images/6319/large/usdc.png',
+  chainlink:    'https://assets.coingecko.com/coins/images/877/large/chainlink-new-logo.png',
+  'shiba-inu':  'https://assets.coingecko.com/coins/images/11939/large/shiba.png',
+}
+
+type SideVisualData =
+  | { kind: 'crypto'; url: string; dir: 'up' | 'down' | null }
+  | { kind: 'bool';   yes: boolean }
+  | { kind: 'avatar'; initials: string; color: string }
+
+function resolveVisual(
+  label: string,
+  meta: Record<string, unknown>,
+  color: string,
+): SideVisualData {
+  const l = label.toLowerCase().trim()
+
+  if (meta.type === 'updown') {
+    const asset = String(meta.asset ?? 'bitcoin')
+    const url   = CRYPTO_ICONS[asset]
+    if (url) {
+      const dir = l.includes('up') ? 'up' : l.includes('down') ? 'down' : null
+      return { kind: 'crypto', url, dir }
+    }
+  }
+
+  if (l === 'yes') return { kind: 'bool', yes: true }
+  if (l === 'no')  return { kind: 'bool', yes: false }
+
+  const words    = label.trim().split(/\s+/)
+  const initials = words.length >= 2
+    ? (words[0][0] + words[1][0]).toUpperCase()
+    : label.slice(0, 2).toUpperCase()
+  return { kind: 'avatar', initials, color }
+}
+
+function SideVisual({ v }: { v: SideVisualData }) {
+  if (v.kind === 'crypto') {
+    return (
+      <div className="relative mb-3 h-16 w-16 shrink-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={v.url} alt="asset icon" className="h-full w-full rounded-full object-cover" />
+        {v.dir && (
+          <span
+            className={`absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black text-white ${
+              v.dir === 'up' ? 'bg-emerald-500' : 'bg-red-500'
+            }`}
+          >
+            {v.dir === 'up' ? '▲' : '▼'}
+          </span>
+        )}
+      </div>
+    )
+  }
+
+  if (v.kind === 'bool') {
+    return (
+      <div
+        className={`mb-3 flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-3xl font-black ${
+          v.yes ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'
+        }`}
+      >
+        {v.yes ? '✓' : '✕'}
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="mb-3 flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-xl font-black"
+      style={{ background: `${v.color}18`, color: v.color, border: `2px solid ${v.color}35` }}
+    >
+      {v.initials}
+    </div>
+  )
+}
+
 function useCountdown(closesAt: string | null) {
   const [display, setDisplay] = useState('')
   const [urgency, setUrgency] = useState<'normal' | 'soon' | 'urgent'>('normal')
@@ -407,6 +495,7 @@ export default function BetPanel({
                 const isWinner    = isSettled && opt.id === market.winning_option_id
                 const isLoser     = isSettled && opt.id !== market.winning_option_id
                 const isUserPick  = userBet?.option_id === opt.id
+                const visual      = resolveVisual(opt.label, meta, color)
 
                 return (
                   <button
@@ -424,11 +513,13 @@ export default function BetPanel({
                     }}
                   >
                     <span
-                      className="mb-2 text-[10px] font-black uppercase tracking-[0.2em]"
+                      className="mb-3 text-[10px] font-black uppercase tracking-[0.2em]"
                       style={{ color }}
                     >
                       {isA ? 'Side A' : 'Side B'}
                     </span>
+
+                    <SideVisual v={visual} />
 
                     <span
                       className="text-2xl font-black leading-tight"

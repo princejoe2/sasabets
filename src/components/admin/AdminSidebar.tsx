@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -50,10 +51,31 @@ const NAV_GROUPS = [
   },
 ]
 
-export default function AdminSidebar({ adminPhone }: { adminPhone: string }) {
+export default function AdminSidebar({ adminPhone, floatBalance }: { adminPhone: string; floatBalance: number }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+
+  const [badges, setBadges] = useState({ withdrawals: 0, kyc: 0, complaints: 0 })
+
+  useEffect(() => {
+    async function fetchCounts() {
+      const [w, k, c] = await Promise.all([
+        supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('type', 'withdrawal').eq('status', 'pending'),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('kyc_status', 'pending'),
+        supabase.from('complaints').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+      ])
+      setBadges({ withdrawals: w.count ?? 0, kyc: k.count ?? 0, complaints: c.count ?? 0 })
+    }
+    fetchCounts()
+
+    const ch = supabase.channel('admin-sidebar-badges')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, fetchCounts)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchCounts)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, fetchCounts)
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [])
 
   async function logout() {
     await supabase.auth.signOut()
@@ -85,6 +107,10 @@ export default function AdminSidebar({ adminPhone }: { adminPhone: string }) {
             <div className="space-y-0.5">
               {group.items.map(({ href, icon, label }) => {
                 const active = href === '/admin' ? pathname === '/admin' : pathname.startsWith(href)
+                const badge =
+                  href === '/admin/withdrawals' ? badges.withdrawals :
+                  href === '/admin/kyc'         ? badges.kyc         :
+                  href === '/admin/support'     ? badges.complaints   : 0
                 return (
                   <Link
                     key={href}
@@ -96,7 +122,12 @@ export default function AdminSidebar({ adminPhone }: { adminPhone: string }) {
                     }`}
                   >
                     <span className="text-base w-5 text-center">{icon}</span>
-                    {label}
+                    <span className="flex-1">{label}</span>
+                    {badge > 0 && (
+                      <span className="rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-black text-white leading-none">
+                        {badge}
+                      </span>
+                    )}
                   </Link>
                 )
               })}
@@ -107,6 +138,13 @@ export default function AdminSidebar({ adminPhone }: { adminPhone: string }) {
 
       {/* Footer */}
       <div className="border-t border-[#1a1a28] px-4 py-4 space-y-3">
+        {/* Float balance */}
+        <div className="rounded-xl border border-emerald-900/40 bg-emerald-950/20 px-3 py-2.5">
+          <p className="text-[10px] text-emerald-700 uppercase tracking-wider font-bold">Float Account</p>
+          <p className="text-base font-black text-emerald-400 mt-0.5 tabular-nums">
+            UGX {floatBalance.toLocaleString()}
+          </p>
+        </div>
         <div className="rounded-xl bg-[#1a1a28] px-3 py-2.5">
           <p className="text-[10px] text-slate-600 uppercase tracking-wider">Logged in as</p>
           <p className="text-xs font-semibold text-slate-300 mt-0.5">+{adminPhone}</p>

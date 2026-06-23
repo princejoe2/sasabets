@@ -1,13 +1,16 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import AdminFundsClient from '@/components/admin/AdminFundsClient'
+import MarzStatsWidget from '@/components/admin/MarzStatsWidget'
+import { getMarzStats } from '@/lib/marz'
 
 export default async function AdminFundsPage() {
   const admin = createAdminClient()
 
-  const [{ data: txns }, { data: wallets }, { data: profiles }] = await Promise.all([
+  const [{ data: txns }, { data: wallets }, { data: profiles }, marzStats] = await Promise.all([
     admin.from('transactions').select('type, amount, status, created_at'),
     admin.from('wallets').select('user_id, balance'),
     admin.from('profiles').select('id, phone, full_name'),
+    getMarzStats().catch(() => null),
   ])
 
   const completed = txns?.filter(t => t.status === 'completed') ?? []
@@ -46,6 +49,9 @@ export default async function AdminFundsPage() {
           </div>
         ))}
       </div>
+
+      {/* MarzPay live stats */}
+      {marzStats && <MarzStatsWidget stats={marzStats} platformDeposited={totalDeposited} platformWithdrawn={totalWithdrawn} />}
 
       {/* Manual adjustment + user wallets */}
       <AdminFundsClient wallets={walletList} />

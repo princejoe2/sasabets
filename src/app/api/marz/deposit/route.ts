@@ -27,8 +27,8 @@ async function handleDeposit(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { amount, phone } = await req.json()
-  if (typeof amount !== 'number' || !Number.isFinite(amount) || amount < 1000 || amount > 10_000_000) {
-    return NextResponse.json({ error: 'Deposit must be between UGX 1,000 and UGX 10,000,000' }, { status: 400 })
+  if (typeof amount !== 'number' || !Number.isFinite(amount) || amount < 1000 || amount > 200_000) {
+    return NextResponse.json({ error: 'Deposit must be between UGX 1,000 and UGX 200,000' }, { status: 400 })
   }
 
   const { data: profile } = await admin.from('profiles')
@@ -91,18 +91,28 @@ async function handleDeposit(req: NextRequest) {
   let gatewayMeta: Record<string, string>
 
   // MarzPay primary → Relworx fallback
+  let marzError = ''
+  let relworxError = ''
   try {
     const result = await collectMoney({ phone_number, amount, reference, description: 'Sabula 256 deposit' })
     gateway = 'marzpay'
     gatewayMeta = { phone: phone_number, marz_uuid: result.data.transaction.uuid }
-  } catch {
+  } catch (e) {
+    marzError = e instanceof Error ? e.message : String(e)
+    const myIp = await fetch('https://api.ipify.org?format=json').then(r => r.json()).then(d => d.ip).catch(() => 'unknown')
+    console.error('[deposit] marzpay failed:', marzError, '| outbound IP was:', myIp)
     try {
       const result = await requestPayment({ msisdn: phone_number, amount, reference, description: 'Sabula 256 deposit' })
       gateway = 'relworx'
       gatewayMeta = { phone: phone_number, internal_reference: result.internal_reference }
-    } catch (err) {
-      // Both gateways failed — mark the pre-inserted transaction as failed
-      await admin.from('transactions').update({ status: 'failed' }).eq('reference', reference)
+      console.log('[deposit] relworx accepted:', result.internal_reference, '| phone:', phone_number)
+    } catch (e2) {
+      relworxError = e2 instanceof Error ? e2.message : String(e2)
+      await admin.from('transactions').update({
+        status: 'failed',
+        metadata: { phone: phone_number, marz_error: marzError, relworx_error: relworxError },
+      }).eq('reference', reference)
+      console.error('[deposit] relworx also failed:', relworxError)
       return NextResponse.json({ error: 'Payment request failed. Please try again.' }, { status: 502 })
     }
   }
@@ -151,6 +161,7 @@ export async function GET(req: NextRequest) {
       const internalRef = txn.metadata?.internal_reference
       if (!internalRef) return NextResponse.json({ status: 'pending' })
       const result = await checkPaymentStatus(internalRef)
+      console.log('[poll] relworx status:', JSON.stringify(result))
       if (result.request_status === 'success') gatewaySuccess = true
       if (result.request_status === 'failed')  gatewayFailed  = true
     }

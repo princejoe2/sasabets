@@ -1,6 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import AdminMarketsClient from '@/components/admin/AdminMarketsClient'
 
+export const revalidate = 0
+
 export default async function AdminMarketsPage() {
   const admin = createAdminClient()
   const { data: markets } = await admin

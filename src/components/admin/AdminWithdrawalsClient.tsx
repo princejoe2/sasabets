@@ -1,5 +1,6 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 interface Withdrawal {
   id: string; amount: number; status: string; created_at: string;
@@ -8,11 +9,34 @@ interface Withdrawal {
 }
 
 export default function AdminWithdrawalsClient({ withdrawals }: { withdrawals: Withdrawal[] }) {
-  const [statuses, setStatuses] = useState<Record<string, string>>({})
+  const [rows, setRows] = useState<Withdrawal[]>(withdrawals)
   const [loading, setLoading] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<string | null>(null)
 
-  function status(w: Withdrawal) { return statuses[w.id] ?? w.status }
+  // Realtime: keep the list in sync with the transactions table without a refresh.
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel('admin-withdrawals')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transactions', filter: 'type=eq.withdrawal' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const row = payload.new as Withdrawal
+            if (row.status === 'pending') {
+              setRows(prev => prev.some(r => r.id === row.id) ? prev : [row, ...prev])
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            const row = payload.new as Withdrawal
+            setRows(prev => prev.map(r => r.id === row.id ? { ...r, ...row } : r))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   async function act(id: string, action: 'complete' | 'reject') {
     setLoading(id)
@@ -22,14 +46,15 @@ export default function AdminWithdrawalsClient({ withdrawals }: { withdrawals: W
       body: JSON.stringify({ transactionId: id, action }),
     })
     if (res.ok) {
-      setStatuses(s => ({ ...s, [id]: action === 'complete' ? 'completed' : 'failed' }))
+      const newStatus = action === 'complete' ? 'completed' : 'failed'
+      setRows(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r))
       setConfirm(null)
     }
     setLoading(null)
   }
 
-  const pending  = withdrawals.filter(w => status(w) === 'pending')
-  const resolved = withdrawals.filter(w => status(w) !== 'pending')
+  const pending  = rows.filter(w => w.status === 'pending')
+  const resolved = rows.filter(w => w.status !== 'pending')
 
   return (
     <div className="space-y-8">
@@ -108,7 +133,7 @@ export default function AdminWithdrawalsClient({ withdrawals }: { withdrawals: W
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-slate-300">UGX {Math.abs(w.amount).toLocaleString()}</p>
-                  <p className={`text-xs ${status(w) === 'completed' ? 'text-emerald-500' : 'text-red-500'}`}>{status(w)}</p>
+                  <p className={`text-xs ${w.status === 'completed' ? 'text-emerald-500' : 'text-red-500'}`}>{w.status}</p>
                 </div>
               </div>
             ))}

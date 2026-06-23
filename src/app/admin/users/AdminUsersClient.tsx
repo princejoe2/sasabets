@@ -34,6 +34,35 @@ export default function AdminUsersClient({ users: initial, totalBalance }: { use
     u.full_name?.toLowerCase().includes(search.toLowerCase())
   )
 
+  function csvCell(value: string | number): string {
+    const s = String(value ?? '')
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+  }
+
+  function downloadCsv() {
+    const header = ['Name', 'Phone', 'Balance (UGX)', 'Bets Placed', 'Total Wagered (UGX)', 'KYC Status', 'Joined Date']
+    const lines = users.map(u => [
+      u.full_name ?? '',
+      u.phone ? `+${u.phone}` : '',
+      u.balance,
+      u.bets,
+      u.wagered,
+      u.kyc_status ?? 'none',
+      new Date(u.created_at).toISOString().slice(0, 10),
+    ].map(csvCell).join(','))
+
+    const csv = [header.map(csvCell).join(','), ...lines].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `users-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+  }
+
   async function patch(userId: string, payload: object) {
     setBusy(true); setMsg(null)
     const res = await fetch('/api/admin/user', {
@@ -109,11 +138,19 @@ export default function AdminUsersClient({ users: initial, totalBalance }: { use
           <h1 className="text-3xl font-black text-white">Users</h1>
           <p className="mt-1 text-slate-500">{users.length} registered · UGX {totalBalance.toLocaleString()} total in wallets</p>
         </div>
-        <input
-          value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Search by phone or name…"
-          className="rounded-xl border border-[#1a1a28] bg-[#0d0d18] px-4 py-2.5 text-sm text-white outline-none focus:border-violet-600 transition-colors w-64"
-        />
+        <div className="flex items-center gap-2">
+          <input
+            value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search by phone or name…"
+            className="rounded-xl border border-[#1a1a28] bg-[#0d0d18] px-4 py-2.5 text-sm text-white outline-none focus:border-violet-600 transition-colors w-64"
+          />
+          <button
+            onClick={downloadCsv}
+            className="rounded-xl border border-[#2a2a3e] bg-[#0d0d18] px-4 py-2.5 text-sm font-bold text-slate-300 hover:border-violet-700 hover:text-white transition-colors whitespace-nowrap"
+          >
+            ⬇ Download CSV
+          </button>
+        </div>
       </div>
 
       {msg && (

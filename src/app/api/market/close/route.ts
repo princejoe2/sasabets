@@ -2,12 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
-  // Only the countdown timer on the client triggers this — require a logged-in user
-  const { createClient } = await import('@/lib/supabase/server')
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   const { marketId } = await req.json()
   if (!marketId) return NextResponse.json({ error: 'Missing marketId' }, { status: 400 })
 

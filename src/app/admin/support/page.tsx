@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/server'
+import ComplaintsClient from './ComplaintsClient'
 
 export default async function AdminSupportPage() {
   const admin = createAdminClient()
@@ -43,6 +44,8 @@ export default async function AdminSupportPage() {
         <h1 className="text-3xl font-black text-white">Support</h1>
         <p className="mt-1 text-slate-500">Users needing attention and client directory</p>
       </div>
+
+      <ComplaintsClient />
 
       {/* Flagged users */}
       <div className="mb-8">

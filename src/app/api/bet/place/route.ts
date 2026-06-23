@@ -15,6 +15,9 @@ export async function POST(req: NextRequest) {
   if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0 || amount > 100_000_000) {
     return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
   }
+  if (amount < 1000) {
+    return NextResponse.json({ error: 'Minimum bet is UGX 1,000' }, { status: 400 })
+  }
 
   // Check suspended / self-excluded
   const { data: profile } = await admin

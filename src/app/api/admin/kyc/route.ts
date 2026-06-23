@@ -17,8 +17,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { error } = await admin.from('profiles').update({
-    kyc_status:  status,
-    updated_at:  new Date().toISOString(),
+    kyc_status: status,
   }).eq('id', userId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

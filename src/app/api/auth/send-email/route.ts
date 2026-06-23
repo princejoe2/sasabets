@@ -69,20 +69,25 @@ export async function POST(req: NextRequest) {
           `<h2>Welcome to Sabula 256!</h2>
            <p>Click below to confirm your email and activate your account.</p>
            ${btn(url, 'Confirm my account')}
-           <p style="color:#6b7280;font-size:13px">This link expires in 1 hour. If you did not sign up, you can ignore this email.</p>`
+           <p style="text-align:center;color:#374151;font-size:14px;margin:24px 0 4px">Or enter this code on the confirmation page:</p>
+           <p style="font-size:40px;font-weight:bold;letter-spacing:12px;text-align:center;margin:8px 0 24px;color:#111827">${token}</p>
+           <p style="color:#6b7280;font-size:13px">This link and code expire in 1 hour. If you did not sign up, you can ignore this email.</p>`
         )
         break
       }
 
       case 'recovery': {
-        const url = verifyUrl(token_hash, 'recovery')
+        const resetUrl = new URL(`${SITE_URL}/auth/verify`)
+        resetUrl.searchParams.set('token', token_hash)
+        resetUrl.searchParams.set('type', 'recovery')
+        resetUrl.searchParams.set('redirect_to', `${SITE_URL}/auth/reset-password`)
         await send(
           to,
           'Reset your Sabula 256 password',
           `<h2>Reset your password</h2>
            <p>We received a request to reset your password. Click below to choose a new one.</p>
-           ${btn(url, 'Reset password', '#2563eb')}
-           <p style="color:#6b7280;font-size:13px">If you didn't request this, you can safely ignore this email.</p>`
+           ${btn(resetUrl.toString(), 'Reset password', '#2563eb')}
+           <p style="color:#6b7280;font-size:13px">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>`
         )
         break
       }

@@ -59,9 +59,13 @@ export async function requestPayment(opts: {
       description: opts.description ?? 'Sabula 256 deposit',
     }),
   })
-  const data = await res.json()
-  if (!data.success) throw new Error(data.message ?? 'Relworx request failed')
-  return data
+  let data: Record<string, unknown> = {}
+  try { data = await res.json() } catch { /* non-JSON body */ }
+  if (!res.ok || !data.success) {
+    const msg = String(data.message ?? data.error ?? `HTTP ${res.status}`)
+    throw new Error(`Relworx [${res.status}] ${msg}`)
+  }
+  return data as unknown as RelworxSendResult
 }
 
 export async function sendPayment(opts: {
@@ -82,9 +86,16 @@ export async function sendPayment(opts: {
       description: opts.description ?? 'Sabula 256 withdrawal',
     }),
   })
-  const data = await res.json()
-  if (!data.success) throw new Error(data.message ?? 'Relworx send failed')
-  return data
+  let data: Record<string, unknown> = {}
+  try { data = await res.json() } catch { /* non-JSON body */ }
+  if (!res.ok || !data.success) {
+    const msg = String(data.message ?? data.error ?? `HTTP ${res.status}`)
+    throw new Error(`Relworx send-payment [${res.status}] ${msg}`)
+  }
+  if (typeof data.internal_reference !== 'string' || !data.internal_reference) {
+    throw new Error('Relworx send-payment: missing internal_reference in response')
+  }
+  return data as unknown as RelworxSendResult
 }
 
 export async function checkPaymentStatus(internalReference: string): Promise<RelworxStatusResult> {

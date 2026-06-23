@@ -9,7 +9,7 @@ const _SB_URL = _d('aHR0cHM6Ly9qc2lncGh5cmhnbXBheWRvempmYS5zdXBhYmFzZS5jbw==')
 const _SB_KEY = _d('ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW1wemFXZHdhSGx5YUdkdGNHRjVaRzk2YW1aaElpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzT0RFMk9ERTJNVGNzSW1WNGNDSTZNakE1TnpJMU56WXhOMzAuQUFmaEdqTzdYODlvLUhMMlFWbXBjTnJYeV9NajdhSnFvTEZvZHAwcnlhSQ==')
 
 type Mode = 'login' | 'register'
-type Step = 'form' | 'otp' | 'totp'
+type Step = 'form' | 'otp' | 'totp' | 'forgot' | 'forgot-sent'
 
 const T = {
   bg: '#07090f',
@@ -42,6 +42,7 @@ export default function AuthPage() {
   const [confirm,     setConfirm]     = useState('')
   const [totp,        setTotp]        = useState('')
   const [isAdmin,     setIsAdmin]     = useState(false)
+  const [otpCode,     setOtpCode]     = useState('')
 
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
@@ -109,6 +110,42 @@ export default function AuthPage() {
     setError(''); setLoading(true)
     const { error: e } = await supabase.auth.resend({ type: 'signup', email: email.trim().toLowerCase() })
     if (e) setError(e.message)
+    setLoading(false)
+  }
+
+  async function handleVerifyOtp() {
+    setError(''); setLoading(true)
+    const { data, error: verifyErr } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: otpCode,
+      type: 'signup',
+    })
+    if (verifyErr) {
+      setError(verifyErr.message)
+      setLoading(false)
+      return
+    }
+    if (data.session) {
+      router.push('/markets')
+      router.refresh()
+    } else {
+      setError('Verification failed — try again or request a new code.')
+      setLoading(false)
+    }
+  }
+
+  // ─── Forgot password ───────────────────────────────────────────────────────
+
+  async function handleForgotPassword() {
+    setError('')
+    if (!email) { setError('Enter your email address'); return }
+    setLoading(true)
+    const { error: e } = await supabase.auth.resetPasswordForEmail(
+      email.trim().toLowerCase(),
+      { redirectTo: `${window.location.origin}/auth/reset-password` },
+    )
+    if (e) { setError(e.message); setLoading(false); return }
+    setStep('forgot-sent')
     setLoading(false)
   }
 
@@ -246,23 +283,45 @@ export default function AuthPage() {
     return (
       <div style={wrap}>
         <div style={card}>
-          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <div style={{ fontSize: '48px', marginBottom: '12px' }}>📧</div>
             <h1 style={{ color: T.text, fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>Check your email</h1>
             <p style={{ color: T.muted, fontSize: '14px', margin: 0, lineHeight: 1.6 }}>
-              We sent a confirmation link to{' '}
+              We sent a confirmation code to{' '}
               <strong style={{ color: T.text }}>{email}</strong>.
-              <br />Click it to activate your account.
+              <br />Enter the 6-digit code below to activate your account.
             </p>
           </div>
 
-          <div style={{ background: '#0a1628', border: '1px solid #1e3a5f', borderRadius: '10px', padding: '16px', marginBottom: '20px' }}>
-            <p style={{ color: '#93c5fd', fontSize: '13px', margin: 0, lineHeight: 1.6 }}>
-              Can&apos;t find it? Check your spam folder. The link expires in 1 hour.
-            </p>
+          <div style={fieldGap}>
+            <label style={label}>Confirmation code</label>
+            <input
+              style={{ ...inputStyle, letterSpacing: '0.3em', textAlign: 'center', fontSize: '24px', padding: '14px' }}
+              value={otpCode}
+              onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000"
+              maxLength={6}
+              autoFocus
+              inputMode="numeric"
+            />
           </div>
 
           {error && <p style={{ color: T.error, fontSize: '13px', margin: '0 0 12px' }}>{error}</p>}
+
+          <button
+            style={{ ...btn, opacity: loading || otpCode.length !== 6 ? 0.6 : 1 }}
+            disabled={loading || otpCode.length !== 6}
+            onClick={handleVerifyOtp}
+          >
+            {loading ? 'Verifying…' : 'Verify code'}
+          </button>
+
+          <div style={{ background: '#0a1628', border: '1px solid #1e3a5f', borderRadius: '10px', padding: '14px', margin: '16px 0' }}>
+            <p style={{ color: '#93c5fd', fontSize: '13px', margin: 0, lineHeight: 1.6 }}>
+              Can&apos;t find the email? Check your spam folder. The code expires in 1 hour.
+              You can also click the confirmation link in the email instead.
+            </p>
+          </div>
 
           <button
             style={{ ...btn, background: T.card, border: `1px solid ${T.border}`, color: T.text, marginTop: 0, opacity: loading ? 0.6 : 1 }}
@@ -274,7 +333,7 @@ export default function AuthPage() {
 
           <div style={{ marginTop: '16px', textAlign: 'center' }}>
             <button
-              onClick={() => { setStep('form'); setError('') }}
+              onClick={() => { setStep('form'); setError(''); setOtpCode('') }}
               style={{ background: 'none', border: 'none', color: T.muted, fontSize: '13px', cursor: 'pointer' }}
             >
               Back to sign in
@@ -324,6 +383,87 @@ export default function AuthPage() {
               Cancel & sign out
             </button>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Forgot password form ───────────────────────────────────────────────
+  if (step === 'forgot') {
+    return (
+      <div style={wrap}>
+        <div style={card}>
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔑</div>
+            <h1 style={{ color: T.text, fontSize: '20px', fontWeight: 800, margin: '0 0 6px' }}>Reset your password</h1>
+            <p style={{ color: T.muted, fontSize: '14px', margin: 0, lineHeight: 1.6 }}>
+              Enter your email and we&apos;ll send you a link to reset your password.
+            </p>
+          </div>
+
+          <div style={fieldGap}>
+            <label style={label}>Email address</label>
+            <input
+              type="email"
+              style={inputStyle}
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              autoComplete="email"
+              autoFocus
+            />
+          </div>
+
+          {error && <p style={{ color: T.error, fontSize: '13px', margin: '0 0 12px' }}>{error}</p>}
+
+          <button
+            style={{ ...btn, opacity: loading ? 0.6 : 1 }}
+            disabled={loading}
+            onClick={handleForgotPassword}
+          >
+            {loading ? 'Sending…' : 'Send reset link'}
+          </button>
+
+          <div style={{ marginTop: '16px', textAlign: 'center' }}>
+            <button
+              onClick={() => { setStep('form'); setError('') }}
+              style={{ background: 'none', border: 'none', color: T.muted, fontSize: '13px', cursor: 'pointer' }}
+            >
+              Back to sign in
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Forgot password sent ────────────────────────────────────────────────
+  if (step === 'forgot-sent') {
+    return (
+      <div style={wrap}>
+        <div style={card}>
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>📧</div>
+            <h1 style={{ color: T.text, fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>Check your email</h1>
+            <p style={{ color: T.muted, fontSize: '14px', margin: 0, lineHeight: 1.6 }}>
+              We sent a password reset link to{' '}
+              <strong style={{ color: T.text }}>{email}</strong>.
+              <br />Click the link in the email to set a new password.
+            </p>
+          </div>
+
+          <div style={{ background: '#0a1628', border: '1px solid #1e3a5f', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+            <p style={{ color: '#93c5fd', fontSize: '13px', margin: 0, lineHeight: 1.6 }}>
+              Can&apos;t find the email? Check your spam folder. The link expires in 1 hour.
+            </p>
+          </div>
+
+          <button
+            style={{ ...btn, background: T.card, border: `1px solid ${T.border}`, color: T.text, marginTop: 0 }}
+            onClick={() => { setStep('form'); setError('') }}
+          >
+            Back to sign in
+          </button>
         </div>
       </div>
     )
@@ -411,7 +551,18 @@ export default function AuthPage() {
 
         {/* Password */}
         <div style={fieldGap}>
-          <label style={label}>Password</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+            <label style={{ ...label, margin: 0 }}>Password</label>
+            {mode === 'login' && (
+              <button
+                type="button"
+                onClick={() => { setStep('forgot'); setError('') }}
+                style={{ background: 'none', border: 'none', color: T.accent, fontSize: '12px', cursor: 'pointer', padding: 0 }}
+              >
+                Forgot password?
+              </button>
+            )}
+          </div>
           <input
             type="password"
             style={inputStyle}

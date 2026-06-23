@@ -23,6 +23,27 @@ export default function Navbar() {
     })
   }, [])
 
+  // Re-fetch balance on every navigation so it never stays stale
+  useEffect(() => {
+    if (user) fetchWallet(user.id)
+  }, [pathname, user])
+
+  // Also subscribe to realtime wallet updates (instant sync when Realtime is enabled on the wallets table)
+  useEffect(() => {
+    if (!user) return
+    const channel = supabase
+      .channel(`wallet-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'wallets', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          if (payload.new?.balance !== undefined) setWallet(Number(payload.new.balance))
+        }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [user])
+
   useEffect(() => {
     function onOut(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
