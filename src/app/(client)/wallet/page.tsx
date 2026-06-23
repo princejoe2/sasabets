@@ -74,6 +74,26 @@ function WalletPageContent() {
 
   useEffect(() => { load() }, [load])
 
+  // Realtime: keep balance and transactions live
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      channel = supabase
+        .channel(`wallet-page-${user.id}`)
+        .on('postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'wallets', filter: `user_id=eq.${user.id}` },
+          (payload) => { if (payload.new?.balance !== undefined) setBalance(Number(payload.new.balance)) }
+        )
+        .on('postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'transactions', filter: `user_id=eq.${user.id}` },
+          () => load()
+        )
+        .subscribe()
+    })
+    return () => { if (channel) supabase.removeChannel(channel) }
+  }, [load])
+
   // Poll Relworx deposit status after initiation
   useEffect(() => {
     if (!pendingRef) return
@@ -145,13 +165,17 @@ function WalletPageContent() {
     const res = await fetch('/api/wallet/withdraw', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: amtNum, phone: withdrawPhone }),
+      // Note: the server always disburses to the user's verified profile phone and
+      // ignores any number supplied here. We don't send a phone to avoid implying otherwise.
+      body: JSON.stringify({ amount: amtNum }),
     })
     const data = await res.json()
     if (!res.ok) {
       setError(data.error ?? 'Withdrawal failed')
     } else {
-      setSuccess('Withdrawal submitted! UGX ' + amtNum.toLocaleString() + ' will be sent to ' + withdrawPhone + ' shortly.')
+      // Funds always go to the verified profile number, never the editable field.
+      const dest = phone ? '+' + phone : 'your registered Mobile Money number'
+      setSuccess('Withdrawal submitted! UGX ' + amtNum.toLocaleString() + ' will be sent to ' + dest + ' shortly.')
       setAmount('')
       await load()
     }
@@ -265,14 +289,18 @@ function WalletPageContent() {
                     </div>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-slate-500">Send to (MTN / Airtel number)</label>
+                    <label className="mb-1 block text-xs text-slate-500">Send to (your verified Mobile Money number)</label>
                     <input
                       type="tel"
                       value={withdrawPhone}
-                      onChange={e => setWithdrawPhone(e.target.value)}
+                      readOnly
+                      disabled
                       placeholder="+256 700 000 000"
-                      className="w-full rounded-lg border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm outline-none focus:border-violet-600 transition-colors"
+                      className="w-full cursor-not-allowed rounded-lg border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm text-slate-400 outline-none transition-colors"
                     />
+                    <p className="mt-1 text-[11px] text-slate-600">
+                      For your security, withdrawals are always sent to your verified profile number.
+                    </p>
                   </div>
                   {amtNum > 0 && balance !== null && (
                     <div className="rounded-lg bg-[#0a0a0f] px-4 py-3 text-xs space-y-1">

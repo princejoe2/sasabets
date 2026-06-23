@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createHash, timingSafeEqual } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/server'
 
 function ascii(s: string) {
@@ -10,11 +11,19 @@ function ascii(s: string) {
   return out.trim()
 }
 
+// Constant-time string comparison. Hashing both sides first guarantees equal-length
+// inputs (so length itself doesn't leak) before the timing-safe compare.
+function safeEqual(a: string, b: string): boolean {
+  const ha = createHash('sha256').update(a).digest()
+  const hb = createHash('sha256').update(b).digest()
+  return timingSafeEqual(ha, hb)
+}
+
 function validSecret(req: NextRequest): boolean {
   const expected = ascii(process.env.RELWORX_WEBHOOK_SECRET ?? '')
   if (!expected) return false  // fail closed
-  const provided = req.nextUrl.searchParams.get('secret')
-  return provided === expected
+  const provided = req.nextUrl.searchParams.get('secret') ?? ''
+  return safeEqual(provided, expected)
 }
 
 export async function POST(req: NextRequest) {
@@ -60,16 +69,30 @@ export async function POST(req: NextRequest) {
 
   if (!txn) return NextResponse.json({ received: true })  // already processed
 
+  // txn.amount is signed: deposits are positive, withdrawals negative. The handling
+  // is direction-aware so a successful WITHDRAWAL is never re-applied to the balance
+  // (the balance was already debited at request time) and a FAILED withdrawal is
+  // refunded with the absolute amount.
+  const isWithdrawal = txn.type === 'withdrawal' || Number(txn.amount) < 0
+
   if (status === 'success') {
-    // Always credit from our own DB record — never trust payload amount
-    const credit = Number(txn.amount)
-    const { data: wallet } = await admin.from('wallets').select('balance').eq('user_id', txn.user_id).single()
-    const newBalance = Number(wallet?.balance ?? 0) + credit
-    await Promise.all([
-      admin.from('wallets').update({ balance: newBalance, updated_at: new Date().toISOString() }).eq('user_id', txn.user_id),
-      admin.from('transactions').update({ status: 'completed', balance_after: newBalance }).eq('id', txn.id),
-    ])
+    if (isWithdrawal) {
+      // Disbursement confirmed. Balance was already debited up front — just finalise.
+      await admin.from('transactions').update({ status: 'completed' }).eq('id', txn.id)
+    } else {
+      // Deposit confirmed — credit atomically from our own DB record (never the payload).
+      const credit = Number(txn.amount)
+      const { data: newBalance } = await admin.rpc('adjust_wallet_balance', { p_user_id: txn.user_id, p_delta: credit })
+      await admin.from('transactions')
+        .update({ status: 'completed', balance_after: newBalance ?? null }).eq('id', txn.id)
+    }
   } else if (status === 'failed') {
+    if (isWithdrawal) {
+      // Disbursement failed — refund the originally debited amount atomically.
+      // The pending→processing claim above guarantees this runs at most once.
+      const refundAmt = Math.abs(Number(txn.amount))
+      await admin.rpc('adjust_wallet_balance', { p_user_id: txn.user_id, p_delta: refundAmt })
+    }
     await admin.from('transactions').update({ status: 'failed' }).eq('id', txn.id)
   } else {
     // Unknown status — revert back to pending so it can be reprocessed

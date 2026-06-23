@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createHash, timingSafeEqual } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/server'
 
 function ascii(s: string) {
@@ -10,11 +11,19 @@ function ascii(s: string) {
   return out.trim()
 }
 
+// Constant-time comparison. Hashing both sides first equalises length so the
+// comparison never short-circuits on length and cannot leak the secret via timing.
+function safeEqual(a: string, b: string): boolean {
+  const ha = createHash('sha256').update(a).digest()
+  const hb = createHash('sha256').update(b).digest()
+  return timingSafeEqual(ha, hb)
+}
+
 function validSecret(req: NextRequest): boolean {
   const expected = ascii(process.env.MARZ_WEBHOOK_SECRET ?? '')
   if (!expected) return false  // fail closed — if no secret configured, reject all
-  const provided = req.nextUrl.searchParams.get('secret')
-  return provided === expected
+  const provided = req.nextUrl.searchParams.get('secret') ?? ''
+  return safeEqual(provided, expected)
 }
 
 export async function POST(req: NextRequest) {
@@ -56,14 +65,12 @@ export async function POST(req: NextRequest) {
   if (claimErr || !txn) return NextResponse.json({ received: true })  // already processed
 
   if (event_type === 'collection.completed') {
-    // Always credit from our own DB record — never trust payload amount
+    // Always credit from our own DB record — never trust payload amount.
+    // Atomic relative credit (no stale read-then-absolute-write race).
     const credit = Number(txn.amount)
-    const { data: wallet } = await admin.from('wallets').select('balance').eq('user_id', txn.user_id).single()
-    const newBalance = Number(wallet?.balance ?? 0) + credit
-    await Promise.all([
-      admin.from('wallets').update({ balance: newBalance, updated_at: new Date().toISOString() }).eq('user_id', txn.user_id),
-      admin.from('transactions').update({ status: 'completed', balance_after: newBalance }).eq('id', txn.id),
-    ])
+    const { data: newBalance } = await admin.rpc('adjust_wallet_balance', { p_user_id: txn.user_id, p_delta: credit })
+    await admin.from('transactions')
+      .update({ status: 'completed', balance_after: newBalance ?? null }).eq('id', txn.id)
 
   } else if (event_type === 'collection.failed' || event_type === 'collection.cancelled') {
     await admin.from('transactions').update({ status: 'failed' }).eq('id', txn.id)
@@ -72,14 +79,15 @@ export async function POST(req: NextRequest) {
     await admin.from('transactions').update({ status: 'completed' }).eq('id', txn.id)
 
   } else if (event_type === 'disbursement.failed' || event_type === 'disbursement.cancelled') {
-    // Refund wallet
-    const refundAmt = Math.abs(Number(txn.amount))
-    const { data: wallet } = await admin.from('wallets').select('balance').eq('user_id', txn.user_id).single()
-    const refunded = Number(wallet?.balance ?? 0) + refundAmt
-    await Promise.all([
-      admin.from('wallets').update({ balance: refunded, updated_at: new Date().toISOString() }).eq('user_id', txn.user_id),
-      admin.from('transactions').update({ status: 'failed' }).eq('id', txn.id),
-    ])
+    // Refund wallet atomically. The 'processing' idempotency claim above guarantees
+    // this branch runs at most once per transaction, so the user is refunded exactly
+    // the originally debited amount and never double-credited. The type guard ensures
+    // a misrouted/replayed disbursement event can only ever refund an actual withdrawal.
+    if (txn.type === 'withdrawal') {
+      const refundAmt = Math.abs(Number(txn.amount))
+      await admin.rpc('adjust_wallet_balance', { p_user_id: txn.user_id, p_delta: refundAmt })
+    }
+    await admin.from('transactions').update({ status: 'failed' }).eq('id', txn.id)
   } else {
     // Unknown event — revert processing status back to pending
     await admin.from('transactions').update({ status: 'pending' }).eq('id', txn.id)
