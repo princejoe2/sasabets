@@ -1,5 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 function dayLabel(daysAgo: number) {
   const d = new Date()
   d.setDate(d.getDate() - daysAgo)

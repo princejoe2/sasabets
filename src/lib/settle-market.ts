@@ -57,13 +57,14 @@ export async function settleMarket(
 
       if (!claimedBet || claimedBet.length === 0) continue  // already paid, skip
 
-      // Atomic credit: balance = balance + payout
-      const { data: w } = await admin.from('wallets').select('balance').eq('user_id', bet.user_id).single()
-      const newBalance = Number(w?.balance ?? 0) + payout
-      await admin.from('wallets').update({ balance: newBalance, updated_at: new Date().toISOString() }).eq('user_id', bet.user_id)
+      // Atomic wallet credit via RPC — eliminates read-modify-write race
+      const { data: newBalance } = await admin.rpc('adjust_wallet_balance', {
+        p_user_id: bet.user_id,
+        p_delta: payout,
+      })
       await admin.from('transactions').insert({
         user_id: bet.user_id, type: 'payout', amount: payout,
-        balance_after: newBalance, status: 'completed',
+        balance_after: newBalance ?? undefined, status: 'completed',
         metadata: {
           marketId,
           winningOptionId,
@@ -81,6 +82,30 @@ export async function settleMarket(
     .eq('market_id', marketId)
     .eq('status', 'active')
     .neq('option_id', winningOptionId)
+
+  // Record rake as a platform transaction so admin funds page shows exact accumulated rake
+  const rake = totalPool * rakePct
+  if (rake > 0) {
+    const { data: adminProfiles } = await admin
+      .from('profiles').select('id').eq('is_admin', true).limit(1)
+    const adminProfile = adminProfiles?.[0]
+    if (!adminProfile) {
+      console.error(`[settle-market] No admin profile found — rake UGX ${rake} not recorded for market ${marketId}`)
+    } else {
+      const { error: rakeErr } = await admin.from('transactions').insert({
+        user_id:   adminProfile.id,
+        type:      'rake',
+        amount:    rake,
+        status:    'completed',
+        reference: `rake-${marketId}`,
+        metadata:  { marketId, market_title: claimed.title, totalPool, rakePct, winningOptionId },
+      })
+      // 23505 = unique_violation: rake already recorded (settlement retried), safe to ignore
+      if (rakeErr && (rakeErr as { code?: string }).code !== '23505') {
+        console.error(`[settle-market] Rake insert failed for market ${marketId}:`, rakeErr.message)
+      }
+    }
+  }
 
   await admin.from('markets')
     .update({ status: 'settled', winning_option_id: winningOptionId, settled_at: new Date().toISOString() })

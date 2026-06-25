@@ -2,6 +2,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import AdminActivityClient, { type ActivityProps } from '@/components/admin/AdminActivityClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminActivityPage() {
   const admin = createAdminClient()
 

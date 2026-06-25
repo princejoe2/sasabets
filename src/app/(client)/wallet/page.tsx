@@ -14,19 +14,25 @@ interface Transaction {
 }
 
 const TYPE_LABEL: Record<string, string> = {
-  deposit: 'Deposit',
-  withdrawal: 'Withdrawal',
-  bet: 'Bet placed',
-  payout: 'Winnings',
-  refund: 'Refund',
+  deposit:        'Deposit',
+  withdrawal:     'Withdrawal',
+  bet:            'Bet placed',
+  payout:         'Winnings',
+  refund:         'Refund',
+  cashout:        'Early exit',
+  referral_bonus: 'Referral bonus',
+  rake:           'Platform rake',
 }
 
 const TYPE_ICON: Record<string, string> = {
-  deposit: '↓',
-  withdrawal: '↑',
-  bet: '●',
-  payout: '★',
-  refund: '↺',
+  deposit:        '↓',
+  withdrawal:     '↑',
+  bet:            '●',
+  payout:         '★',
+  refund:         '↺',
+  cashout:        '⤴',
+  referral_bonus: '🎁',
+  rake:           '—',
 }
 
 function WalletPageContent() {
@@ -34,7 +40,8 @@ function WalletPageContent() {
   const searchParams = useSearchParams()
   const isCallback = searchParams.get('status') === 'success'
 
-  const [balance, setBalance] = useState<number | null>(null)
+  const [balance,      setBalance]      = useState<number | null>(null)
+  const [bonusBalance, setBonusBalance] = useState<number>(0)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [tab, setTab] = useState<'deposit' | 'withdraw'>('deposit')
   const [amount, setAmount] = useState('')
@@ -52,7 +59,7 @@ function WalletPageContent() {
     if (!user) return
 
     const [{ data: wallet }, { data: txns }, { data: profile }] = await Promise.all([
-      supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
+      supabase.from('wallets').select('balance, bonus_balance').eq('user_id', user.id).single(),
       supabase
         .from('transactions')
         .select('id, type, amount, status, balance_after, pesapal_tracking_id, created_at')
@@ -62,7 +69,10 @@ function WalletPageContent() {
       supabase.from('profiles').select('phone').eq('id', user.id).single(),
     ])
 
-    if (wallet) setBalance(wallet.balance)
+    if (wallet) {
+      setBalance(wallet.balance)
+      setBonusBalance(Number((wallet as { balance: number; bonus_balance?: number }).bonus_balance ?? 0))
+    }
     if (txns) setTransactions(txns)
     if (profile?.phone) {
       setPhone(profile.phone)
@@ -83,7 +93,10 @@ function WalletPageContent() {
         .channel(`wallet-page-${user.id}`)
         .on('postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'wallets', filter: `user_id=eq.${user.id}` },
-          (payload) => { if (payload.new?.balance !== undefined) setBalance(Number(payload.new.balance)) }
+          (payload) => {
+            if (payload.new?.balance !== undefined) setBalance(Number(payload.new.balance))
+            if (payload.new?.bonus_balance !== undefined) setBonusBalance(Number(payload.new.bonus_balance))
+          }
         )
         .on('postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'transactions', filter: `user_id=eq.${user.id}` },
@@ -183,6 +196,7 @@ function WalletPageContent() {
   }
 
   const amtNum = parseFloat(amount) || 0
+  const locked = balance !== null ? Math.min(bonusBalance, balance) : bonusBalance
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -206,6 +220,11 @@ function WalletPageContent() {
               {balance !== null ? `UGX ${Number(balance).toLocaleString()}` : '—'}
             </p>
             {phone && <p className="mt-2 text-xs text-slate-600">+{phone}</p>}
+            {locked > 0 && (
+              <p className="mt-3 text-xs text-amber-500">
+                🔒 UGX {locked.toLocaleString()} referral bonus · betting only
+              </p>
+            )}
           </div>
 
           {/* Tabs */}
@@ -331,6 +350,16 @@ function WalletPageContent() {
 
         {/* Right: transaction history */}
         <div className="lg:col-span-3">
+          {/* Pending withdrawals banner */}
+          {transactions.filter(t => t.type === 'withdrawal' && t.status === 'pending').length > 0 && (
+            <div className="mb-4 rounded-xl border border-amber-700/40 bg-amber-900/15 px-4 py-3 text-sm text-amber-300">
+              <p className="font-semibold">
+                {transactions.filter(t => t.type === 'withdrawal' && t.status === 'pending').length} pending withdrawal{transactions.filter(t => t.type === 'withdrawal' && t.status === 'pending').length > 1 ? 's' : ''}
+              </p>
+              <p className="mt-0.5 text-xs text-amber-500">Withdrawals are processed within 24 hours to your registered Mobile Money number.</p>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold">Transactions</h2>
             <button onClick={() => load()} className="text-xs text-slate-500 hover:text-slate-300 transition-colors">

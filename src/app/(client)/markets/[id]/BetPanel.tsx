@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import PriceWidget from '@/components/PriceWidget'
 import { createClient } from '@/lib/supabase/client'
+import OddsChart from '@/components/OddsChart'
+import MarketComments from '@/components/MarketComments'
 
 type Option = { id: string; label: string; total_pool: number }
 type Market = {
@@ -595,6 +597,24 @@ export default function BetPanel({
                 </div>
               </div>
             )}
+
+            {/* Probability chart */}
+            {liveOpts.length >= 2 && (
+              <div className="mt-5">
+                <OddsChart
+                  marketId={market.id}
+                  labelA={liveOpts[0].label}
+                  labelB={liveOpts[1].label}
+                  colorA="#a78bfa"
+                  colorB="#fbbf24"
+                />
+              </div>
+            )}
+
+            {/* Discussion */}
+            <div className="mt-5">
+              <MarketComments marketId={market.id} isLoggedIn={isLoggedIn} />
+            </div>
           </div>
 
           {/* Bet slip — sticky on desktop */}

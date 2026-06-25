@@ -11,9 +11,11 @@ export default function Navbar() {
   const pathname = usePathname()
   const menuRef  = useRef<HTMLDivElement>(null)
 
-  const [user,     setUser]     = useState<User | null>(null)
-  const [wallet,   setWallet]   = useState<number | null>(null)
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [user,        setUser]        = useState<User | null>(null)
+  const [wallet,      setWallet]      = useState<number | null>(null)
+  const [menuOpen,    setMenuOpen]    = useState(false)
+  const [notifCount,  setNotifCount]  = useState(0)
+  const [notifSeen,   setNotifSeen]   = useState<string | null>(null)
 
   useEffect(() => {
     supabase.auth.onAuthStateChange((_e, session) => {
@@ -28,17 +30,38 @@ export default function Navbar() {
     if (user) fetchWallet(user.id)
   }, [pathname, user])
 
-  // Also subscribe to realtime wallet updates (instant sync when Realtime is enabled on the wallets table)
+  // Subscribe to wallet updates + new completed transactions (for notification badge)
   useEffect(() => {
     if (!user) return
+
+    // Load last-seen timestamp from localStorage
+    const seen = localStorage.getItem(`notif-seen-${user.id}`)
+    setNotifSeen(seen)
+
+    async function countNew(afterTs: string | null) {
+      const q = supabase
+        .from('transactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user!.id)
+        .eq('status', 'completed')
+        .in('type', ['deposit', 'payout', 'cashout', 'referral_bonus'])
+      if (afterTs) q.gt('created_at', afterTs)
+      const { count } = await q
+      setNotifCount(count ?? 0)
+    }
+    countNew(seen)
+
     const channel = supabase
-      .channel(`wallet-${user.id}`)
-      .on(
-        'postgres_changes',
+      .channel(`navbar-${user.id}`)
+      .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'wallets', filter: `user_id=eq.${user.id}` },
         (payload) => {
           if (payload.new?.balance !== undefined) setWallet(Number(payload.new.balance))
         }
+      )
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'transactions', filter: `user_id=eq.${user.id}` },
+        () => countNew(seen)
       )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
@@ -117,6 +140,28 @@ export default function Navbar() {
                 }
               </span>
             </div>
+
+            {/* Notifications bell */}
+            <Link
+              href="/wallet"
+              onClick={() => {
+                const now = new Date().toISOString()
+                localStorage.setItem(`notif-seen-${user?.id}`, now)
+                setNotifSeen(now)
+                setNotifCount(0)
+              }}
+              aria-label="Notifications"
+              className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-[#2a2a3e] bg-[#111118] text-slate-400 hover:border-violet-800/60 hover:text-white transition-all"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {notifCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white">
+                  {notifCount > 9 ? '9+' : notifCount}
+                </span>
+              )}
+            </Link>
 
             {/* Deposit CTA */}
             <Link

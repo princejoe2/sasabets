@@ -158,8 +158,9 @@ export async function getMarzBalance(): Promise<MarzBalance> {
 
 export interface MarzStats {
   balance: MarzBalance
-  totalCollected: number   // sum of successful inbound (deposits)
-  totalDisbursed: number   // sum of successful outbound (withdrawals)
+  totalCollected: number
+  totalDisbursed: number
+  pagesFetched: number
   recentTransactions: Array<{
     type: 'collection' | 'disbursement'
     amount: number
@@ -170,15 +171,12 @@ export interface MarzStats {
 }
 
 export async function getMarzStats(): Promise<MarzStats> {
-  const [balRes, txnRes] = await Promise.allSettled([
-    fetch(`${BASE}/balance`, { headers: requestHeaders() }),
-    fetch(`${BASE}/transactions?per_page=50&sort=desc`, { headers: requestHeaders() }),
-  ])
+  const balRes = await fetch(`${BASE}/balance`, { headers: requestHeaders() }).catch(() => null)
 
   let balance: MarzBalance = { available: 0, currency: 'UGX' }
-  if (balRes.status === 'fulfilled' && balRes.value.ok) {
+  if (balRes?.ok) {
     try {
-      const data = await balRes.value.json()
+      const data = await balRes.json()
       const bal = data?.data?.available ?? data?.data?.balance ?? data?.data ?? {}
       const amount = typeof bal.amount === 'number' ? bal.amount
         : typeof data?.data?.amount === 'number' ? data.data.amount : 0
@@ -188,32 +186,50 @@ export async function getMarzStats(): Promise<MarzStats> {
 
   let totalCollected = 0
   let totalDisbursed = 0
+  let pagesFetched = 0
   const recentTransactions: MarzStats['recentTransactions'] = []
 
-  if (txnRes.status === 'fulfilled' && txnRes.value.ok) {
+  // Paginate through all MarzPay transactions (up to 10 pages × 100 = 1 000 transactions)
+  const PER_PAGE = 100
+  for (let page = 1; page <= 10; page++) {
+    const res = await fetch(`${BASE}/transactions?per_page=${PER_PAGE}&page=${page}&sort=desc`, {
+      headers: requestHeaders(),
+    }).catch(() => null)
+    if (!res?.ok) break
+
+    let txns: Array<Record<string, unknown>> = []
     try {
-      const data = await txnRes.value.json()
-      const txns: Array<Record<string, unknown>> = data?.data?.transactions ?? data?.data ?? data?.transactions ?? []
-      for (const t of txns) {
-        const amt = Number((t.amount as Record<string, unknown>)?.raw ?? t.amount ?? 0)
-        const status = String(t.status ?? '')
-        const type = String(t.type ?? (t.direction === 'inbound' ? 'collection' : 'disbursement'))
-        if (status === 'successful') {
-          if (type.includes('collect') || type === 'inbound') totalCollected += amt
-          else totalDisbursed += amt
-        }
+      const data = await res.json()
+      txns = data?.data?.transactions ?? data?.data ?? data?.transactions ?? []
+    } catch { break }
+
+    pagesFetched = page
+
+    for (const t of txns) {
+      const amt    = Number((t.amount as Record<string, unknown>)?.raw ?? t.amount ?? 0)
+      const status = String(t.status ?? '')
+      const type   = String(t.type ?? (t.direction === 'inbound' ? 'collection' : 'disbursement'))
+      const isColl = type.includes('collect') || type === 'inbound'
+      if (status === 'successful') {
+        if (isColl) totalCollected += amt
+        else        totalDisbursed += amt
+      }
+      // Only keep the first page for the recent-transactions display
+      if (page === 1) {
         recentTransactions.push({
-          type: (type.includes('collect') || type === 'inbound') ? 'collection' : 'disbursement',
-          amount: amt,
+          type:       isColl ? 'collection' : 'disbursement',
+          amount:     amt,
           status,
-          reference: String(t.reference ?? t.uuid ?? ''),
+          reference:  String(t.reference ?? t.uuid ?? ''),
           created_at: String(t.created_at ?? t.createdAt ?? ''),
         })
       }
-    } catch { /* ignore */ }
+    }
+
+    if (txns.length < PER_PAGE) break  // reached the last page
   }
 
-  return { balance, totalCollected, totalDisbursed, recentTransactions }
+  return { balance, totalCollected, totalDisbursed, pagesFetched, recentTransactions }
 }
 
 export async function verifyPhone(phone_number: string): Promise<{

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-type BetStatus = 'active' | 'won' | 'lost' | 'cancelled'
+type BetStatus = 'active' | 'won' | 'lost' | 'cancelled' | 'exited'
 type Category = 'football' | 'politics' | 'economy' | 'entertainment' | 'tech' | 'infrastructure' | 'agriculture' | 'default'
 
 interface Market {
@@ -23,6 +23,7 @@ interface Bet {
   option_id: string
   amount: number
   potential_payout: number
+  settled_payout: number | null
   status: BetStatus
   placed_at: string
   markets: Market
@@ -60,22 +61,26 @@ const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
   won:       { label: 'Won ✓',    cls: 'bg-emerald-900/40 text-emerald-400 border border-emerald-800/40' },
   lost:      { label: 'Lost',      cls: 'bg-red-900/30 text-red-400 border border-red-800/30' },
   cancelled: { label: 'Cancelled', cls: 'bg-slate-800 text-slate-500 border border-slate-700/50' },
+  exited:    { label: 'Exited',    cls: 'bg-amber-900/30 text-amber-400 border border-amber-800/30' },
 }
 
 const TAB_FILTERS: Record<string, (b: Bet) => boolean> = {
   all:    () => true,
   active: b => b.status === 'active',
   won:    b => b.status === 'won',
-  lost:   b => b.status === 'lost',
+  lost:   b => b.status === 'lost' || b.status === 'exited',
 }
 
 export default function BetsPage() {
   const supabase = createClient()
   const router = useRouter()
-  const [bets, setBets] = useState<Bet[]>([])
-  const [loading, setLoading] = useState(true)
+  const [bets, setBets]           = useState<Bet[]>([])
+  const [loading, setLoading]     = useState(true)
   const [fetchError, setFetchError] = useState('')
-  const [tab, setTab] = useState<'all' | 'active' | 'won' | 'lost'>('all')
+  const [tab, setTab]             = useState<'all' | 'active' | 'won' | 'lost'>('all')
+  const [exitingBet, setExitingBet] = useState<string | null>(null)
+  const [exitLoading, setExitLoading] = useState(false)
+  const [exitMsg, setExitMsg]     = useState<{ betId: string; text: string; ok: boolean } | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -84,7 +89,7 @@ export default function BetsPage() {
 
       const { data, error } = await supabase
         .from('bets')
-        .select('id, market_id, option_id, amount, potential_payout, status, placed_at, markets(id, title, description, status, options, winning_option_id, closes_at)')
+        .select('id, market_id, option_id, amount, potential_payout, settled_payout, status, placed_at, markets(id, title, description, status, options, winning_option_id, closes_at)')
         .eq('user_id', user.id)
         .order('placed_at', { ascending: false })
 
@@ -97,6 +102,24 @@ export default function BetsPage() {
     }
     load()
   }, [])
+
+  async function handleExit(bet: Bet) {
+    setExitLoading(true)
+    const res = await fetch('/api/bet/exit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ betId: bet.id }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setBets(bs => bs.map(b => b.id === bet.id ? { ...b, status: 'exited' } : b))
+      setExitMsg({ betId: bet.id, text: `Cashed out — UGX ${Number(data.cashout).toLocaleString()} returned to your wallet.`, ok: true })
+      setExitingBet(null)
+    } else {
+      setExitMsg({ betId: bet.id, text: data.error ?? 'Exit failed', ok: false })
+    }
+    setExitLoading(false)
+  }
 
   const filtered = bets.filter(TAB_FILTERS[tab])
   const totalStaked = bets.reduce((s, b) => s + Number(b.amount), 0)
@@ -221,107 +244,164 @@ export default function BetsPage() {
               const opts = (market?.options ?? []) as Array<{ id: string; label: string; total_pool: number }>
               const chosenOpt = opts.find(o => o.id === bet.option_id)
               const winnerOpt = opts.find(o => o.id === market?.winning_option_id)
-              const isWon = bet.status === 'won'
+              const isWon    = bet.status === 'won'
               const isActive = bet.status === 'active'
+              const isExited = bet.status === 'exited'
               const statusCfg = STATUS_CONFIG[bet.status] ?? STATUS_CONFIG.cancelled
 
+              const canExit = isActive && market?.status === 'open' &&
+                (!market.closes_at || new Date(market.closes_at) > new Date())
+              const cashoutPreview = Math.round(Number(bet.amount) * 0.85)
+              const isConfirming = exitingBet === bet.id
+              const msg = exitMsg?.betId === bet.id ? exitMsg : null
+
               return (
-                <Link
-                  key={bet.id}
-                  href={`/markets/${bet.market_id}`}
-                  className="group block overflow-hidden rounded-xl border transition-all duration-150 hover:brightness-110"
-                  style={{
-                    borderColor: cat.border,
-                    background: `linear-gradient(135deg, ${cat.glow} 0%, #13131a 55%)`,
-                  }}
-                >
-                  {/* Category colour top strip */}
-                  <div
-                    className="h-[3px] w-full"
-                    style={{ background: `linear-gradient(90deg, ${cat.color} 0%, ${cat.color}30 100%)` }}
-                  />
-
-                  <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center">
-                    {/* Category icon bubble */}
+                <div key={bet.id} className="space-y-1.5">
+                  <Link
+                    href={`/markets/${bet.market_id}`}
+                    className="group block overflow-hidden rounded-xl border transition-all duration-150 hover:brightness-110"
+                    style={{
+                      borderColor: cat.border,
+                      background: `linear-gradient(135deg, ${cat.glow} 0%, #13131a 55%)`,
+                    }}
+                  >
+                    {/* Category colour top strip */}
                     <div
-                      className="hidden sm:flex shrink-0 h-11 w-11 items-center justify-center rounded-xl text-xl"
-                      style={{ background: cat.tag.background }}
-                    >
-                      {cat.icon}
-                    </div>
+                      className="h-[3px] w-full"
+                      style={{ background: `linear-gradient(90deg, ${cat.color} 0%, ${cat.color}30 100%)` }}
+                    />
 
-                    {/* Main content */}
-                    <div className="flex-1 min-w-0">
-                      {/* Badges */}
-                      <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusCfg.cls}`}>
-                          {statusCfg.label}
-                        </span>
-                        <span
-                          className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                          style={cat.tag}
-                        >
-                          {cat.icon} {cat.label}
-                        </span>
-                        {isActive && market?.closes_at && (
-                          <span className="text-[10px] text-slate-600">
-                            Closes {new Date(market.closes_at).toLocaleDateString('en-UG', { day: 'numeric', month: 'short' })}
-                          </span>
-                        )}
+                    <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center">
+                      {/* Category icon bubble */}
+                      <div
+                        className="hidden sm:flex shrink-0 h-11 w-11 items-center justify-center rounded-xl text-xl"
+                        style={{ background: cat.tag.background }}
+                      >
+                        {cat.icon}
                       </div>
 
-                      {/* Market title */}
-                      <p className="font-bold leading-snug text-slate-100 group-hover:text-white transition-colors"
-                         style={{ fontSize: '0.95rem' }}>
-                        {market?.title ?? bet.market_id}
-                      </p>
-
-                      {/* Pick + winner + date */}
-                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                        <span>
-                          Picked:{' '}
-                          <span className="font-semibold" style={{ color: cat.color }}>
-                            {chosenOpt?.label ?? bet.option_id}
+                      {/* Main content */}
+                      <div className="flex-1 min-w-0">
+                        {/* Badges */}
+                        <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusCfg.cls}`}>
+                            {statusCfg.label}
                           </span>
-                        </span>
-                        {!isActive && winnerOpt && (
+                          <span
+                            className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                            style={cat.tag}
+                          >
+                            {cat.icon} {cat.label}
+                          </span>
+                          {isActive && market?.closes_at && (
+                            <span className="text-[10px] text-slate-600">
+                              Closes {new Date(market.closes_at).toLocaleDateString('en-UG', { day: 'numeric', month: 'short' })}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Market title */}
+                        <p className="font-bold leading-snug text-slate-100 group-hover:text-white transition-colors"
+                           style={{ fontSize: '0.95rem' }}>
+                          {market?.title ?? bet.market_id}
+                        </p>
+
+                        {/* Pick + winner + date */}
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                           <span>
-                            Winner:{' '}
-                            <span className={`font-semibold ${isWon ? 'text-emerald-400' : 'text-red-400'}`}>
-                              {winnerOpt.label}
+                            Picked:{' '}
+                            <span className="font-semibold" style={{ color: cat.color }}>
+                              {chosenOpt?.label ?? bet.option_id}
                             </span>
                           </span>
+                          {!isActive && winnerOpt && !isExited && (
+                            <span>
+                              Winner:{' '}
+                              <span className={`font-semibold ${isWon ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {winnerOpt.label}
+                              </span>
+                            </span>
+                          )}
+                          <span>
+                            {new Date(bet.placed_at).toLocaleDateString('en-UG', {
+                              day: 'numeric', month: 'short', year: 'numeric',
+                            })}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Amount / payout */}
+                      <div className="shrink-0 text-right sm:border-l sm:border-[#1e1e2e] sm:pl-5">
+                        <p className="text-base font-black text-slate-200">
+                          UGX {Number(bet.amount).toLocaleString()}
+                        </p>
+                        {isWon ? (
+                          <p className="mt-0.5 text-sm font-bold text-emerald-400">
+                            +UGX {Number(bet.potential_payout).toLocaleString()}
+                          </p>
+                        ) : isActive ? (
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            est.{' '}
+                            <span className="font-semibold" style={{ color: cat.color }}>
+                              UGX {Number(bet.potential_payout).toLocaleString()}
+                            </span>
+                          </p>
+                        ) : isExited ? (
+                          <p className="mt-0.5 text-xs font-semibold text-amber-400">
+                            Returned UGX {Number(bet.settled_payout ?? 0).toLocaleString()}
+                          </p>
+                        ) : (
+                          <p className="mt-0.5 text-xs font-medium text-red-400">Lost</p>
                         )}
-                        <span>
-                          {new Date(bet.placed_at).toLocaleDateString('en-UG', {
-                            day: 'numeric', month: 'short', year: 'numeric',
-                          })}
-                        </span>
                       </div>
                     </div>
+                  </Link>
 
-                    {/* Amount / payout */}
-                    <div className="shrink-0 text-right sm:border-l sm:border-[#1e1e2e] sm:pl-5">
-                      <p className="text-base font-black text-slate-200">
-                        UGX {Number(bet.amount).toLocaleString()}
-                      </p>
-                      {isWon ? (
-                        <p className="mt-0.5 text-sm font-bold text-emerald-400">
-                          +UGX {Number(bet.potential_payout).toLocaleString()}
-                        </p>
-                      ) : isActive ? (
-                        <p className="mt-0.5 text-xs text-slate-500">
-                          est.{' '}
-                          <span className="font-semibold" style={{ color: cat.color }}>
-                            UGX {Number(bet.potential_payout).toLocaleString()}
-                          </span>
-                        </p>
+                  {/* Exit controls — only for eligible active bets */}
+                  {canExit && (
+                    <div className="rounded-xl border border-amber-900/30 bg-amber-950/20 px-4 py-3">
+                      {msg && (
+                        <p className={`mb-2 text-xs font-semibold ${msg.ok ? 'text-emerald-400' : 'text-red-400'}`}>{msg.text}</p>
+                      )}
+                      {!isConfirming ? (
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-xs text-slate-500">
+                            Exit early · get back{' '}
+                            <span className="font-bold text-amber-400">UGX {cashoutPreview.toLocaleString()}</span>
+                            <span className="text-slate-700"> (85% of stake)</span>
+                          </p>
+                          <button
+                            onClick={() => { setExitingBet(bet.id); setExitMsg(null) }}
+                            className="shrink-0 rounded-lg border border-amber-800/40 bg-amber-900/20 px-3 py-1.5 text-xs font-bold text-amber-400 hover:bg-amber-900/40 transition-colors"
+                          >
+                            Cash out →
+                          </button>
+                        </div>
                       ) : (
-                        <p className="mt-0.5 text-xs font-medium text-red-400">Lost</p>
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-xs font-semibold text-amber-300">
+                            Confirm: receive <span className="text-white">UGX {cashoutPreview.toLocaleString()}</span> now?
+                          </p>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => handleExit(bet)}
+                              disabled={exitLoading}
+                              className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-black text-black hover:bg-amber-400 disabled:opacity-50 transition-colors"
+                            >
+                              {exitLoading ? '…' : 'Yes, exit'}
+                            </button>
+                            <button
+                              onClick={() => setExitingBet(null)}
+                              className="rounded-lg border border-[#2a2a3e] px-3 py-1.5 text-xs text-slate-500 hover:text-white transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                </Link>
+                  )}
+                </div>
               )
             })}
           </div>

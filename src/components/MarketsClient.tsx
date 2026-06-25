@@ -1,5 +1,6 @@
 'use client'
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import MarketCard from '@/components/MarketCard'
 
 function seededShuffle<T>(arr: T[], seed: number): T[] {
@@ -23,7 +24,13 @@ type Mkt = {
 type Category = 'all' | 'updown' | 'football' | 'politics' | 'economy' | 'entertainment' | 'tech' | 'infrastructure' | 'agriculture' | 'default'
 type Sort = 'random' | 'pool' | 'closing' | 'newest'
 
-function detectCat(title: string, desc = ''): Exclude<Category, 'all'> {
+const VALID_CATS: Category[] = ['football','politics','economy','entertainment','tech','infrastructure','agriculture','updown','default']
+
+function detectCat(title: string, desc = '', metadata?: Record<string, unknown>): Exclude<Category, 'all'> {
+  if (metadata?.type === 'updown') return 'updown'
+  // Admin-assigned category takes precedence over regex
+  const stored = metadata?.category as string | undefined
+  if (stored && VALID_CATS.includes(stored as Category)) return stored as Exclude<Category, 'all'>
   const t = (title + ' ' + desc).toLowerCase()
   if (/football|soccer|premier.?league|fufa|kcca.*fc|vipers|express.?fc|cranes|afcon|scorer|derby|sc.villa|bul.fc|world.?cup|golden.?boot|messi|haaland|mbapp|bellingham|ronaldo|england.*group|group.?l|norway.*wc|wc.*final|africa.*semi|wc.*semi/.test(t)) return 'football'
   if (/president|election|parliament|political|bobi.?wine|museveni|besigye|social.?media.?tax|vote|contest|treason|muhoozi|lukwago|speaker|nabbanja|minister|mp.be|nup.mp|vetting|ayebare|oboth|foreign.?affair/.test(t)) return 'politics'
@@ -55,11 +62,21 @@ const SORTS: { id: Sort; label: string }[] = [
   { id: 'newest',  label: 'Newest'       },
 ]
 
-export default function MarketsClient({ markets, openCount }: { markets: Mkt[]; openCount: number }) {
+export default function MarketsClient({ markets, openCount, initialCat = 'all' }: { markets: Mkt[]; openCount: number; initialCat?: string }) {
+  const router = useRouter()
   const [search, setSearch]         = useState('')
-  const [cat, setCat]               = useState<Category>('all')
+  const [cat, setCat]               = useState<Category>((initialCat as Category) ?? 'all')
   const [sort, setSort]             = useState<Sort>('random')
   const [showClosed, setShowClosed] = useState(false)
+
+  function handleCatChange(newCat: Category) {
+    setCat(newCat)
+    const params = new URLSearchParams(window.location.search)
+    if (newCat === 'all') params.delete('cat')
+    else params.set('cat', newCat)
+    const qs = params.toString()
+    router.replace(`${window.location.pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
+  }
 
   const dailySeed = useMemo(() => {
     const n = new Date()
@@ -68,6 +85,16 @@ export default function MarketsClient({ markets, openCount }: { markets: Mkt[]; 
 
   const open   = useMemo(() => markets.filter(m => m.status === 'open'),  [markets])
   const closed = useMemo(() => markets.filter(m => m.status !== 'open'), [markets])
+
+  // Count open markets per category for badge display on pills
+  const catCounts = useMemo(() => {
+    const counts: Partial<Record<Category, number>> = {}
+    for (const m of open) {
+      const c = detectCat(m.title, m.description ?? '', m.metadata)
+      counts[c] = (counts[c] ?? 0) + 1
+    }
+    return counts
+  }, [open])
 
   const filtered = useMemo(() => {
     let list = showClosed ? markets : open
@@ -83,7 +110,7 @@ export default function MarketsClient({ markets, openCount }: { markets: Mkt[]; 
     if (cat === 'updown') {
       list = list.filter(m => m.metadata?.type === 'updown')
     } else if (cat !== 'all') {
-      list = list.filter(m => m.metadata?.type !== 'updown' && detectCat(m.title, m.description ?? '') === cat)
+      list = list.filter(m => m.metadata?.type !== 'updown' && detectCat(m.title, m.description ?? '', m.metadata) === cat)
     }
 
     if (sort === 'random') {
@@ -168,10 +195,11 @@ export default function MarketsClient({ markets, openCount }: { markets: Mkt[]; 
               <div className="flex flex-1 gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
                 {CATS.map(c => {
                   const active = cat === c.id
+                  const count  = c.id === 'all' ? open.length : (catCounts[c.id] ?? 0)
                   return (
                     <button
                       key={c.id}
-                      onClick={() => setCat(c.id)}
+                      onClick={() => handleCatChange(c.id)}
                       className="shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-all"
                       style={active
                         ? { background: c.bg, borderColor: c.border, color: c.color, boxShadow: `0 0 14px ${c.bg}`, transform: 'translateY(-1px)' }
@@ -179,6 +207,16 @@ export default function MarketsClient({ markets, openCount }: { markets: Mkt[]; 
                       }
                     >
                       {c.icon} {c.label}
+                      {count > 0 && (
+                        <span className="ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-black tabular-nums"
+                          style={active
+                            ? { background: `${c.color}30`, color: c.color }
+                            : { background: '#1e1e2e', color: '#475569' }
+                          }
+                        >
+                          {count}
+                        </span>
+                      )}
                     </button>
                   )
                 })}

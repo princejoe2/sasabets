@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import OddsSparkline from '@/components/OddsSparkline'
 
 interface Opt { id: string; label: string; total_pool: number }
 interface Market {
@@ -20,6 +21,9 @@ type Category = 'football' | 'politics' | 'economy' | 'entertainment' | 'tech' |
 
 function detectCategory(title: string, desc = '', metadata?: Record<string, unknown>): Category {
   if (metadata?.type === 'updown') return 'updown'
+  // Admin-assigned category takes precedence over regex
+  const stored = metadata?.category as string | undefined
+  if (stored && stored in CAT) return stored as Category
   const t = (title + ' ' + desc).toLowerCase()
   if (/football|soccer|premier.?league|fufa|kcca.*fc|vipers|express.?fc|cranes|afcon|scorer|derby|sc.villa|bul.fc|world.?cup|golden.?boot/.test(t)) return 'football'
   if (/president|election|parliament|political|bobi.?wine|museveni|besigye|social.?media.?tax|vote|contest|nup|nrm|minister/.test(t)) return 'politics'
@@ -287,14 +291,22 @@ export default function MarketCard({ market }: { market: Market }) {
           </div>
         )}
 
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-4 mt-auto" style={{ borderTop: `1px solid ${cat.border}` }}>
-          <span className="text-sm text-slate-500">
-            Pool: <span className="font-bold text-slate-200">UGX {total.toLocaleString()}</span>
-          </span>
-          <span className="text-sm font-black transition-all group-hover:scale-110" style={{ color: cat.color }}>
-            {effectivelyOpen ? 'Predict →' : 'View →'}
-          </span>
+        {/* Sparkline + footer */}
+        <div className="mt-auto pt-4" style={{ borderTop: `1px solid ${cat.border}` }}>
+          {total > 0 && (
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Odds history</span>
+              <OddsSparkline marketId={market.id} />
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-slate-500">
+              Pool: <span className="font-bold text-slate-200">UGX {total.toLocaleString()}</span>
+            </span>
+            <span className="text-sm font-black transition-all group-hover:scale-110" style={{ color: cat.color }}>
+              {effectivelyOpen ? 'Predict →' : 'View →'}
+            </span>
+          </div>
         </div>
       </div>
     </div>

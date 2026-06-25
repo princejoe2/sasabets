@@ -1,6 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import AdminWithdrawalsClient from '@/components/admin/AdminWithdrawalsClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminWithdrawalsPage() {
   const admin = createAdminClient()
 

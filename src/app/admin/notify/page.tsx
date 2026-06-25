@@ -1,6 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import AdminNotifyClient from '@/components/admin/AdminNotifyClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminNotifyPage() {
   const admin = createAdminClient()
   const { data: profiles } = await admin.from('profiles').select('id, phone, full_name').order('created_at', { ascending: false })

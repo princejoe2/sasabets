@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { MarzStats } from '@/lib/marz'
 
 interface Props {
@@ -9,10 +9,38 @@ interface Props {
 }
 
 export default function MarzStatsWidget({ stats, platformDeposited, platformWithdrawn }: Props) {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded]       = useState(false)
+  const [stuckCount, setStuckCount]   = useState<number | null>(null)
+  const [reconciling, setReconciling] = useState(false)
+  const [reconcileResult, setReconcileResult] = useState<{ resolved: number; failed: number; skipped: number } | null>(null)
 
-  const reconcileDeposit = stats.totalCollected - platformDeposited
+  useEffect(() => {
+    fetch('/api/admin/marz-reconcile')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => d && setStuckCount(d.count))
+      .catch(() => {})
+  }, [])
+
+  async function handleReconcile() {
+    setReconciling(true)
+    setReconcileResult(null)
+    try {
+      const res = await fetch('/api/admin/marz-reconcile', { method: 'POST' })
+      if (res.ok) {
+        const d = await res.json()
+        setReconcileResult(d)
+        setStuckCount(0)
+      }
+    } finally {
+      setReconciling(false)
+    }
+  }
+
+  const reconcileDeposit  = stats.totalCollected - platformDeposited
   const reconcileWithdraw = stats.totalDisbursed - platformWithdrawn
+  // Only flag when MarzPay shows MORE than platform (missed webhooks).
+  // Platform showing more than MarzPay is always expected — full history vs last N transactions.
+  const missedWebhook = reconcileDeposit > 0 || reconcileWithdraw > 0
 
   return (
     <div className="mb-8 rounded-2xl border border-blue-900/40 bg-blue-950/10 overflow-hidden">
@@ -82,11 +110,80 @@ export default function MarzStatsWidget({ stats, platformDeposited, platformWith
         </div>
       </div>
 
-      {/* Reconciliation note */}
-      {(reconcileDeposit !== 0 || reconcileWithdraw !== 0) && (
-        <div className="mx-5 mb-4 rounded-xl border border-amber-800/40 bg-amber-900/10 px-4 py-3 text-xs text-amber-400">
-          ⚠️ Reconciliation gap detected — MarzPay totals differ from platform records.
-          Check for pending webhooks or transactions processed outside the platform.
+      {/* Reconciliation note — only when MarzPay shows more than platform (missed webhooks) */}
+      {missedWebhook && (
+        <div className="mx-5 mb-4 space-y-3">
+          <div className="rounded-xl border border-red-800/40 bg-red-900/10 px-4 py-3 text-xs text-red-400">
+            ⚠️ MarzPay collected more than platform records show — possible missed webhooks.
+            {reconcileDeposit > 0 && (
+              <> Deposits gap: <span className="font-bold">+UGX {reconcileDeposit.toLocaleString()}</span>.</>
+            )}
+            {reconcileWithdraw > 0 && (
+              <> Withdrawals gap: <span className="font-bold">+UGX {reconcileWithdraw.toLocaleString()}</span>.</>
+            )}
+          </div>
+
+          {/* Stuck deposits */}
+          <div className="rounded-xl border border-slate-800 bg-[#0d0d14] px-4 py-3 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold text-slate-300">
+                Stuck deposits{' '}
+                {stuckCount !== null && (
+                  <span className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-black ${stuckCount > 0 ? 'bg-red-900/40 text-red-400' : 'bg-emerald-900/30 text-emerald-400'}`}>
+                    {stuckCount > 0 ? `${stuckCount} pending > 15 min` : '✓ none'}
+                  </span>
+                )}
+              </p>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                Checks MarzPay/Relworx for each pending deposit and credits wallets for any that succeeded.
+              </p>
+              {reconcileResult && (
+                <p className="mt-1.5 text-[11px] font-semibold text-emerald-400">
+                  Done — {reconcileResult.resolved} credited · {reconcileResult.failed} failed · {reconcileResult.skipped} skipped
+                </p>
+              )}
+            </div>
+            <button
+              onClick={handleReconcile}
+              disabled={reconciling || stuckCount === 0}
+              className="shrink-0 rounded-xl border border-violet-800/40 bg-violet-900/20 px-4 py-2 text-xs font-bold text-violet-400 hover:bg-violet-900/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {reconciling ? 'Checking…' : 'Reconcile now'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Stuck deposits panel — always visible even when no gap */}
+      {!missedWebhook && (
+        <div className="mx-5 mb-4">
+          <div className="rounded-xl border border-slate-800 bg-[#0d0d14] px-4 py-3 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold text-slate-300">
+                Stuck deposits{' '}
+                {stuckCount !== null && (
+                  <span className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-black ${stuckCount > 0 ? 'bg-red-900/40 text-red-400' : 'bg-emerald-900/30 text-emerald-400'}`}>
+                    {stuckCount > 0 ? `${stuckCount} pending > 15 min` : '✓ none'}
+                  </span>
+                )}
+              </p>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                Checks MarzPay/Relworx for each pending deposit and credits wallets for any that succeeded.
+              </p>
+              {reconcileResult && (
+                <p className="mt-1.5 text-[11px] font-semibold text-emerald-400">
+                  Done — {reconcileResult.resolved} credited · {reconcileResult.failed} failed · {reconcileResult.skipped} skipped
+                </p>
+              )}
+            </div>
+            <button
+              onClick={handleReconcile}
+              disabled={reconciling || stuckCount === 0}
+              className="shrink-0 rounded-xl border border-violet-800/40 bg-violet-900/20 px-4 py-2 text-xs font-bold text-violet-400 hover:bg-violet-900/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {reconciling ? 'Checking…' : 'Reconcile now'}
+            </button>
+          </div>
         </div>
       )}
 

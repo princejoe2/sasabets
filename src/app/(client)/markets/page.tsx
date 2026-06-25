@@ -15,7 +15,11 @@ export const metadata: Metadata = {
 
 export const revalidate = 30
 
-export default async function MarketsPage() {
+export default async function MarketsPage({
+  searchParams,
+}: {
+  searchParams?: { cat?: string }
+}) {
   const supabase = createClient()
   const { data: markets } = await supabase
     .from('markets')
@@ -34,6 +38,8 @@ export default async function MarketsPage() {
     }
   }
 
+  const initialCat = (searchParams?.cat ?? 'all') as string
+
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
       <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-10">
@@ -48,7 +54,7 @@ export default async function MarketsPage() {
         </div>
       </div>
 
-      <MarketsClient markets={all.map(normalise)} openCount={openCount} />
+      <MarketsClient markets={all.map(normalise)} openCount={openCount} initialCat={initialCat} />
     </div>
   )
 }

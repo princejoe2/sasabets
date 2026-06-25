@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createHash, timingSafeEqual } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/server'
+import { maybeFireReferralBonus } from '@/lib/referral'
 
 function ascii(s: string) {
   let out = ''
@@ -71,6 +72,8 @@ export async function POST(req: NextRequest) {
     const { data: newBalance } = await admin.rpc('adjust_wallet_balance', { p_user_id: txn.user_id, p_delta: credit })
     await admin.from('transactions')
       .update({ status: 'completed', balance_after: newBalance ?? null }).eq('id', txn.id)
+
+    await maybeFireReferralBonus(admin, txn.user_id, txn.id)
 
   } else if (event_type === 'collection.failed' || event_type === 'collection.cancelled') {
     await admin.from('transactions').update({ status: 'failed' }).eq('id', txn.id)

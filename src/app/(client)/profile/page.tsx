@@ -20,7 +20,11 @@ export default function ProfilePage() {
   const [stats,       setStats]       = useState<Stats | null>(null)
   const [memberSince, setMemberSince] = useState('')
   const [has2fa,      setHas2fa]      = useState(false)
-  const [userId,      setUserId]      = useState('')
+  const [userId,        setUserId]        = useState('')
+  const [referralCode,  setReferralCode]  = useState<string | null>(null)
+  const [referredCount, setReferredCount] = useState(0)
+  const [bonusEarned,   setBonusEarned]   = useState(0)
+  const [refCopied,     setRefCopied]     = useState(false)
 
   // 2FA management state
   const [show2faSetup,  setShow2faSetup]  = useState(false)
@@ -42,12 +46,19 @@ export default function ProfilePage() {
         day: 'numeric', month: 'long', year: 'numeric',
       }))
 
-      const [{ data: profile }, { data: wallet }, { data: bets }, { data: txns }] = await Promise.all([
+      const [{ data: profile }, { data: wallet }, { data: bets }, { data: txns }, refRes] = await Promise.all([
         supabase.from('profiles').select('phone, full_name, totp_enabled').eq('id', user.id).single(),
         supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
         supabase.from('bets').select('amount, potential_payout, status').eq('user_id', user.id),
         supabase.from('transactions').select('amount').eq('user_id', user.id).eq('type', 'payout').eq('status', 'completed'),
+        fetch('/api/referral/stats').then(r => r.ok ? r.json() : null),
       ])
+
+      if (refRes) {
+        setReferralCode(refRes.referralCode ?? null)
+        setReferredCount(refRes.referredCount ?? 0)
+        setBonusEarned(refRes.bonusEarned ?? 0)
+      }
 
       if (profile?.full_name) setName(profile.full_name)
       else if (user.user_metadata?.full_name) setName(user.user_metadata.full_name as string)
@@ -381,6 +392,60 @@ export default function ProfilePage() {
                 </button>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* ── Referral Program ── */}
+        <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-6 space-y-5">
+          <div>
+            <h2 className="font-bold text-slate-200">Refer a Friend</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Earn <span className="text-violet-400 font-bold">UGX 5,000</span> for every friend who makes their first deposit.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-[#0a0a0f] p-4 text-center">
+              <p className="text-2xl font-black text-violet-400">{referredCount}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 mt-0.5">Friends Referred</p>
+            </div>
+            <div className="rounded-xl bg-[#0a0a0f] p-4 text-center">
+              <p className="text-xl font-black text-emerald-400">
+                {bonusEarned > 0 ? `UGX ${bonusEarned.toLocaleString()}` : 'UGX 0'}
+              </p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 mt-0.5">Bonus Earned</p>
+            </div>
+          </div>
+
+          {referralCode ? (
+            <div>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Your Referral Link</p>
+              <div className="flex gap-2">
+                <div className="flex-1 min-w-0 rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 overflow-hidden">
+                  <span className="text-sm text-slate-300 block truncate">
+                    {typeof window !== 'undefined'
+                      ? `${window.location.origin}/?ref=${referralCode}`
+                      : `sabula256.com/?ref=${referralCode}`}
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    const link = `${window.location.origin}/?ref=${referralCode}`
+                    navigator.clipboard.writeText(link).catch(() => {})
+                    setRefCopied(true)
+                    setTimeout(() => setRefCopied(false), 2000)
+                  }}
+                  className="shrink-0 rounded-xl border border-violet-800/40 bg-violet-900/20 px-4 py-3 text-sm font-bold text-violet-400 hover:bg-violet-900/40 transition-colors"
+                >
+                  {refCopied ? '✓ Copied' : 'Copy'}
+                </button>
+              </div>
+              <p className="mt-2 text-[11px] text-slate-600">
+                Share this link. When your friend makes their first deposit, UGX 5,000 lands in your wallet automatically.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-[#0a0a0f] px-4 py-3 text-sm text-slate-600">Loading referral link…</div>
           )}
         </div>
 

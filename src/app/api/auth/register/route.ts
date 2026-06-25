@@ -36,5 +36,21 @@ export async function POST(req: NextRequest) {
     await admin.from('profiles').update(update).eq('id', user.id)
   }
 
+  // Capture referral: read sb_ref cookie, look up referrer, set referred_by (once only)
+  const refCode = req.cookies.get('sb_ref')?.value
+  if (refCode) {
+    const { data: existing } = await admin
+      .from('profiles').select('referred_by').eq('id', user.id).single()
+
+    if (existing && !existing.referred_by) {
+      const { data: referrer } = await admin
+        .from('profiles').select('id').eq('referral_code', refCode).limit(1).single()
+
+      if (referrer && referrer.id !== user.id) {
+        await admin.from('profiles').update({ referred_by: referrer.id }).eq('id', user.id)
+      }
+    }
+  }
+
   return NextResponse.json({ success: true })
 }

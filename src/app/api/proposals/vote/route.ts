@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     .eq('id', proposalId)
     .single()
 
-  if (p && p.status === 'pending' && (p.vote_count ?? 0) + 1 >= AUTO_APPROVE_THRESHOLD) {
+  if (p && p.status === 'pending' && (p.vote_count ?? 0) >= AUTO_APPROVE_THRESHOLD) {
     // Auto-create the market
     const closesAt = p.closes_suggestion
       ? new Date(p.closes_suggestion)

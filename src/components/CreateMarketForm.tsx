@@ -3,6 +3,29 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { VerificationType } from '@/lib/auto-verify'
 
+const MANUAL_CATS = [
+  { id: 'football',       icon: '⚽', label: 'Football'       },
+  { id: 'politics',       icon: '🏛️', label: 'Politics'       },
+  { id: 'economy',        icon: '💰', label: 'Economy'        },
+  { id: 'entertainment',  icon: '🎵', label: 'Entertainment'  },
+  { id: 'tech',           icon: '📱', label: 'Technology'     },
+  { id: 'infrastructure', icon: '🏗️', label: 'Infrastructure' },
+  { id: 'agriculture',    icon: '🌿', label: 'Agriculture'    },
+  { id: 'default',        icon: '✨', label: 'Other'          },
+]
+
+function autoDetectCat(title: string): string {
+  const t = title.toLowerCase()
+  if (/football|soccer|fufa|kcca|vipers|express.?fc|cranes|afcon|world.?cup/.test(t)) return 'football'
+  if (/president|election|parliament|political|bobi.?wine|museveni|besigye|vote|nup|nrm|minister/.test(t)) return 'politics'
+  if (/oil|exchange.?rate|ugx|usd|bitcoin|btc|crypto|gdp|shilling|economy|coffee|robusta|bank|profit/.test(t)) return 'economy'
+  if (/music|artist|album|song|festival|nyege|afrimma|chameleone|fik.?fameica|pallaso/.test(t)) return 'entertainment'
+  if (/5g|mobile.?money|airtel|mtn|telecom|subscribers/.test(t)) return 'tech'
+  if (/expressway|railway|sgr|road|bridge|kampala.*jinja|construction/.test(t)) return 'infrastructure'
+  if (/rainfall|rain|agriculture|crop|climate|harvest|maize/.test(t)) return 'agriculture'
+  return 'default'
+}
+
 interface Props {
   onCreated: () => void
   prefill?: { title: string; optA: string; optB: string; conditionId?: string }
@@ -45,6 +68,10 @@ export default function CreateMarketForm({ onCreated, prefill }: Props) {
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
 
+  // Category
+  const [category,   setCategory]   = useState(autoDetectCat(prefill?.title ?? ''))
+  const [catManual,  setCatManual]  = useState(false)
+
   // Verification
   const [showVer,      setShowVer]      = useState(false)
   const [verType,      setVerType]      = useState<VerificationType>('manual')
@@ -69,6 +96,7 @@ export default function CreateMarketForm({ onCreated, prefill }: Props) {
       setOptA(prefill.optA)
       setOptB(prefill.optB)
       setError('')
+      if (!catManual) setCategory(autoDetectCat(prefill.title))
       if (prefill.conditionId) {
         setVerCondId(prefill.conditionId)
         setVerType('polymarket')
@@ -76,6 +104,11 @@ export default function CreateMarketForm({ onCreated, prefill }: Props) {
       }
     }
   }, [prefill?.title, prefill?.optA, prefill?.optB, prefill?.conditionId])
+
+  // Auto-detect category from title as admin types (only when not manually set)
+  useEffect(() => {
+    if (!catManual) setCategory(autoDetectCat(title))
+  }, [title])
 
   async function searchFootball() {
     if (!fbQuery.trim()) return
@@ -130,6 +163,7 @@ export default function CreateMarketForm({ onCreated, prefill }: Props) {
         ],
         verificationType:   verType,
         verificationConfig: buildVerificationConfig(),
+        category,
       }),
     })
     const data = await res.json()
@@ -148,6 +182,44 @@ export default function CreateMarketForm({ onCreated, prefill }: Props) {
           placeholder="Will Uganda qualify for AFCON 2026?"
           className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors"
         />
+      </div>
+
+      {/* Category */}
+      <div>
+        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+          Category
+          {!catManual && title.trim() && (
+            <span className="ml-2 normal-case font-normal text-slate-600">auto-detected · click to override</span>
+          )}
+        </label>
+        <div className="flex flex-wrap gap-1.5">
+          {MANUAL_CATS.map(c => {
+            const active = category === c.id
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => { setCategory(c.id); setCatManual(true) }}
+                className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-all ${
+                  active
+                    ? 'border-violet-700 bg-violet-900/30 text-violet-300'
+                    : 'border-[#2a2a3e] text-slate-500 hover:border-[#3a3a5e] hover:text-slate-300'
+                }`}
+              >
+                {c.icon} {c.label}
+              </button>
+            )
+          })}
+          {catManual && (
+            <button
+              type="button"
+              onClick={() => { setCatManual(false); setCategory(autoDetectCat(title)) }}
+              className="rounded-full border border-dashed border-[#2a2a3e] px-3 py-1.5 text-xs text-slate-600 hover:text-slate-400 transition-colors"
+            >
+              ↺ auto
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Description */}

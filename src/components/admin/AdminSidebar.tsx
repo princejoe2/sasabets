@@ -57,6 +57,7 @@ export default function AdminSidebar({ adminPhone, floatBalance }: { adminPhone:
   const supabase = createClient()
 
   const [badges, setBadges] = useState({ withdrawals: 0, kyc: 0, complaints: 0 })
+  const [float, setFloat] = useState(floatBalance)
 
   useEffect(() => {
     async function fetchCounts() {
@@ -74,7 +75,18 @@ export default function AdminSidebar({ adminPhone, floatBalance }: { adminPhone:
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchCounts)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, fetchCounts)
       .subscribe()
-    return () => { supabase.removeChannel(ch) }
+
+    async function refreshFloat() {
+      const res = await fetch('/api/admin/marz-stats')
+      if (!res.ok) return
+      const data = await res.json()
+      const available = data?.balance?.available
+      if (typeof available === 'number') setFloat(available)
+    }
+    refreshFloat()
+    const floatInterval = setInterval(refreshFloat, 30_000)
+
+    return () => { supabase.removeChannel(ch); clearInterval(floatInterval) }
   }, [])
 
   async function logout() {
@@ -142,7 +154,7 @@ export default function AdminSidebar({ adminPhone, floatBalance }: { adminPhone:
         <div className="rounded-xl border border-emerald-900/40 bg-emerald-950/20 px-3 py-2.5">
           <p className="text-[10px] text-emerald-700 uppercase tracking-wider font-bold">Float Account</p>
           <p className="text-base font-black text-emerald-400 mt-0.5 tabular-nums">
-            UGX {floatBalance.toLocaleString()}
+            UGX {float.toLocaleString()}
           </p>
         </div>
         <div className="rounded-xl bg-[#1a1a28] px-3 py-2.5">

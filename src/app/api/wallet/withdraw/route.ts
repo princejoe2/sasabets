@@ -103,6 +103,26 @@ async function handleWithdraw(req: NextRequest) {
     return NextResponse.json({ error: 'Too many withdrawal requests. Please try again in an hour.' }, { status: 429 })
   }
 
+  // ---- Bonus lock check ---------------------------------------------------
+  // bonus_balance is the portion of balance that is a non-withdrawable betting credit.
+  // Withdrawable = balance - min(bonus_balance, balance).
+  const { data: walletRow } = await admin
+    .from('wallets')
+    .select('balance, bonus_balance')
+    .eq('user_id', userId)
+    .single()
+
+  const currentBalance  = Number(walletRow?.balance ?? 0)
+  const bonusLocked     = Math.min(Number(walletRow?.bonus_balance ?? 0), currentBalance)
+  const withdrawable    = currentBalance - bonusLocked
+
+  if (amount > withdrawable) {
+    return NextResponse.json(
+      { error: `Referral bonuses are not withdrawable. You can withdraw up to UGX ${withdrawable.toLocaleString()}.` },
+      { status: 400 },
+    )
+  }
+
   const reference = crypto.randomUUID()
 
   // ---- Atomic debit -------------------------------------------------------

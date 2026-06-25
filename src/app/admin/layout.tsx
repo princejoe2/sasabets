@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { headers, cookies } from 'next/headers'
 import { verifyTotpCookie, COOKIE_NAME } from '@/lib/totp-session'
 import AdminSidebar from '@/components/admin/AdminSidebar'
+import { getMarzBalance } from '@/lib/marz'
 
 export const metadata = { title: 'Sabula 256 Control Panel' }
 
@@ -16,9 +17,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth')
 
-  const [{ data: profile }, { data: floatWallet }] = await Promise.all([
+  const [{ data: profile }, marzBalance] = await Promise.all([
     admin.from('profiles').select('is_admin, phone, totp_secret, totp_enabled').eq('id', user.id).single(),
-    admin.from('wallets').select('balance').eq('user_id', user.id).maybeSingle(),
+    getMarzBalance().catch(() => ({ available: 0, currency: 'UGX' })),
   ])
 
   if (!profile?.is_admin) redirect('/')
@@ -41,7 +42,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-screen bg-[#08080e]">
-      <AdminSidebar adminPhone={profile.phone} floatBalance={Number(floatWallet?.balance ?? 0)} />
+      <AdminSidebar adminPhone={profile.phone} floatBalance={marzBalance.available} />
       <div className="flex-1 min-w-0 ml-60">
         <main className="min-h-screen p-8">{children}</main>
       </div>

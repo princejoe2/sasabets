@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
   if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { title, description, closesAt, options, verificationType, verificationConfig, rakePct } = await req.json()
+  const { title, description, closesAt, options, verificationType, verificationConfig, rakePct, category } = await req.json()
   if (!title || !options || options.length < 2) {
     return NextResponse.json({ error: 'Invalid market data' }, { status: 400 })
   }
@@ -35,6 +35,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'A market with this title already exists.' }, { status: 409 })
   }
 
+  const VALID_CATS = ['football','politics','economy','entertainment','tech','infrastructure','agriculture','default']
+  const safeCategory = category && VALID_CATS.includes(category) ? category : null
+
   const { data, error } = await admin.from('markets').insert({
     title,
     description,
@@ -46,6 +49,7 @@ export async function POST(req: NextRequest) {
     rake_pct:            rake,
     verification_type:   verificationType   ?? 'manual',
     verification_config: verificationConfig ?? {},
+    metadata:            safeCategory ? { category: safeCategory } : undefined,
   }).select().single()
 
   if (error) {

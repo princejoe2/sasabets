@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { collectMoney, getCollectionStatus } from '@/lib/marz'
 import { requestPayment, checkPaymentStatus } from '@/lib/relworx'
+import { maybeFireReferralBonus } from '@/lib/referral'
 
 function toInternational(phone: string): string {
   let digits = phone.replace(/[\s\-()]/g, '')
@@ -181,12 +182,12 @@ export async function GET(req: NextRequest) {
         if (fresh?.status === 'completed') return NextResponse.json({ status: 'completed', balance: fresh.balance_after })
         return NextResponse.json({ status: 'pending' })
       }
-      const { data: wallet } = await admin.from('wallets').select('balance').eq('user_id', user.id).single()
-      const newBalance = Number(wallet?.balance ?? 0) + Number(claimed.amount)
-      await Promise.all([
-        admin.from('wallets').update({ balance: newBalance, updated_at: new Date().toISOString() }).eq('user_id', user.id),
-        admin.from('transactions').update({ status: 'completed', balance_after: newBalance }).eq('id', txn.id),
-      ])
+      const { data: newBalance } = await admin.rpc('adjust_wallet_balance', {
+        p_user_id: user.id,
+        p_delta:   Number(claimed.amount),
+      })
+      await admin.from('transactions').update({ status: 'completed', balance_after: newBalance ?? null }).eq('id', txn.id)
+      await maybeFireReferralBonus(admin, user.id, txn.id)
       return NextResponse.json({ status: 'completed', balance: newBalance })
     }
 
