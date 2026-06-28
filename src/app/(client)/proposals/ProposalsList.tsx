@@ -30,7 +30,7 @@ function getLocalVotes(): Set<string> {
 
 function saveLocalVotes(ids: Set<string>): void {
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify([...ids]))
+    localStorage.setItem(LS_KEY, JSON.stringify(Array.from(ids)))
   } catch {
     // ignore
   }

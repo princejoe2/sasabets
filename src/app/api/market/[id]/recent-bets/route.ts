@@ -49,7 +49,7 @@ export async function GET(
   }
 
   // Anonymise: show phone last 4 digits if available, else "a predictor"
-  const userIds = [...new Set(recentBets.map(b => b.user_id))]
+  const userIds = Array.from(new Set(recentBets.map(b => b.user_id)))
   const { data: profiles } = await admin
     .from('profiles')
     .select('id, phone')
