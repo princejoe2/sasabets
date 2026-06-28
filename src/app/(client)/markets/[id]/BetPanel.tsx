@@ -306,6 +306,16 @@ export default function BetPanel({
           if (updated.total_pool !== undefined) setLiveTotal(Number(updated.total_pool))
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'market_options', filter: `market_id=eq.${market.id}` },
+        payload => {
+          const updated = payload.new as { id: string; total_pool: number }
+          setLiveOpts(prev => prev.map(opt =>
+            opt.id === updated.id ? { ...opt, total_pool: Number(updated.total_pool) } : opt
+          ))
+        }
+      )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [market.id, isOpen])
@@ -419,6 +429,12 @@ export default function BetPanel({
                 >
                   {cat.icon} {cat.label}
                 </span>
+                {isOpen && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-900/30 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                    LIVE
+                  </span>
+                )}
                 {isOpen && countdown && (
                   <span
                     className="rounded-full px-3 py-1 text-xs font-bold tabular-nums"
@@ -698,6 +714,11 @@ export default function BetPanel({
                 />
               </div>
             )}
+
+            {/* Recent bets feed */}
+            <div className="mt-5">
+              <RecentBets marketId={market.id} optionLabels={liveOpts.map(o => o.label)} />
+            </div>
 
             {/* Discussion */}
             <div className="mt-5">

@@ -46,10 +46,15 @@ export default function OddsChart({
   const svgRef = useRef<SVGSVGElement>(null)
 
   useEffect(() => {
-    fetch(`/api/market/${marketId}/chart`)
-      .then(r => r.json())
-      .then(d => setPoints(d.points ?? []))
-      .catch(() => {})
+    function loadChart() {
+      fetch(`/api/market/${marketId}/chart`)
+        .then(r => r.json())
+        .then(d => setPoints(d.points ?? []))
+        .catch(() => {})
+    }
+    loadChart()
+    const interval = setInterval(loadChart, 30_000)
+    return () => clearInterval(interval)
   }, [marketId])
 
   if (points.length < 2) {

@@ -1,9 +1,10 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import MarketCard from '@/components/MarketCard'
 import OnboardingBanner from '@/components/OnboardingBanner'
 import { useWatchlist } from '@/hooks/useWatchlist'
+import { createClient } from '@/lib/supabase/client'
 
 function seededShuffle<T>(arr: T[], seed: number): T[] {
   const copy = [...arr]
@@ -63,13 +64,67 @@ const SORTS: { id: Sort; label: string }[] = [
   { id: 'newest',  label: 'Newest'       },
 ]
 
-export default function MarketsClient({ markets, openCount, initialCat = 'all' }: { markets: Mkt[]; openCount: number; initialCat?: string }) {
+export default function MarketsClient({ markets, openCount: _openCount, initialCat = 'all' }: { markets: Mkt[]; openCount: number; initialCat?: string }) {
   const router = useRouter()
+  const supabase = createClient()
   const [search, setSearch]         = useState('')
   const [cat, setCat]               = useState<Category>((initialCat as Category) ?? 'all')
   const [sort, setSort]             = useState<Sort>('random')
   const [showClosed, setShowClosed] = useState(false)
   const [showWatchlist, setShowWatchlist] = useState(false)
+
+  const [liveMarkets, setLiveMarkets] = useState(markets)
+
+  // Keep liveMarkets in sync if the server re-sends props (e.g., navigation)
+  useEffect(() => { setLiveMarkets(markets) }, [markets])
+
+  // Realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('markets-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'markets' },
+        (payload) => {
+          setLiveMarkets(prev => prev.map(m =>
+            m.id === payload.new.id
+              ? { ...m, total_pool: payload.new.total_pool, status: payload.new.status, closes_at: payload.new.closes_at }
+              : m
+          ))
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'market_options' },
+        (payload) => {
+          setLiveMarkets(prev => prev.map(m => ({
+            ...m,
+            options: m.options.map((opt: { id: string; label: string; total_pool: number }) =>
+              opt.id === payload.new.id
+                ? { ...opt, total_pool: payload.new.total_pool }
+                : opt
+            )
+          })))
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'markets' },
+        async (payload) => {
+          const { data } = await supabase
+            .from('markets')
+            .select('id, title, description, total_pool, options, closes_at, status, rake_pct, created_at, metadata')
+            .eq('id', payload.new.id)
+            .single()
+          if (data) setLiveMarkets(prev => [data as Mkt, ...prev])
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [])
+
+  const liveOpenCount = liveMarkets.filter(m => m.status === 'open').length
 
   const { watched, loaded: watchlistLoaded } = useWatchlist()
   const watchlistCount = watchlistLoaded ? watched.size : 0
@@ -88,8 +143,8 @@ export default function MarketsClient({ markets, openCount, initialCat = 'all' }
     return n.getFullYear() * 10000 + (n.getMonth() + 1) * 100 + n.getDate()
   }, [])
 
-  const open   = useMemo(() => markets.filter(m => m.status === 'open'),  [markets])
-  const closed = useMemo(() => markets.filter(m => m.status !== 'open'), [markets])
+  const open   = useMemo(() => liveMarkets.filter(m => m.status === 'open'),  [liveMarkets])
+  const closed = useMemo(() => liveMarkets.filter(m => m.status !== 'open'), [liveMarkets])
 
   const catCounts = useMemo(() => {
     const counts: Partial<Record<Category, number>> = {}
@@ -103,10 +158,10 @@ export default function MarketsClient({ markets, openCount, initialCat = 'all' }
   const filtered = useMemo(() => {
     // If watchlist mode, show only watched markets (skip all other filters)
     if (showWatchlist) {
-      return markets.filter(m => watched.has(m.id))
+      return liveMarkets.filter(m => watched.has(m.id))
     }
 
-    let list = showClosed ? markets : open
+    let list = showClosed ? liveMarkets : open
 
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -139,7 +194,7 @@ export default function MarketsClient({ markets, openCount, initialCat = 'all' }
     }
 
     return list
-  }, [markets, open, search, cat, sort, showClosed, showWatchlist, watched, dailySeed])
+  }, [liveMarkets, open, search, cat, sort, showClosed, showWatchlist, watched, dailySeed])
 
   const activeCat  = CATS.find(c => c.id === cat)!
   const hasFilters = !!(search.trim() || cat !== 'all')
@@ -194,8 +249,9 @@ export default function MarketsClient({ markets, openCount, initialCat = 'all' }
               </div>
 
               {/* Stats + settled toggle */}
-              <span className="shrink-0 text-xs font-semibold text-slate-500 hidden sm:block">
-                <span className="font-black text-emerald-600">{openCount}</span> open
+              <span className="flex items-center gap-1 shrink-0 text-xs font-semibold text-slate-500 hidden sm:flex">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                <span className="font-black text-emerald-600">{liveOpenCount}</span> live
               </span>
               {closed.length > 0 && (
                 <button

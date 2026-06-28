@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 
 export type Proposal = {
   id: string
@@ -88,8 +89,9 @@ export default function ProposalsList({
   votedIds: string[]
   isLoggedIn: boolean
 }) {
-  const [sort,    setSort]    = useState<Sort>('votes')
-  const [votes,   setVotes]   = useState<Record<string, number>>(
+  const [sort,          setSort]          = useState<Sort>('votes')
+  const [proposalsList, setProposalsList] = useState<Proposal[]>(proposals)
+  const [votes,         setVotes]         = useState<Record<string, number>>(
     Object.fromEntries(proposals.map(p => [p.id, p.vote_count ?? 0]))
   )
   const [voted,   setVoted]   = useState<Set<string>>(new Set(votedIds))
@@ -110,6 +112,40 @@ export default function ProposalsList({
     }
     setMounted(true)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Real-time subscription: update vote counts + status live
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel('proposals-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'proposals' },
+        (payload) => {
+          const updated = payload.new as Proposal
+          setProposalsList(prev =>
+            prev.map(p => p.id === updated.id ? { ...p, ...updated } : p)
+          )
+          setVotes(v => ({
+            ...v,
+            [updated.id]: updated.vote_count ?? v[updated.id] ?? 0,
+          }))
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'proposals' },
+        (payload) => {
+          const newProposal = payload.new as Proposal
+          if (newProposal.status !== 'rejected') {
+            setProposalsList(prev => [newProposal, ...prev].slice(0, 50))
+            setVotes(v => ({ ...v, [newProposal.id]: newProposal.vote_count ?? 0 }))
+          }
+        }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   async function toggleVote(id: string) {
     if (loading) return
@@ -143,8 +179,8 @@ export default function ProposalsList({
 
   const sorted =
     sort === 'votes'
-      ? [...proposals].sort((a, b) => (votes[b.id] ?? 0) - (votes[a.id] ?? 0))
-      : [...proposals].sort(
+      ? [...proposalsList].sort((a, b) => (votes[b.id] ?? 0) - (votes[a.id] ?? 0))
+      : [...proposalsList].sort(
           (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         )
 
@@ -156,7 +192,7 @@ export default function ProposalsList({
         <div>
           <h2 className="text-lg font-black text-white">Community Proposals</h2>
           <p className="mt-0.5 text-xs text-slate-600">
-            {proposals.length} proposal{proposals.length !== 1 ? 's' : ''}
+            {proposalsList.length} proposal{proposalsList.length !== 1 ? 's' : ''}
           </p>
         </div>
         <div className="flex gap-2">
@@ -293,7 +329,7 @@ export default function ProposalsList({
       })}
 
       {/* Guest nudge */}
-      {!isLoggedIn && proposals.length > 0 && (
+      {!isLoggedIn && proposalsList.length > 0 && (
         <p className="pt-2 text-center text-xs text-slate-600">
           <Link href="/auth" className="text-violet-500 transition-colors hover:text-violet-400">
             Sign in

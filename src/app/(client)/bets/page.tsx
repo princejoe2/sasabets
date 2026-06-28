@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -57,11 +57,11 @@ const CAT: Record<Category, {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
-  active:    { label: 'Active',    cls: 'bg-sky-900/40 text-sky-400 border border-sky-800/40' },
-  won:       { label: 'Won ✓',    cls: 'bg-emerald-900/40 text-emerald-400 border border-emerald-800/40' },
+  active:    { label: 'In play',   cls: 'bg-amber-900/30 text-amber-400 border border-amber-800/30 animate-pulse' },
+  won:       { label: 'Won 🏆',    cls: 'bg-emerald-900/40 text-emerald-400 border border-emerald-800/40' },
   lost:      { label: 'Lost',      cls: 'bg-red-900/30 text-red-400 border border-red-800/30' },
-  cancelled: { label: 'Cancelled', cls: 'bg-slate-800 text-slate-500 border border-slate-700/50' },
-  exited:    { label: 'Exited',    cls: 'bg-amber-900/30 text-amber-400 border border-amber-800/30' },
+  cancelled: { label: 'Refunded',  cls: 'bg-slate-800 text-slate-500 border border-slate-700/50' },
+  exited:    { label: 'Exited',    cls: 'bg-orange-900/30 text-orange-400 border border-orange-800/30' },
 }
 
 const TAB_FILTERS: Record<string, (b: Bet) => boolean> = {
@@ -75,6 +75,7 @@ export default function BetsPage() {
   const supabase = createClient()
   const router = useRouter()
   const [bets, setBets]           = useState<Bet[]>([])
+  const [userId, setUserId]       = useState<string | null>(null)
   const [loading, setLoading]     = useState(true)
   const [fetchError, setFetchError] = useState('')
   const [tab, setTab]             = useState<'all' | 'active' | 'won' | 'lost'>('all')
@@ -82,26 +83,55 @@ export default function BetsPage() {
   const [exitLoading, setExitLoading] = useState(false)
   const [exitMsg, setExitMsg]     = useState<{ betId: string; text: string; ok: boolean } | null>(null)
 
+  const loadBets = useCallback(async (uid: string) => {
+    const { data, error } = await supabase
+      .from('bets')
+      .select('id, market_id, option_id, amount, potential_payout, settled_payout, status, placed_at, markets(id, title, description, status, options, winning_option_id, closes_at)')
+      .eq('user_id', uid)
+      .order('placed_at', { ascending: false })
+    if (error) setFetchError(error.message)
+    else setBets((data as unknown as Bet[]) ?? [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
-    async function load() {
+    async function init() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.replace('/auth'); return }
-
-      const { data, error } = await supabase
-        .from('bets')
-        .select('id, market_id, option_id, amount, potential_payout, settled_payout, status, placed_at, markets(id, title, description, status, options, winning_option_id, closes_at)')
-        .eq('user_id', user.id)
-        .order('placed_at', { ascending: false })
-
-      if (error) {
-        setFetchError(error.message)
-      } else {
-        setBets((data as unknown as Bet[]) ?? [])
-      }
+      setUserId(user.id)
+      await loadBets(user.id)
       setLoading(false)
     }
-    load()
-  }, [])
+    init()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Real-time subscription: update bet status live when markets settle
+  useEffect(() => {
+    if (!userId) return
+    const channel = supabase
+      .channel(`bets-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'bets', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          // Only update the changed bet's own fields; preserve the joined `markets` data
+          setBets(prev => prev.map(b =>
+            b.id === (payload.new as { id: string }).id
+              ? { ...b, ...(payload.new as Partial<Bet>) }
+              : b
+          ))
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'bets', filter: `user_id=eq.${userId}` },
+        () => {
+          // Re-fetch so the new bet includes its joined market data
+          loadBets(userId)
+        }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleExit(bet: Bet) {
     setExitLoading(true)

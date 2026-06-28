@@ -1,6 +1,7 @@
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { LeaderboardRefresher } from '@/components/LeaderboardRefresher'
 
 export const metadata: Metadata = {
   title: 'Leaderboard – Top Predictors | Sabula 256',
@@ -268,6 +269,8 @@ export default async function LeaderboardPage({
 
   return (
     <div className={`min-h-screen bg-[#0a0a0f] ${myRow ? 'pb-20 lg:pb-0' : ''}`}>
+      {/* Auto-refresh leaderboard data every 30 s without a full reload */}
+      <LeaderboardRefresher />
 
       {/* ── Hero ── */}
       <div className="border-b border-[#1e1e2e] bg-gradient-to-b from-amber-950/30 to-transparent px-4 pb-10 pt-10">

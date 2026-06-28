@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 type RecentBet = {
   id: string
@@ -48,6 +49,25 @@ export default function RecentBets({ marketId, optionLabels }: Props) {
         setLoading(false)
       })
       .catch(() => setLoading(false))
+  }, [marketId])
+
+  // Realtime: re-fetch when a new bet is inserted on this market
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`recent-bets:${marketId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'bets', filter: `market_id=eq.${marketId}` },
+        () => {
+          fetch(`/api/market/${marketId}/recent-bets`)
+            .then(r => r.json())
+            .then(d => setBets(d.bets ?? []))
+            .catch(() => {})
+        }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
   }, [marketId])
 
   return (
