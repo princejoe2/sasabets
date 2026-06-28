@@ -3,12 +3,13 @@ import MarketsClient from '@/components/MarketsClient'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Prediction Markets – Uganda Politics, Football & More',
-  description: 'Browse live prediction markets on Uganda elections, FUFA football, World Cup 2026, crypto prices and more. Bet with MTN or Airtel Mobile Money.',
+  title: 'Prediction Markets – Uganda Politics, Football & More | Sabula 256',
+  description: 'Predict Uganda elections, FUFA football, World Cup 2026 and crypto prices on Sabula 256 — Uganda\'s #1 prediction market. Win real money via MTN or Airtel Mobile Money.',
   keywords: ['Uganda prediction market', 'Uganda betting', 'MTN mobile money betting', 'Uganda elections prediction', 'FUFA betting Uganda', 'World Cup 2026 Uganda'],
+  alternates: { canonical: 'https://sabula256.com/markets' },
   openGraph: {
     title: 'Prediction Markets | Sabula 256',
-    description: 'Live markets on Uganda politics, football, crypto & more. Win on Mobile Money.',
+    description: 'Predict Uganda elections, FUFA football, World Cup 2026 and crypto prices. Win real money via MTN or Airtel Mobile Money.',
     url: 'https://sabula256.com/markets',
   },
 }
@@ -41,12 +42,12 @@ export default async function MarketsPage({
   const initialCat = (searchParams?.cat ?? 'all') as string
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
-      <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-10">
+    <div className="min-h-screen bg-slate-50">
+      <div className="border-b border-slate-200 bg-white px-4 py-8">
         <div className="mx-auto max-w-6xl">
           <h1 className="text-4xl font-black tracking-tight">
-            <span className="text-white">Prediction </span>
-            <span className="text-violet-400">Markets</span>
+            <span className="text-slate-900">Prediction </span>
+            <span className="text-violet-600">Markets</span>
           </h1>
           <p className="mt-2 text-slate-500">
             {openCount} open now · Pick your outcome · Collect your winnings

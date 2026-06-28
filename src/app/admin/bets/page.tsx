@@ -10,8 +10,9 @@ export default async function AdminBetsPage() {
     .select('*, profiles(phone, full_name), markets(id, title, options, status, winning_option_id)')
     .order('placed_at', { ascending: false })
 
-  const active = bets?.filter(b => b.status === 'active') ?? []
-  const settled = bets?.filter(b => b.status !== 'active') ?? []
+  const active  = bets?.filter(b => b.status === 'active') ?? []
+  const exited  = bets?.filter(b => b.status === 'exited') ?? []
+  const settled = bets?.filter(b => b.status !== 'active' && b.status !== 'exited') ?? []
 
   function getOptionLabel(market: { options: Array<{id:string;label:string}> } | null, optionId: string) {
     if (!market?.options) return optionId
@@ -31,6 +32,7 @@ export default async function AdminBetsPage() {
         <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase text-center ${
           b.status === 'active' ? 'bg-sky-900/40 text-sky-400' :
           b.status === 'won'    ? 'bg-emerald-900/40 text-emerald-400' :
+          b.status === 'exited' ? 'bg-amber-900/40 text-amber-400' :
           'bg-red-900/30 text-red-400'
         }`}>{b.status}</span>
       </div>
@@ -41,15 +43,16 @@ export default async function AdminBetsPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-black text-white">Active Bets</h1>
-        <p className="mt-1 text-slate-500">{active.length} open predictions · {(bets?.length ?? 0)} total</p>
+        <p className="mt-1 text-slate-500">{active.length} open · {(bets?.length ?? 0)} total</p>
       </div>
 
       {/* Summary */}
-      <div className="mb-8 grid grid-cols-3 gap-4">
+      <div className="mb-8 grid grid-cols-4 gap-4">
         {[
-          { label: 'Active', value: active.length, color: '#60a5fa' },
-          { label: 'Won', value: settled.filter(b => b.status === 'won').length, color: '#34d399' },
-          { label: 'Lost', value: settled.filter(b => b.status === 'lost').length, color: '#f87171' },
+          { label: 'Active',  value: active.length,                                  color: '#60a5fa' },
+          { label: 'Won',     value: settled.filter(b => b.status === 'won').length,  color: '#34d399' },
+          { label: 'Lost',    value: settled.filter(b => b.status === 'lost').length, color: '#f87171' },
+          { label: 'Exited',  value: exited.length,                                   color: '#f59e0b' },
         ].map(s => (
           <div key={s.label} className="rounded-2xl border border-[#1a1a28] bg-[#0d0d18] p-5 text-center" style={{ borderColor: `${s.color}20` }}>
             <p className="text-3xl font-black" style={{ color: s.color }}>{s.value}</p>
@@ -67,6 +70,19 @@ export default async function AdminBetsPage() {
               <span>User</span><span>Market</span><span>Pick</span><span>Stake</span><span>Status</span>
             </div>
             {active.map(b => <Row key={b.id} b={b} />)}
+          </div>
+        </div>
+      )}
+
+      {/* Exited bets */}
+      {exited.length > 0 && (
+        <div className="mb-8">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-amber-500">Exited Early</h2>
+          <div className="rounded-2xl border border-[#1a1a28] bg-[#0d0d18] overflow-hidden">
+            <div className="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-4 px-5 py-2.5 border-b border-[#1a1a28] text-[10px] font-bold uppercase tracking-wider text-slate-600">
+              <span>User</span><span>Market</span><span>Pick</span><span>Stake</span><span>Status</span>
+            </div>
+            {exited.map(b => <Row key={b.id} b={b} />)}
           </div>
         </div>
       )}

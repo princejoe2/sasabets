@@ -9,6 +9,7 @@ interface Summary {
   totalBetVol: number
   totalPaidOut: number
   totalRake: number
+  totalExitFees: number
   totalUserFunds: number
   marzStats: MarzStats | null
   marzDeposited?: number
@@ -21,6 +22,7 @@ const STATS = [
   { key: 'totalBetVol'    as const, label: 'Total Bet Volume',   color: '#60a5fa' },
   { key: 'totalPaidOut'   as const, label: 'Total Paid Out',     color: '#a78bfa' },
   { key: 'totalRake'      as const, label: 'Rake Collected',     color: '#fbbf24' },
+  { key: 'totalExitFees'  as const, label: 'Exit Fees',          color: '#f97316' },
   { key: 'totalUserFunds' as const, label: 'User Funds on Hand', color: '#f472b6' },
 ]
 

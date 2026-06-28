@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import WhatsAppPopup from '@/components/WhatsAppPopup'
+import PhoneGate from '@/components/PhoneGate'
 
 export default async function ClientLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
@@ -22,6 +24,8 @@ export default async function ClientLayout({ children }: { children: React.React
       <Navbar />
       <main>{children}</main>
       <Footer />
+      <WhatsAppPopup />
+      <PhoneGate />
     </>
   )
 }

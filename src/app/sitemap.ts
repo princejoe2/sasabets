@@ -27,6 +27,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/updown`,        lastModified: new Date(), changeFrequency: 'hourly',  priority: 0.8 },
     { url: `${BASE}/leaderboard`,   lastModified: new Date(), changeFrequency: 'daily',   priority: 0.7 },
     { url: `${BASE}/proposals`,     lastModified: new Date(), changeFrequency: 'daily',   priority: 0.6 },
+    { url: `${BASE}/about`,         lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE}/help`,          lastModified: new Date(), changeFrequency: 'monthly', priority: 0.4 },
     { url: `${BASE}/responsible-gambling`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.3 },
     { url: `${BASE}/terms`,         lastModified: new Date(), changeFrequency: 'monthly', priority: 0.2 },
     { url: `${BASE}/privacy`,       lastModified: new Date(), changeFrequency: 'monthly', priority: 0.2 },

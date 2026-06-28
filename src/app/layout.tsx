@@ -1,6 +1,8 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import './globals.css'
 import CursorEffects from '@/components/CursorEffects'
+import ThemeProvider from '@/components/ThemeProvider'
+import PushNotificationPrompt from '@/components/PushNotificationPrompt'
 
 const BASE = 'https://sabula256.com'
 
@@ -46,14 +48,31 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true },
   },
   manifest: '/site.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Sabula 256',
+  },
+  themeColor: '#7c3aed',
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-[#0a0a0f] text-slate-200">
-        <CursorEffects />
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+        <ThemeProvider>
+          <CursorEffects />
+          {children}
+          <PushNotificationPrompt />
+        </ThemeProvider>
+        <script dangerouslySetInnerHTML={{ __html: `
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+          }
+        `}} />
       </body>
     </html>
   )

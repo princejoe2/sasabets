@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import ReferralCard from '@/components/ReferralCard'
+import NotificationPreferences from '@/components/NotificationPreferences'
 
 interface Stats {
   total: number; active: number; won: number; lost: number
@@ -20,11 +22,9 @@ export default function ProfilePage() {
   const [stats,       setStats]       = useState<Stats | null>(null)
   const [memberSince, setMemberSince] = useState('')
   const [has2fa,      setHas2fa]      = useState(false)
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported' | null>(null)
+  const [pushLoading,    setPushLoading]    = useState(false)
   const [userId,        setUserId]        = useState('')
-  const [referralCode,  setReferralCode]  = useState<string | null>(null)
-  const [referredCount, setReferredCount] = useState(0)
-  const [bonusEarned,   setBonusEarned]   = useState(0)
-  const [refCopied,     setRefCopied]     = useState(false)
 
   // 2FA management state
   const [show2faSetup,  setShow2faSetup]  = useState(false)
@@ -42,23 +42,23 @@ export default function ProfilePage() {
 
       setUserId(user.id)
       setEmail(user.email ?? '')
+
+      // Push notification permission (browser API — no DB call needed for reading state)
+      if ('Notification' in window) {
+        setPushPermission(Notification.permission)
+      } else {
+        setPushPermission('unsupported')
+      }
       setMemberSince(new Date(user.created_at).toLocaleDateString('en-UG', {
         day: 'numeric', month: 'long', year: 'numeric',
       }))
 
-      const [{ data: profile }, { data: wallet }, { data: bets }, { data: txns }, refRes] = await Promise.all([
+      const [{ data: profile }, { data: wallet }, { data: bets }, { data: txns }] = await Promise.all([
         supabase.from('profiles').select('phone, full_name, totp_enabled').eq('id', user.id).single(),
         supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
         supabase.from('bets').select('amount, potential_payout, status').eq('user_id', user.id),
         supabase.from('transactions').select('amount').eq('user_id', user.id).eq('type', 'payout').eq('status', 'completed'),
-        fetch('/api/referral/stats').then(r => r.ok ? r.json() : null),
       ])
-
-      if (refRes) {
-        setReferralCode(refRes.referralCode ?? null)
-        setReferredCount(refRes.referredCount ?? 0)
-        setBonusEarned(refRes.bonusEarned ?? 0)
-      }
 
       if (profile?.full_name) setName(profile.full_name)
       else if (user.user_metadata?.full_name) setName(user.user_metadata.full_name as string)
@@ -127,6 +127,28 @@ export default function ProfilePage() {
       setTwoFaMsg({ text: '2FA disabled.', ok: true })
     }
     setTwoFaLoading(false)
+  }
+
+  // ── Push notifications ──────────────────────────────────────────────────────
+
+  async function requestPushPermission() {
+    if (!('Notification' in window)) return
+    setPushLoading(true)
+    try {
+      const result = await Notification.requestPermission()
+      setPushPermission(result)
+      if (result === 'granted') {
+        // Best-effort: store opt-in flag — silently ignore if push_enabled column doesn't exist
+        try {
+          await supabase.from('profiles').update({ push_enabled: true }).eq('id', userId)
+        } catch {
+          // Column may not exist yet — no-op
+        }
+      }
+    } catch (err) {
+      console.error('Push permission error:', err)
+    }
+    setPushLoading(false)
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -395,59 +417,56 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* ── Referral Program ── */}
-        <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-6 space-y-5">
-          <div>
-            <h2 className="font-bold text-slate-200">Refer a Friend</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Earn <span className="text-violet-400 font-bold">UGX 5,000</span> for every friend who makes their first deposit.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl bg-[#0a0a0f] p-4 text-center">
-              <p className="text-2xl font-black text-violet-400">{referredCount}</p>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 mt-0.5">Friends Referred</p>
-            </div>
-            <div className="rounded-xl bg-[#0a0a0f] p-4 text-center">
-              <p className="text-xl font-black text-emerald-400">
-                {bonusEarned > 0 ? `UGX ${bonusEarned.toLocaleString()}` : 'UGX 0'}
-              </p>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 mt-0.5">Bonus Earned</p>
-            </div>
-          </div>
-
-          {referralCode ? (
-            <div>
-              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Your Referral Link</p>
-              <div className="flex gap-2">
-                <div className="flex-1 min-w-0 rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 overflow-hidden">
-                  <span className="text-sm text-slate-300 block truncate">
-                    {typeof window !== 'undefined'
-                      ? `${window.location.origin}/?ref=${referralCode}`
-                      : `sabula256.com/?ref=${referralCode}`}
-                  </span>
+        {/* ── Push Notifications ── */}
+        {pushPermission !== null && pushPermission !== 'unsupported' && (
+          <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-6">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🔔</span>
+                <div>
+                  <h2 className="font-bold text-slate-200">Push Notifications</h2>
+                  <p className="mt-0.5 text-sm text-slate-500">
+                    Get alerts when markets close or you win
+                  </p>
                 </div>
-                <button
-                  onClick={() => {
-                    const link = `${window.location.origin}/?ref=${referralCode}`
-                    navigator.clipboard.writeText(link).catch(() => {})
-                    setRefCopied(true)
-                    setTimeout(() => setRefCopied(false), 2000)
-                  }}
-                  className="shrink-0 rounded-xl border border-violet-800/40 bg-violet-900/20 px-4 py-3 text-sm font-bold text-violet-400 hover:bg-violet-900/40 transition-colors"
-                >
-                  {refCopied ? '✓ Copied' : 'Copy'}
-                </button>
               </div>
-              <p className="mt-2 text-[11px] text-slate-600">
-                Share this link. When your friend makes their first deposit, UGX 5,000 lands in your wallet automatically.
-              </p>
+
+              {pushPermission === 'granted' && (
+                <span className="shrink-0 rounded-full border border-emerald-800/40 bg-emerald-900/30 px-3 py-1 text-xs font-bold text-emerald-400">
+                  ✓ Enabled
+                </span>
+              )}
+
+              {pushPermission === 'denied' && (
+                <span className="shrink-0 rounded-full border border-slate-700/40 bg-slate-800/50 px-3 py-1 text-xs font-bold text-slate-500">
+                  Blocked
+                </span>
+              )}
+
+              {pushPermission === 'default' && (
+                <button
+                  onClick={requestPushPermission}
+                  disabled={pushLoading}
+                  className="shrink-0 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-500 disabled:opacity-50 transition-colors"
+                >
+                  {pushLoading ? 'Requesting…' : 'Enable'}
+                </button>
+              )}
             </div>
-          ) : (
-            <div className="rounded-xl bg-[#0a0a0f] px-4 py-3 text-sm text-slate-600">Loading referral link…</div>
-          )}
-        </div>
+
+            {pushPermission === 'denied' && (
+              <p className="mt-3 text-xs text-slate-600">
+                Notifications are blocked in your browser settings. To enable them, open your browser site settings and allow notifications for this site.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── Referral Program ── */}
+        <ReferralCard />
+
+        {/* ── Email Notification Preferences ── */}
+        <NotificationPreferences />
 
         {/* ── Navigation shortcuts ── */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

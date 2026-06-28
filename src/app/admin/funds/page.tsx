@@ -21,6 +21,7 @@ export default async function AdminFundsPage() {
   const totalBetVol    = completed.filter(t => t.type === 'bet').reduce((s,t) => s+Math.abs(Number(t.amount)), 0)
   const totalPaidOut   = completed.filter(t => t.type === 'payout').reduce((s,t) => s+Number(t.amount), 0)
   const totalRake      = completed.filter(t => t.type === 'rake').reduce((s,t) => s+Number(t.amount), 0)
+  const totalExitFees  = completed.filter(t => t.type === 'exit_fee').reduce((s,t) => s+Number(t.amount), 0)
   const totalUserFunds = (wallets ?? []).reduce((s,w) => s+Number(w.balance), 0)
 
   // Split by gateway so reconciliation only compares MarzPay ↔ MarzPay
@@ -40,7 +41,7 @@ export default async function AdminFundsPage() {
       </div>
 
       <AdminFundsSummary
-        initial={{ totalDeposited, totalWithdrawn, totalBetVol, totalPaidOut, totalRake, totalUserFunds, marzStats, marzDeposited, marzWithdrawn }}
+        initial={{ totalDeposited, totalWithdrawn, totalBetVol, totalPaidOut, totalRake, totalExitFees, totalUserFunds, marzStats, marzDeposited, marzWithdrawn }}
       />
 
       <AdminFundsClient wallets={walletList} />

@@ -4,12 +4,14 @@ import { useRouter } from 'next/navigation'
 import CreateMarketForm from '@/components/CreateMarketForm'
 import SettleMarketForm from '@/components/SettleMarketForm'
 import PolymarketImport from '@/components/admin/PolymarketImport'
+import PoolDepthSparkline from '@/components/admin/PoolDepthSparkline'
 
 interface Market {
   id: string; title: string; status: string; total_pool: number;
   options: Array<{ id: string; label: string; total_pool: number }>;
   closes_at: string | null; created_at: string; rake_pct: number;
   verification_type?: string; verification_config?: Record<string, unknown>;
+  surge_flag?: boolean;
 }
 
 interface Prefill { title: string; optA: string; optB: string; conditionId?: string }
@@ -27,12 +29,20 @@ interface AutoSettleResult {
 
 export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
   const router = useRouter()
+  const [clearingSurge, setClearingSurge] = useState<string | null>(null)
+
+  async function clearSurge(marketId: string) {
+    setClearingSurge(marketId)
+    await fetch(`/api/admin/market/${marketId}/clear-surge`, { method: 'POST' })
+    setClearingSurge(null)
+    router.refresh()
+  }
 
   const [showCreate,     setShowCreate]     = useState(false)
   const [showPolyImport, setShowPolyImport] = useState(false)
   const [prefill,        setPrefill]        = useState<Prefill | undefined>()
   const [settleMarket,   setSettleMarket]   = useState<Market | null>(null)
-  const [filter,         setFilter]         = useState<'all' | 'open' | 'closed' | 'settled'>('all')
+  const [filter,         setFilter]         = useState<'all' | 'open' | 'closed' | 'settled' | 'suspended'>('all')
 
   // Auto-settle state
   const [autoRunning,  setAutoRunning]  = useState(false)
@@ -72,6 +82,10 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
               {f}
             </button>
           ))}
+          <button onClick={() => setFilter('suspended')}
+            className={`rounded-lg px-3 py-1.5 text-xs font-bold capitalize transition-colors ${filter === 'suspended' ? 'bg-red-700 text-white' : 'text-red-400/70 hover:text-red-300'}`}>
+            🚨 suspended
+          </button>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
@@ -170,21 +184,39 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
           const verBadge = m.verification_type && m.verification_type !== 'manual'
             ? VER_BADGE[m.verification_type] : null
           return (
-            <div key={m.id} className={`grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-4 px-5 py-4 hover:bg-[#111120] transition-colors ${i < filtered.length-1 ? 'border-b border-[#1a1a28]' : ''}`}>
+            <div key={m.id} className={`grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-4 px-5 py-4 transition-colors ${
+              m.status === 'suspended'
+                ? `bg-red-950/20 border-l-2 border-l-red-600 hover:bg-red-950/30 ${i < filtered.length-1 ? 'border-b border-[#1a1a28]' : ''}`
+                : `hover:bg-[#111120] ${i < filtered.length-1 ? 'border-b border-[#1a1a28]' : ''}`
+            }`}>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-semibold text-slate-200 line-clamp-1">{m.title}</p>
                   {verBadge && (
                     <span className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-bold ${verBadge.color}`}>
                       {verBadge.icon} auto
                     </span>
                   )}
+                  {m.surge_flag && (
+                    <span className="shrink-0 flex items-center gap-1 rounded-full border border-amber-700/50 bg-amber-900/20 px-1.5 py-0.5 text-[9px] font-bold text-amber-400">
+                      ⚡ SURGE
+                    </span>
+                  )}
+                  {m.status === 'suspended' && (
+                    <span className="shrink-0 flex items-center gap-1 rounded-full border border-red-700/50 bg-red-900/20 px-1.5 py-0.5 text-[9px] font-bold text-red-400">
+                      🚨 SUSPENDED
+                    </span>
+                  )}
                 </div>
-                <span className={`inline-block mt-0.5 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
-                  m.status === 'open' ? 'bg-emerald-900/40 text-emerald-400' :
-                  m.status === 'settled' ? 'bg-slate-800 text-slate-400' :
-                  'bg-amber-900/40 text-amber-400'
-                }`}>{m.status}</span>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
+                    m.status === 'open'      ? 'bg-emerald-900/40 text-emerald-400' :
+                    m.status === 'suspended' ? 'bg-red-900/40 text-red-400' :
+                    m.status === 'settled'   ? 'bg-slate-800 text-slate-400' :
+                    'bg-amber-900/40 text-amber-400'
+                  }`}>{m.status}</span>
+                  <PoolDepthSparkline marketId={m.id} />
+                </div>
               </div>
               <span className="text-xs text-slate-400 font-semibold">
                 <span className="text-violet-400">{m.options[0]?.label ?? '—'}</span>
@@ -195,13 +227,22 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
               <span className="text-xs text-slate-600">
                 {m.closes_at ? new Date(m.closes_at).toLocaleDateString('en-UG', { day:'numeric', month:'short' }) : '—'}
               </span>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-1.5">
                 {m.status === 'open' && (
                   <button
                     onClick={() => { setSettleMarket(m); setShowCreate(false) }}
                     className="rounded-lg border border-amber-800/50 px-3 py-1.5 text-xs font-bold text-amber-400 hover:bg-amber-900/20 transition-colors"
                   >
                     Settle
+                  </button>
+                )}
+                {m.surge_flag && (
+                  <button
+                    onClick={() => clearSurge(m.id)}
+                    disabled={clearingSurge === m.id}
+                    className="rounded-lg border border-emerald-800/50 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-900/20 disabled:opacity-40 transition-colors"
+                  >
+                    {clearingSurge === m.id ? '…' : 'Clear ⚡'}
                   </button>
                 )}
               </div>

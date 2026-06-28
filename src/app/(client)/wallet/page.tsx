@@ -1,7 +1,8 @@
 'use client'
-import { Suspense, useEffect, useState, useCallback } from 'react'
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import KYCBanner from '@/components/KYCBanner'
 
 interface Transaction {
   id: string
@@ -13,52 +14,101 @@ interface Transaction {
   created_at: string
 }
 
+type FilterType = 'all' | 'deposit' | 'withdrawal' | 'payout' | 'bet' | 'referral_bonus'
+
 const TYPE_LABEL: Record<string, string> = {
   deposit:        'Deposit',
   withdrawal:     'Withdrawal',
-  bet:            'Bet placed',
+  cashout:        'Early Exit',
+  bet:            'Bet Placed',
   payout:         'Winnings',
   refund:         'Refund',
-  cashout:        'Early exit',
-  referral_bonus: 'Referral bonus',
-  rake:           'Platform rake',
+  referral_bonus: 'Referral Bonus',
+  rake:           'Platform Fee',
 }
 
-const TYPE_ICON: Record<string, string> = {
-  deposit:        '↓',
-  withdrawal:     '↑',
-  bet:            '●',
-  payout:         '★',
-  refund:         '↺',
-  cashout:        '⤴',
+const TYPE_EMOJI: Record<string, string> = {
+  deposit:        '💰',
+  withdrawal:     '🏦',
+  cashout:        '🏦',
+  bet:            '🎯',
+  payout:         '🏆',
+  refund:         '↩️',
   referral_bonus: '🎁',
   rake:           '—',
 }
 
-function WalletPageContent() {
-  const supabase = createClient()
-  const searchParams = useSearchParams()
-  const isCallback = searchParams.get('status') === 'success'
+const FILTERS: { key: FilterType; label: string }[] = [
+  { key: 'all',            label: 'All' },
+  { key: 'deposit',        label: 'Deposits' },
+  { key: 'withdrawal',     label: 'Withdrawals' },
+  { key: 'payout',         label: 'Winnings' },
+  { key: 'bet',            label: 'Bets' },
+  { key: 'referral_bonus', label: 'Referrals' },
+]
 
-  const [balance,      setBalance]      = useState<number | null>(null)
-  const [bonusBalance, setBonusBalance] = useState<number>(0)
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [tab, setTab] = useState<'deposit' | 'withdraw'>('deposit')
-  const [amount, setAmount] = useState('')
-  const [depositPhone, setDepositPhone] = useState('')
+function filterMatch(txn: Transaction, f: FilterType): boolean {
+  if (f === 'all') return true
+  if (f === 'withdrawal') return txn.type === 'withdrawal' || txn.type === 'cashout'
+  return txn.type === f
+}
+
+function groupByDate(txns: Transaction[]): { label: string; txns: Transaction[] }[] {
+  const now       = new Date()
+  const today     = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const yesterday = today - 86_400_000
+  const weekAgo   = today - 7 * 86_400_000
+
+  const buckets: { label: string; txns: Transaction[] }[] = [
+    { label: 'Today',     txns: [] },
+    { label: 'Yesterday', txns: [] },
+    { label: 'This Week', txns: [] },
+    { label: 'Older',     txns: [] },
+  ]
+
+  for (const t of txns) {
+    const d   = new Date(t.created_at)
+    const day = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+    if      (day >= today)     buckets[0].txns.push(t)
+    else if (day >= yesterday) buckets[1].txns.push(t)
+    else if (day >= weekAgo)   buckets[2].txns.push(t)
+    else                       buckets[3].txns.push(t)
+  }
+
+  return buckets.filter(b => b.txns.length > 0)
+}
+
+function fmt(n: number): string {
+  return Math.abs(n).toLocaleString('en-UG')
+}
+
+function WalletPageContent() {
+  const supabase     = createClient()
+  const searchParams = useSearchParams()
+  const isCallback   = searchParams.get('status') === 'success'
+  const formRef      = useRef<HTMLDivElement>(null)
+
+  const [balance,       setBalance]       = useState<number | null>(null)
+  const [bonusBalance,  setBonusBalance]  = useState<number>(0)
+  const [transactions,  setTransactions]  = useState<Transaction[]>([])
+  const [activeBets,    setActiveBets]    = useState<number>(0)
+  const [tab,           setTab]           = useState<'deposit' | 'withdraw'>('deposit')
+  const [filter,        setFilter]        = useState<FilterType>('all')
+  const [amount,        setAmount]        = useState('')
+  const [depositPhone,  setDepositPhone]  = useState('')
   const [withdrawPhone, setWithdrawPhone] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [phone, setPhone] = useState('')
-  const [processing, setProcessing] = useState(isCallback)
-  const [pendingRef, setPendingRef] = useState<string | null>(null)
+  const [loading,       setLoading]       = useState(false)
+  const [error,         setError]         = useState('')
+  const [success,       setSuccess]       = useState('')
+  const [phone,         setPhone]         = useState('')
+  const [processing,    setProcessing]    = useState(isCallback)
+  const [pendingRef,    setPendingRef]    = useState<string | null>(null)
 
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const [{ data: wallet }, { data: txns }, { data: profile }] = await Promise.all([
+    const [walletRes, txnsRes, profileRes, betsRes] = await Promise.all([
       supabase.from('wallets').select('balance, bonus_balance').eq('user_id', user.id).single(),
       supabase
         .from('transactions')
@@ -67,19 +117,25 @@ function WalletPageContent() {
         .order('created_at', { ascending: false })
         .limit(50),
       supabase.from('profiles').select('phone').eq('id', user.id).single(),
+      supabase
+        .from('bets')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('status', 'active'),
     ])
 
-    if (wallet) {
-      setBalance(wallet.balance)
-      setBonusBalance(Number((wallet as { balance: number; bonus_balance?: number }).bonus_balance ?? 0))
+    if (walletRes.data) {
+      setBalance(walletRes.data.balance)
+      setBonusBalance(Number((walletRes.data as { balance: number; bonus_balance?: number }).bonus_balance ?? 0))
     }
-    if (txns) setTransactions(txns)
-    if (profile?.phone) {
-      setPhone(profile.phone)
-      setDepositPhone('+' + profile.phone)
-      setWithdrawPhone('+' + profile.phone)
+    if (txnsRes.data) setTransactions(txnsRes.data)
+    if (profileRes.data?.phone) {
+      setPhone(profileRes.data.phone)
+      setDepositPhone('+' + profileRes.data.phone)
+      setWithdrawPhone('+' + profileRes.data.phone)
     }
-    return txns
+    if (betsRes.count !== null) setActiveBets(betsRes.count)
+    return txnsRes.data
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -114,7 +170,7 @@ function WalletPageContent() {
     const interval = setInterval(async () => {
       attempts++
       try {
-        const res = await fetch(`/api/marz/deposit?ref=${pendingRef}`)
+        const res  = await fetch(`/api/marz/deposit?ref=${pendingRef}`)
         const data = await res.json()
         if (data.status === 'completed') {
           setBalance(data.balance)
@@ -146,6 +202,9 @@ function WalletPageContent() {
     setAmount('')
     setError('')
     setSuccess('')
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
   }
 
   async function handleDeposit() {
@@ -153,7 +212,7 @@ function WalletPageContent() {
     if (!amtNum || amtNum < 1000) { setError('Minimum deposit is UGX 1,000'); return }
     if (!depositPhone) { setError('Enter a phone number to receive the USSD prompt'); return }
     setLoading(true); setError(''); setSuccess('')
-    const res = await fetch('/api/marz/deposit', {
+    const res  = await fetch('/api/marz/deposit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount: amtNum, phone: depositPhone }),
@@ -175,7 +234,7 @@ function WalletPageContent() {
     if (!withdrawPhone) { setError('Enter a phone number'); return }
     if (balance !== null && amtNum > balance) { setError('Insufficient balance'); return }
     setLoading(true); setError(''); setSuccess('')
-    const res = await fetch('/api/wallet/withdraw', {
+    const res  = await fetch('/api/wallet/withdraw', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       // Note: the server always disburses to the user's verified profile phone and
@@ -198,11 +257,34 @@ function WalletPageContent() {
   const amtNum = parseFloat(amount) || 0
   const locked = balance !== null ? Math.min(bonusBalance, balance) : bonusBalance
 
+  // Computed stats from transaction history
+  const totalDeposited = transactions
+    .filter(t => t.type === 'deposit' && t.status === 'completed')
+    .reduce((s, t) => s + t.amount, 0)
+  const totalWithdrawn = transactions
+    .filter(t => (t.type === 'withdrawal' || t.type === 'cashout') && t.status === 'completed')
+    .reduce((s, t) => s + Math.abs(t.amount), 0)
+  const totalWon = transactions
+    .filter(t => t.type === 'payout' && t.status === 'completed')
+    .reduce((s, t) => s + t.amount, 0)
+
+  // Filtered + date-grouped transactions for the list
+  const filtered = transactions.filter(t => filterMatch(t, filter))
+  const grouped  = groupByDate(filtered)
+
+  // Pending withdrawals for the banner
+  const pendingWithdrawals = transactions.filter(
+    t => t.type === 'withdrawal' && t.status === 'pending'
+  )
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-8 space-y-6">
+      <KYCBanner />
+
+      {/* Processing banner */}
       {processing && (
-        <div className="mb-6 flex items-center gap-3 rounded-xl border border-yellow-700/50 bg-yellow-900/20 px-5 py-4 text-sm text-yellow-300">
-          <span className="animate-spin inline-block">↻</span>
+        <div className="flex items-center gap-3 rounded-xl border border-yellow-700/50 bg-yellow-900/20 px-5 py-4 text-sm text-yellow-300">
+          <span className="animate-spin inline-block text-base">↻</span>
           <span>
             Check your phone — enter your Mobile Money PIN to confirm the payment.
             <span className="ml-1 text-yellow-500">Waiting for confirmation…</span>
@@ -210,24 +292,94 @@ function WalletPageContent() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        {/* Left: balance + actions */}
-        <div className="lg:col-span-2 space-y-5">
-          {/* Balance card */}
-          <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-8 text-center">
-            <p className="mb-1 text-sm text-slate-500">Available Balance</p>
-            <p className="text-5xl font-bold text-violet-400">
-              {balance !== null ? `UGX ${Number(balance).toLocaleString()}` : '—'}
+      {/* ── Balance Hero ─────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-900 via-violet-800 to-indigo-900 p-8 text-white shadow-xl">
+        {/* subtle radial highlight */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.08),transparent_60%)]" />
+
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          {/* Balance + mini-stats */}
+          <div>
+            <p className="text-sm font-medium text-violet-200">Available to bet</p>
+            <p className="mt-1 text-5xl font-bold tracking-tight">
+              {balance !== null ? `UGX ${fmt(balance)}` : '—'}
             </p>
-            {phone && <p className="mt-2 text-xs text-slate-600">+{phone}</p>}
             {locked > 0 && (
-              <p className="mt-3 text-xs text-amber-500">
-                🔒 UGX {locked.toLocaleString()} referral bonus · betting only
+              <p className="mt-2 text-xs text-violet-300">
+                🔒 UGX {fmt(locked)} referral bonus · betting only
               </p>
             )}
+            <div className="mt-5 flex flex-wrap gap-6 text-sm">
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-violet-300">Deposited</p>
+                <p className="font-semibold">UGX {fmt(totalDeposited)}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-violet-300">Withdrawn</p>
+                <p className="font-semibold">UGX {fmt(totalWithdrawn)}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-violet-300">Won</p>
+                <p className="font-semibold text-emerald-300">UGX {fmt(totalWon)}</p>
+              </div>
+            </div>
           </div>
 
-          {/* Tabs */}
+          {/* CTA buttons */}
+          <div className="flex gap-3 sm:flex-col sm:min-w-[140px]">
+            <button
+              onClick={() => switchTab('deposit')}
+              className="flex-1 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-violet-900 shadow hover:bg-violet-50 transition-colors"
+            >
+              💰 Deposit
+            </button>
+            <button
+              onClick={() => switchTab('withdraw')}
+              className="flex-1 rounded-xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold backdrop-blur hover:bg-white/20 transition-colors"
+            >
+              🏦 Withdraw
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Stats Cards ──────────────────────────────────────────────── */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-5 text-center">
+          <p className="text-[11px] uppercase tracking-wider text-slate-500">Total Deposited</p>
+          <p className="mt-1 text-xl font-bold text-emerald-400">UGX {fmt(totalDeposited)}</p>
+        </div>
+        <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-5 text-center">
+          <p className="text-[11px] uppercase tracking-wider text-slate-500">Total Won</p>
+          <p className="mt-1 text-xl font-bold text-violet-400">UGX {fmt(totalWon)}</p>
+        </div>
+        <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-5 text-center">
+          <p className="text-[11px] uppercase tracking-wider text-slate-500">Active Bets</p>
+          <p className="mt-1 text-xl font-bold text-amber-400">{activeBets}</p>
+        </div>
+      </div>
+
+      {/* ── Main content: Form | Transaction history ──────────────────── */}
+      <div className="grid gap-6 lg:grid-cols-5">
+
+        {/* Left: Deposit / Withdraw form */}
+        <div ref={formRef} className="lg:col-span-2 space-y-4">
+
+          {/* Referral banner */}
+          <div className="flex items-center gap-3 rounded-xl border border-violet-900/30 bg-violet-950/20 px-4 py-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-violet-300">Invite friends → earn UGX</p>
+              <p className="text-[11px] text-slate-500">Earn a bonus for every friend who bets</p>
+            </div>
+            <a
+              href="/profile#referral"
+              className="shrink-0 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-violet-500 transition-colors"
+            >
+              Get link
+            </a>
+          </div>
+
+          {/* Deposit / Withdraw tabs */}
           <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] overflow-hidden">
             <div className="flex border-b border-[#1e1e2e]">
               {(['deposit', 'withdraw'] as const).map(t => (
@@ -240,7 +392,7 @@ function WalletPageContent() {
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  {t === 'deposit' ? '↓ Deposit' : '↑ Withdraw'}
+                  {t === 'deposit' ? '💰 Deposit' : '🏦 Withdraw'}
                 </button>
               ))}
             </div>
@@ -277,7 +429,8 @@ function WalletPageContent() {
                       className="w-full rounded-lg border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm outline-none focus:border-violet-600 transition-colors"
                     />
                   </div>
-                  {error && <p className="text-sm text-red-400">{error}</p>}
+                  {error   && <p className="text-sm text-red-400">{error}</p>}
+                  {success && <p className="text-sm text-emerald-400">{success}</p>}
                   <button onClick={handleDeposit} disabled={loading}
                     className="w-full rounded-lg bg-violet-600 py-3 text-sm font-medium hover:bg-violet-700 disabled:opacity-50 transition-colors">
                     {loading ? 'Sending prompt…' : 'Deposit via Mobile Money'}
@@ -333,7 +486,7 @@ function WalletPageContent() {
                       </div>
                     </div>
                   )}
-                  {error && <p className="text-sm text-red-400">{error}</p>}
+                  {error   && <p className="text-sm text-red-400">{error}</p>}
                   {success && <p className="text-sm text-emerald-400">{success}</p>}
                   <button
                     onClick={handleWithdraw}
@@ -348,77 +501,163 @@ function WalletPageContent() {
           </div>
         </div>
 
-        {/* Right: transaction history */}
-        <div className="lg:col-span-3">
+        {/* Right: Transaction history */}
+        <div className="lg:col-span-3 space-y-4">
+
           {/* Pending withdrawals banner */}
-          {transactions.filter(t => t.type === 'withdrawal' && t.status === 'pending').length > 0 && (
-            <div className="mb-4 rounded-xl border border-amber-700/40 bg-amber-900/15 px-4 py-3 text-sm text-amber-300">
+          {pendingWithdrawals.length > 0 && (
+            <div className="rounded-xl border border-amber-700/40 bg-amber-900/15 px-4 py-3 text-sm text-amber-300">
               <p className="font-semibold">
-                {transactions.filter(t => t.type === 'withdrawal' && t.status === 'pending').length} pending withdrawal{transactions.filter(t => t.type === 'withdrawal' && t.status === 'pending').length > 1 ? 's' : ''}
+                {pendingWithdrawals.length} pending withdrawal{pendingWithdrawals.length > 1 ? 's' : ''}
               </p>
-              <p className="mt-0.5 text-xs text-amber-500">Withdrawals are processed within 24 hours to your registered Mobile Money number.</p>
+              <p className="mt-0.5 text-xs text-amber-500">
+                Withdrawals are processed within 24 hours to your registered Mobile Money number.
+              </p>
             </div>
           )}
 
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold">Transactions</h2>
-            <button onClick={() => load()} className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
-              Refresh
+          {/* Filter pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+            {FILTERS.map(({ key, label }) => {
+              const count  = key === 'all'
+                ? transactions.length
+                : transactions.filter(t => filterMatch(t, key)).length
+              const active = filter === key
+              return (
+                <button
+                  key={key}
+                  onClick={() => setFilter(key)}
+                  className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
+                    active
+                      ? 'bg-violet-600 text-white'
+                      : 'border border-[#1e1e2e] bg-[#13131a] text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {label}
+                  {count > 0 && (
+                    <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] ${
+                      active ? 'bg-violet-700 text-violet-200' : 'bg-[#0a0a0f] text-slate-500'
+                    }`}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+            <button
+              onClick={() => load()}
+              className="ml-auto shrink-0 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              ↻ Refresh
             </button>
           </div>
 
-          {transactions.length === 0 ? (
-            <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-12 text-center text-sm text-slate-500">
-              No transactions yet.
+          {/* Transaction list */}
+          {filtered.length === 0 ? (
+            <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-12 text-center">
+              <p className="text-3xl mb-3">💳</p>
+              <p className="text-sm font-medium text-slate-400">
+                {transactions.length === 0
+                  ? 'No transactions yet.'
+                  : 'No transactions match this filter.'}
+              </p>
+              {transactions.length === 0 && (
+                <p className="mt-1 text-xs text-slate-600">
+                  Make your first deposit to start predicting!
+                </p>
+              )}
             </div>
           ) : (
-            <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] overflow-hidden">
-              {transactions.map((txn, i) => {
-                const isCredit = txn.amount > 0
-                const isPending = txn.status === 'pending'
-                const isFailed = txn.status === 'failed'
-                return (
-                  <div key={txn.id}
-                    className={`flex items-center gap-4 px-5 py-4 ${i < transactions.length - 1 ? 'border-b border-[#1e1e2e]' : ''}`}>
-                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                      txn.type === 'deposit' ? 'bg-emerald-900/40 text-emerald-400'
-                      : txn.type === 'withdrawal' ? 'bg-orange-900/40 text-orange-400'
-                      : txn.type === 'payout' ? 'bg-violet-900/40 text-violet-400'
-                      : txn.type === 'bet' ? 'bg-red-900/30 text-red-400'
-                      : 'bg-slate-800 text-slate-400'
-                    }`}>
-                      {TYPE_ICON[txn.type] ?? '·'}
-                    </div>
+            <div className="space-y-5">
+              {grouped.map(({ label, txns }) => (
+                <div key={label}>
+                  {/* Date group label */}
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    {label}
+                  </p>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">{TYPE_LABEL[txn.type] ?? txn.type}</p>
-                        {isPending && (
-                          <span className="rounded-full bg-yellow-900/40 px-2 py-0.5 text-[10px] text-yellow-400">pending</span>
-                        )}
-                        {isFailed && (
-                          <span className="rounded-full bg-red-900/40 px-2 py-0.5 text-[10px] text-red-400">failed</span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-500">
-                        {new Date(txn.created_at).toLocaleString('en-UG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                        {txn.pesapal_tracking_id && (
-                          <span className="ml-2 font-mono text-[10px] text-slate-600">{txn.pesapal_tracking_id.slice(0, 8)}…</span>
-                        )}
-                      </p>
-                    </div>
+                  <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] overflow-hidden">
+                    {txns.map((txn, i) => {
+                      const credit      = txn.amount > 0
+                      const isPending   = txn.status === 'pending'
+                      const isFailed    = txn.status === 'failed'
+                      const isCompleted = txn.status === 'completed'
 
-                    <div className="text-right shrink-0">
-                      <p className={`text-sm font-semibold ${isFailed ? 'text-slate-500 line-through' : isCredit ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {isCredit ? '+' : ''}UGX {Math.abs(txn.amount).toLocaleString()}
-                      </p>
-                      {txn.balance_after !== null && !isFailed && (
-                        <p className="text-[10px] text-slate-600">bal {Number(txn.balance_after).toLocaleString()}</p>
-                      )}
-                    </div>
+                      return (
+                        <div
+                          key={txn.id}
+                          className={`flex items-center gap-4 px-5 py-4 ${
+                            i < txns.length - 1 ? 'border-b border-[#1e1e2e]' : ''
+                          }`}
+                        >
+                          {/* Type icon */}
+                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-base ${
+                            txn.type === 'deposit'          ? 'bg-emerald-900/40'
+                            : txn.type === 'payout'         ? 'bg-violet-900/40'
+                            : txn.type === 'referral_bonus' ? 'bg-amber-900/40'
+                            : txn.type === 'refund'         ? 'bg-sky-900/40'
+                            : txn.type === 'bet'            ? 'bg-red-900/30'
+                            : 'bg-slate-800'
+                          }`}>
+                            {TYPE_EMOJI[txn.type] ?? '·'}
+                          </div>
+
+                          {/* Title + timestamp */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <p className="text-sm font-medium">
+                                {TYPE_LABEL[txn.type] ?? txn.type}
+                              </p>
+                              {isPending && (
+                                <span className="rounded-full bg-amber-900/40 px-2 py-0.5 text-[10px] font-medium text-amber-400">
+                                  pending
+                                </span>
+                              )}
+                              {isFailed && (
+                                <span className="rounded-full bg-red-900/40 px-2 py-0.5 text-[10px] font-medium text-red-400">
+                                  failed
+                                </span>
+                              )}
+                              {isCompleted && (
+                                <span className="rounded-full bg-emerald-900/40 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                                  completed
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                              {new Date(txn.created_at).toLocaleString('en-UG', {
+                                day: 'numeric', month: 'short',
+                                hour: '2-digit', minute: '2-digit',
+                              })}
+                              {txn.pesapal_tracking_id && (
+                                <span className="ml-2 font-mono text-[10px] text-slate-600">
+                                  {txn.pesapal_tracking_id.slice(0, 8)}…
+                                </span>
+                              )}
+                            </p>
+                          </div>
+
+                          {/* Amount + running balance */}
+                          <div className="text-right shrink-0">
+                            <p className={`text-sm font-semibold ${
+                              isFailed ? 'text-slate-500 line-through'
+                              : credit  ? 'text-emerald-400'
+                              : 'text-red-400'
+                            }`}>
+                              {credit ? '+ ' : '− '}UGX {fmt(txn.amount)}
+                            </p>
+                            {txn.balance_after !== null && !isFailed && (
+                              <p className="text-[10px] text-slate-600">
+                                bal {Number(txn.balance_after).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
           )}
         </div>

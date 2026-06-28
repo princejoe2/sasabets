@@ -251,7 +251,7 @@ export default function BetsPage() {
 
               const canExit = isActive && market?.status === 'open' &&
                 (!market.closes_at || new Date(market.closes_at) > new Date())
-              const cashoutPreview = Math.round(Number(bet.amount) * 0.85)
+              const cashoutPreview = Math.round(Number(bet.amount) * 0.75)
               const isConfirming = exitingBet === bet.id
               const msg = exitMsg?.betId === bet.id ? exitMsg : null
 
@@ -368,7 +368,7 @@ export default function BetsPage() {
                           <p className="text-xs text-slate-500">
                             Exit early · get back{' '}
                             <span className="font-bold text-amber-400">UGX {cashoutPreview.toLocaleString()}</span>
-                            <span className="text-slate-700"> (85% of stake)</span>
+                            <span className="text-slate-700"> (75% of stake · 25% exit fee)</span>
                           </p>
                           <button
                             onClick={() => { setExitingBet(bet.id); setExitMsg(null) }}

@@ -43,6 +43,13 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: 'Intelligence',
+    items: [
+      { href: '/admin/market-events',  icon: '⚡', label: 'Market Events' },
+      { href: '/admin/account-flags',  icon: '🚩', label: 'Account Flags' },
+    ],
+  },
+  {
     label: 'System',
     items: [
       { href: '/admin/settings',    icon: '⚙️', label: 'Settings' },

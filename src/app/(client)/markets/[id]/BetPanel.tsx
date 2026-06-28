@@ -1,12 +1,59 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import PriceWidget from '@/components/PriceWidget'
 import { createClient } from '@/lib/supabase/client'
 import OddsChart from '@/components/OddsChart'
 import MarketComments from '@/components/MarketComments'
+import BetDistribution from '@/components/BetDistribution'
+import RecentBets from '@/components/RecentBets'
+import { getPoolDepth, DEPTH_BADGE } from '@/lib/pool-depth'
+
+function friendlyBetError(data: Record<string, unknown>): string {
+  const code = data.code as string | undefined
+  const fmt  = (n: unknown) => Number(n).toLocaleString()
+
+  switch (code) {
+    case 'market_not_open':
+      return `This market is no longer accepting bets (status: ${data.status ?? 'closed'}).`
+    case 'market_suspended':
+      return 'This market has been temporarily suspended for review. Check back soon.'
+    case 'betting_closed':
+      return 'Betting on this market has closed. The result will be announced shortly.'
+    case 'insufficient_balance':
+      return `Your wallet has UGX ${fmt(data.balance)} but this bet needs UGX ${fmt(data.required)}. Top up your wallet first.`
+    case 'account_too_new':
+      return `New accounts can only bet up to UGX 50,000 per prediction for the first 72 hours. Your limit right now is UGX ${fmt(data.max_allowed)}.`
+    case 'position_limit': {
+      const max = Number(data.max_additional_allowed ?? 0)
+      return max > 0
+        ? `You already hold a large share of this side. You can add up to UGX ${fmt(max)} more on this outcome.`
+        : 'You have reached the maximum allowed stake on this side of the market.'
+    }
+    case 'bet_too_large':
+      return `That bet is too large for the current pool size. Maximum single bet is UGX ${fmt(data.max_allowed)}.`
+    case 'surge_cap':
+      return `Unusual activity was detected on this market. Your bets here are capped at UGX ${fmt(data.max_allowed)} until the review clears.`
+    case 'too_many_bets':
+      return 'You have placed too many bets on this market in the last hour. Please wait 15 minutes before trying again.'
+    default:
+      return (data.message as string) || (data.error as string) || 'Something went wrong. Please try again.'
+  }
+}
+
+type PreviewResult = {
+  estimated_payout: number
+  estimated_profit: number
+  estimated_roi_pct: number
+  probability_if_placed: number
+  probability_current: number
+  probability_shift_pct: number
+  pool_depth_after: string
+  pool_depth_warning: string | null
+  warning: 'large_bet_moves_market' | 'thin_pool_estimate_unreliable' | null
+}
 
 type Option = { id: string; label: string; total_pool: number }
 type Market = {
@@ -45,6 +92,18 @@ const CAT = {
   infrastructure: { icon: '🏗️', label: 'Infrastructure', color: '#fb923c', glow: 'rgba(251,146,60,0.08)',  border: 'rgba(251,146,60,0.28)',  bar: '#f97316', tag: { background: 'rgba(251,146,60,0.15)',  color: '#fed7aa' } },
   agriculture:    { icon: '🌿', label: 'Agriculture',    color: '#34d399', glow: 'rgba(52,211,153,0.08)',  border: 'rgba(52,211,153,0.28)',  bar: '#10b981', tag: { background: 'rgba(52,211,153,0.15)',  color: '#a7f3d0' } },
   default:        { icon: '🔮', label: 'Prediction',     color: '#a78bfa', glow: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.28)', bar: '#8b5cf6', tag: { background: 'rgba(167,139,250,0.15)', color: '#ddd6fe' } },
+}
+
+// Category hero background images (same URLs as MarketCard)
+const CAT_IMAGE: Record<Category, string> = {
+  football:       'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1200&q=60&auto=format&fit=crop',
+  politics:       'https://images.unsplash.com/photo-1529107386316-0d2ef31753c0?w=1200&q=60&auto=format&fit=crop',
+  economy:        'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=60&auto=format&fit=crop',
+  entertainment:  'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&q=60&auto=format&fit=crop',
+  tech:           'https://images.unsplash.com/photo-1512941937938-2bdb01e0f36f?w=1200&q=60&auto=format&fit=crop',
+  infrastructure: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&q=60&auto=format&fit=crop',
+  agriculture:    'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1200&q=60&auto=format&fit=crop',
+  default:        'https://images.unsplash.com/photo-1518373714866-3f1b98b28e34?w=1200&q=60&auto=format&fit=crop',
 }
 
 const CRYPTO_ICONS: Record<string, string> = {
@@ -165,12 +224,14 @@ export default function BetPanel({
   initialPick,
   isLoggedIn,
   userBet,
+  predictorCount,
 }: {
   market: Market
   initialBalance: number | null
   initialPick: string | null
   isLoggedIn: boolean
   userBet: { option_id: string; amount: number } | null
+  predictorCount: number
 }) {
   const router = useRouter()
   const opts = market.options as Option[]
@@ -227,7 +288,9 @@ export default function BetPanel({
   const [balance, setBalance] = useState(initialBalance)
   const [liveOpts, setLiveOpts] = useState(opts)
   const [liveTotal, setLiveTotal] = useState(total)
-  const [copied, setCopied] = useState(false)
+  const [preview, setPreview] = useState<PreviewResult | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (!isOpen) return
@@ -246,6 +309,29 @@ export default function BetPanel({
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [market.id, isOpen])
+
+  const fetchPreview = useCallback(async (optId: string, amt: number) => {
+    if (!optId || amt < 1000) { setPreview(null); return }
+    setPreviewLoading(true)
+    try {
+      const res = await fetch(`/api/market/${market.id}/preview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ optionId: optId, amount: amt }),
+      })
+      if (res.ok) setPreview(await res.json())
+      else setPreview(null)
+    } catch { setPreview(null) }
+    setPreviewLoading(false)
+  }, [market.id])
+
+  useEffect(() => {
+    const amt = parseFloat(amount) || 0
+    if (previewTimerRef.current) clearTimeout(previewTimerRef.current)
+    if (!selectedOpt || amt < 1000) { setPreview(null); return }
+    previewTimerRef.current = setTimeout(() => fetchPreview(selectedOpt, amt), 300)
+    return () => { if (previewTimerRef.current) clearTimeout(previewTimerRef.current) }
+  }, [amount, selectedOpt, fetchPreview])
 
   function oddsFor(opt: Option, pool = liveTotal) {
     if (pool <= 0 || opt.total_pool <= 0) return '—'
@@ -274,18 +360,9 @@ export default function BetPanel({
   const userLost = userBet && isSettled && userBet.option_id !== market.winning_option_id
   const userBetOpt = userBet ? liveOpts.find(o => o.id === userBet.option_id) : null
 
-  function shareMarket() {
-    const url  = typeof window !== 'undefined' ? window.location.href : ''
-    const text = `${market.title} — Predict on Sabula 256`
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      navigator.share({ title: text, url }).catch(() => null)
-    } else {
-      navigator.clipboard.writeText(url).then(() => {
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
-      }).catch(() => null)
-    }
-  }
+  const shareText = encodeURIComponent(`"${market.title}" — Predict on Sabula 256 🔮 https://sabula256.com/markets/${market.id}`)
+  const waLink    = `https://wa.me/?text=${shareText}`
+  const twLink    = `https://twitter.com/intent/tweet?text=${shareText}`
 
   async function placeBet() {
     if (!isLoggedIn) { router.push('/auth'); return }
@@ -301,7 +378,7 @@ export default function BetPanel({
     })
     const data = await res.json()
     if (!res.ok) {
-      setError(data.error ?? 'Failed to place bet')
+      setError(friendlyBetError(data))
     } else {
       setBalance(data.newBalance)
       setLiveOpts(prev => prev.map(o =>
@@ -375,17 +452,28 @@ export default function BetPanel({
                 </p>
                 <p className="text-xs text-slate-600 mt-0.5">{(rake * 100).toFixed(0)}% platform fee</p>
               </div>
-              <button
-                onClick={shareMarket}
-                title="Share market"
-                className="flex items-center gap-1.5 rounded-2xl border border-[#1e1e2e] bg-[#13131a] px-4 py-3 text-xs font-semibold text-slate-400 hover:border-violet-800/60 hover:text-white transition-colors"
-              >
-                {copied ? (
-                  <><span className="text-emerald-400">✓</span> Copied!</>
-                ) : (
-                  <><svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg> Share</>
-                )}
-              </button>
+              <div className="flex gap-2">
+                <a
+                  href={waLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 rounded-2xl border border-[#1e1e2e] bg-[#13131a] px-4 py-3 text-xs font-bold text-white hover:bg-[#25D366]/20 hover:border-[#25D366]/40 transition-colors"
+                >
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.115 1.527 5.843L0 24l6.335-1.51A11.933 11.933 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.794 9.794 0 01-5.012-1.378l-.36-.214-3.727.888.937-3.618-.235-.372A9.794 9.794 0 012.182 12C2.182 6.578 6.578 2.182 12 2.182S21.818 6.578 21.818 12 17.422 21.818 12 21.818z"/>
+                  </svg>
+                  WhatsApp
+                </a>
+                <a
+                  href={twLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 rounded-2xl border border-[#1e1e2e] bg-[#13131a] px-4 py-3 text-xs font-bold text-slate-300 hover:border-slate-600 hover:text-white transition-colors"
+                >
+                  𝕏 Tweet
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -673,22 +761,62 @@ export default function BetPanel({
                     </div>
                   </div>
 
-                  {/* Estimated payout */}
-                  {estPayout !== null && amtNum > 0 && (
+                  {/* Payout preview */}
+                  {amtNum >= 1000 && selectedOpt && (
                     <div className="rounded-xl bg-[#0a0a0f] px-4 py-3 space-y-1.5 text-sm">
-                      <div className="flex justify-between text-slate-500">
-                        <span>Stake</span>
-                        <span>UGX {amtNum.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between text-slate-500">
-                        <span>Platform fee ({(rake * 100).toFixed(0)}%)</span>
-                        <span>-UGX {(amtNum * rake).toFixed(0)}</span>
-                      </div>
-                      <div className="flex justify-between font-bold border-t border-[#1e1e2e] pt-1.5 mt-1">
-                        <span className="text-slate-300">Est. payout</span>
-                        <span style={{ color: cat.color }}>UGX {estPayout.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
-                      </div>
-                      <p className="text-[10px] text-slate-600">Payout updates as others bet</p>
+                      {previewLoading ? (
+                        <div className="flex items-center gap-2 text-slate-600">
+                          <div className="h-3 w-3 animate-spin rounded-full border border-slate-600 border-t-transparent" />
+                          <span className="text-xs">Calculating…</span>
+                        </div>
+                      ) : preview ? (
+                        <>
+                          <div className="flex justify-between text-slate-500">
+                            <span>Stake</span>
+                            <span>UGX {amtNum.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between font-bold border-t border-[#1e1e2e] pt-1.5 mt-1">
+                            <span className="text-slate-300">Est. return</span>
+                            <span style={{ color: cat.color }}>UGX {preview.estimated_payout.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-xs text-slate-500">
+                            <span>Profit if correct</span>
+                            <span className="text-emerald-400 font-semibold">
+                              +UGX {preview.estimated_profit.toLocaleString()} ({preview.estimated_roi_pct}%)
+                            </span>
+                          </div>
+                          {preview.probability_shift_pct > 0.5 && (
+                            <p className="text-[10px] text-slate-600">
+                              Moves market: {Math.round(preview.probability_current * 100)}% →{' '}
+                              {Math.round(preview.probability_if_placed * 100)}%
+                            </p>
+                          )}
+                          {/* Pool depth warning */}
+                          {(() => {
+                            const depth = getPoolDepth(liveTotal)
+                            const badge = DEPTH_BADGE[depth.rating]
+                            return depth.warning ? (
+                              <div className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px]"
+                                style={{ background: `${badge.color}14`, border: `1px solid ${badge.border}`, color: badge.color }}>
+                                ⚠ {depth.warning}
+                              </div>
+                            ) : null
+                          })()}
+                          {preview.warning === 'large_bet_moves_market' && (
+                            <div className="rounded-lg border border-amber-800/40 bg-amber-900/20 px-3 py-2 text-[11px] text-amber-400">
+                              ⚠ This bet moves the market significantly ({preview.probability_shift_pct.toFixed(1)}%)
+                            </div>
+                          )}
+                        </>
+                      ) : estPayout !== null ? (
+                        <>
+                          <div className="flex justify-between font-bold">
+                            <span className="text-slate-300">Est. payout</span>
+                            <span style={{ color: cat.color }}>UGX {estPayout.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
+                          </div>
+                          <p className="text-[10px] text-slate-600">Payout updates as others bet</p>
+                        </>
+                      ) : null}
                     </div>
                   )}
 

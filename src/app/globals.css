@@ -5,8 +5,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 body {
-  background-color: #0a0a0f;
-  color: #e2e8f0;
+  background-color: #f8fafc;
+  color: #0f172a;
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
@@ -118,3 +118,72 @@ body {
 /* ── Hide scrollbar but keep scroll ── */
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Dark mode global overrides ── */
+/* These apply when .dark is on <html>, covering every page without editing each file */
+
+.dark body {
+  background-color: #0a0f1e;
+  color: #e2e8f0;
+}
+
+/* Backgrounds */
+.dark .bg-white           { background-color: #1e293b !important; }
+.dark .bg-slate-50        { background-color: #0f172a !important; }
+.dark .bg-slate-100       { background-color: #1e293b !important; }
+.dark .bg-slate-200       { background-color: #334155 !important; }
+
+/* Semi-transparent whites */
+.dark .bg-white\/95       { background-color: rgba(15,23,42,0.95) !important; }
+.dark .bg-white\/80       { background-color: rgba(15,23,42,0.80) !important; }
+.dark .bg-white\/60       { background-color: rgba(15,23,42,0.60) !important; }
+
+/* Text */
+.dark .text-slate-900     { color: #f1f5f9 !important; }
+.dark .text-slate-800     { color: #e2e8f0 !important; }
+.dark .text-slate-700     { color: #cbd5e1 !important; }
+.dark .text-slate-600     { color: #94a3b8 !important; }
+.dark .text-slate-500     { color: #64748b !important; }
+.dark .text-slate-400     { color: #475569 !important; }
+.dark .text-slate-300     { color: #334155 !important; }
+
+/* Borders */
+.dark .border-slate-200   { border-color: #334155 !important; }
+.dark .border-slate-100   { border-color: #1e293b !important; }
+.dark .border-slate-300   { border-color: #475569 !important; }
+
+/* Hover states */
+.dark .hover\:bg-slate-50:hover   { background-color: #1e293b !important; }
+.dark .hover\:bg-slate-100:hover  { background-color: #293548 !important; }
+.dark .hover\:text-slate-900:hover { color: #f1f5f9 !important; }
+
+/* Focus */
+.dark .focus\:bg-white:focus { background-color: #1e293b !important; }
+
+/* Input fields */
+.dark input, .dark textarea, .dark select {
+  background-color: #1e293b;
+  color: #f1f5f9;
+  border-color: #334155;
+}
+.dark input::placeholder, .dark textarea::placeholder {
+  color: #475569;
+}
+
+/* MarketCard image fade — switches gradient colour per theme */
+.card-img-fade {
+  background: linear-gradient(to bottom, transparent 35%, rgba(255,255,255,0.95) 100%);
+}
+.dark .card-img-fade {
+  background: linear-gradient(to bottom, transparent 35%, rgba(30,41,59,0.97) 100%) !important;
+}
+
+/* MarketCard dark backgrounds */
+.dark .card-shine {
+  background-color: #1e293b !important;
+}
+
+/* Hero section dark override */
+.dark [style*="linear-gradient(135deg, #f5f3ff"] {
+  background: linear-gradient(135deg, #1a1035 0%, #0f172a 50%, #0d1f14 100%) !important;
+}

@@ -7,18 +7,24 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const supabase = createClient()
   const { data: m } = await supabase
     .from('markets')
-    .select('title, description, options, total_pool')
+    .select('title, description, options, total_pool, metadata')
     .eq('id', params.id)
     .single()
   if (!m) return {}
   const opts = m.options as Array<{ label: string; total_pool: number }>
   const desc = m.description
     ?? (opts.length >= 2 ? `${opts[0].label} vs ${opts[1].label} · UGX ${Number(m.total_pool).toLocaleString()} pool` : '')
+  const meta = (m.metadata ?? {}) as Record<string, unknown>
+  const ogImage = (meta.og_image ?? meta.image ?? null) as string | null
+  const canonical = `https://sabula256.com/markets/${params.id}`
   return {
     title: `${m.title} — Sabula 256`,
     description: desc,
-    openGraph: { title: m.title, description: desc, siteName: 'Sabula 256', type: 'website' },
-    twitter:    { card: 'summary', title: m.title, description: desc },
+    alternates: { canonical },
+    openGraph: { title: m.title, description: desc, siteName: 'Sabula 256', type: 'website', ...(ogImage ? { images: [ogImage] } : {}) },
+    twitter: ogImage
+      ? { card: 'summary_large_image', title: m.title, description: desc, images: [ogImage] }
+      : { card: 'summary',             title: m.title, description: desc },
   }
 }
 
@@ -57,6 +63,14 @@ export default async function MarketPage({
   let balance: number | null = null
   let userBet: { option_id: string; amount: number } | null = null
 
+  // Fetch predictor count (unique user_ids with a non-cancelled bet on this market)
+  const { data: bettorRows } = await supabase
+    .from('bets')
+    .select('user_id')
+    .eq('market_id', params.id)
+    .neq('status', 'cancelled')
+  const predictorCount = new Set((bettorRows ?? []).map((b: { user_id: string }) => b.user_id)).size
+
   if (user) {
     const [{ data: wallet }, { data: bets }] = await Promise.all([
       supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
@@ -93,6 +107,7 @@ export default async function MarketPage({
         initialPick={searchParams.pick ?? null}
         isLoggedIn={!!user}
         userBet={userBet}
+        predictorCount={predictorCount}
       />
     </>
   )

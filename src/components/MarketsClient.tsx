@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import MarketCard from '@/components/MarketCard'
+import OnboardingBanner from '@/components/OnboardingBanner'
 
 function seededShuffle<T>(arr: T[], seed: number): T[] {
   const copy = [...arr]
@@ -28,7 +29,6 @@ const VALID_CATS: Category[] = ['football','politics','economy','entertainment',
 
 function detectCat(title: string, desc = '', metadata?: Record<string, unknown>): Exclude<Category, 'all'> {
   if (metadata?.type === 'updown') return 'updown'
-  // Admin-assigned category takes precedence over regex
   const stored = metadata?.category as string | undefined
   if (stored && VALID_CATS.includes(stored as Category)) return stored as Exclude<Category, 'all'>
   const t = (title + ' ' + desc).toLowerCase()
@@ -43,16 +43,16 @@ function detectCat(title: string, desc = '', metadata?: Record<string, unknown>)
 }
 
 const CATS: { id: Category; icon: string; label: string; color: string; bg: string; border: string }[] = [
-  { id: 'all',            icon: '🔮', label: 'All',            color: '#a78bfa', bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.5)' },
-  { id: 'updown',         icon: '📈', label: 'Up/Down',        color: '#4ade80', bg: 'rgba(74,222,128,0.12)',  border: 'rgba(74,222,128,0.45)' },
-  { id: 'football',       icon: '⚽', label: 'Football',       color: '#a3e635', bg: 'rgba(163,230,53,0.12)',  border: 'rgba(163,230,53,0.45)' },
-  { id: 'politics',       icon: '🏛️', label: 'Politics',       color: '#60a5fa', bg: 'rgba(96,165,250,0.12)',  border: 'rgba(96,165,250,0.45)'  },
-  { id: 'economy',        icon: '💰', label: 'Economy',        color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',  border: 'rgba(251,191,36,0.45)'  },
-  { id: 'entertainment',  icon: '🎵', label: 'Entertainment',  color: '#f472b6', bg: 'rgba(244,114,182,0.12)', border: 'rgba(244,114,182,0.45)' },
-  { id: 'tech',           icon: '📱', label: 'Technology',     color: '#22d3ee', bg: 'rgba(34,211,238,0.12)',  border: 'rgba(34,211,238,0.45)'  },
-  { id: 'infrastructure', icon: '🏗️', label: 'Infrastructure', color: '#fb923c', bg: 'rgba(251,146,60,0.12)',  border: 'rgba(251,146,60,0.45)'  },
-  { id: 'agriculture',    icon: '🌿', label: 'Agriculture',    color: '#34d399', bg: 'rgba(52,211,153,0.12)',  border: 'rgba(52,211,153,0.45)'  },
-  { id: 'default',        icon: '✨', label: 'Other',          color: '#94a3b8', bg: 'rgba(148,163,184,0.10)', border: 'rgba(148,163,184,0.4)'  },
+  { id: 'all',            icon: '🔮', label: 'All',            color: '#7c3aed', bg: 'rgba(124,58,237,0.08)',  border: 'rgba(124,58,237,0.3)'  },
+  { id: 'updown',         icon: '📈', label: 'Up/Down',        color: '#16a34a', bg: 'rgba(22,163,74,0.08)',   border: 'rgba(22,163,74,0.3)'   },
+  { id: 'football',       icon: '⚽', label: 'Football',       color: '#65a30d', bg: 'rgba(101,163,13,0.08)',  border: 'rgba(101,163,13,0.3)'  },
+  { id: 'politics',       icon: '🏛️', label: 'Politics',       color: '#2563eb', bg: 'rgba(37,99,235,0.08)',   border: 'rgba(37,99,235,0.3)'   },
+  { id: 'economy',        icon: '💰', label: 'Economy',        color: '#d97706', bg: 'rgba(217,119,6,0.08)',   border: 'rgba(217,119,6,0.3)'   },
+  { id: 'entertainment',  icon: '🎵', label: 'Entertainment',  color: '#db2777', bg: 'rgba(219,39,119,0.08)',  border: 'rgba(219,39,119,0.3)'  },
+  { id: 'tech',           icon: '📱', label: 'Technology',     color: '#0891b2', bg: 'rgba(8,145,178,0.08)',   border: 'rgba(8,145,178,0.3)'   },
+  { id: 'infrastructure', icon: '🏗️', label: 'Infrastructure', color: '#ea580c', bg: 'rgba(234,88,12,0.08)',   border: 'rgba(234,88,12,0.3)'   },
+  { id: 'agriculture',    icon: '🌿', label: 'Agriculture',    color: '#059669', bg: 'rgba(5,150,105,0.08)',   border: 'rgba(5,150,105,0.3)'   },
+  { id: 'default',        icon: '✨', label: 'Other',          color: '#7c3aed', bg: 'rgba(124,58,237,0.06)',  border: 'rgba(124,58,237,0.25)' },
 ]
 
 const SORTS: { id: Sort; label: string }[] = [
@@ -86,7 +86,6 @@ export default function MarketsClient({ markets, openCount, initialCat = 'all' }
   const open   = useMemo(() => markets.filter(m => m.status === 'open'),  [markets])
   const closed = useMemo(() => markets.filter(m => m.status !== 'open'), [markets])
 
-  // Count open markets per category for badge display on pills
   const catCounts = useMemo(() => {
     const counts: Partial<Record<Category, number>> = {}
     for (const m of open) {
@@ -134,133 +133,127 @@ export default function MarketsClient({ markets, openCount, initialCat = 'all' }
 
   const activeCat  = CATS.find(c => c.id === cat)!
   const hasFilters = !!(search.trim() || cat !== 'all')
-  const totalPool  = open.reduce((s, m) => s + Number(m.total_pool), 0)
 
   return (
     <div>
       {/* ── Sticky filter bar ── */}
-      <div className="sticky top-[61px] z-10 border-b border-[#1e1e2e] bg-[#0d0d14]/95 backdrop-blur-xl">
+      <div className="sticky top-[61px] z-10 border-b border-slate-200 bg-white/95 backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95">
 
-        {/* Quick stats strip */}
-        <div className="border-b border-[#1a1a28] px-4 py-2">
-          <div className="mx-auto flex max-w-6xl items-center gap-5 text-[11px] font-semibold">
-            <span className="text-slate-600">
-              <span className="font-bold text-emerald-400">{openCount}</span> open markets
-            </span>
-            <span className="text-slate-600">
-              <span className="font-bold text-violet-400">UGX {totalPool.toLocaleString()}</span> total pool
-            </span>
-            {closed.length > 0 && (
-              <button
-                onClick={() => setShowClosed(v => !v)}
-                className="ml-auto text-slate-600 transition-colors hover:text-slate-300"
-              >
-                {showClosed ? '← hide settled' : `show ${closed.length} settled →`}
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="px-4 pb-3 pt-3">
+        <div className="px-4 py-3">
           <div className="mx-auto max-w-6xl space-y-3">
 
-            {/* Search input */}
-            <div className="relative">
-              <svg
-                className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-600"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-              >
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-              </svg>
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search markets, teams, topics…"
-                className="w-full rounded-lg border border-[#1e1e2e] bg-[#111118] py-2 pl-8 pr-8 text-sm text-white outline-none transition-colors placeholder:text-slate-600 focus:border-violet-600/70"
-                style={search ? { borderColor: activeCat.border } : {}}
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full bg-[#2a2a3e] text-[9px] text-slate-400 transition-colors hover:bg-[#3a3a5e] hover:text-white"
+            {/* Row 1: search full-width on mobile, sort below on mobile / inline on desktop */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              {/* Search — full width on mobile */}
+              <div className="relative w-full sm:flex-1">
+                <svg
+                  className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-400"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
                 >
-                  ✕
-                </button>
-              )}
-            </div>
-
-            {/* Category pills + sort */}
-            <div className="flex items-center gap-2">
-              {/* Scrollable pills */}
-              <div className="flex flex-1 gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-                {CATS.map(c => {
-                  const active = cat === c.id
-                  const count  = c.id === 'all' ? open.length : (catCounts[c.id] ?? 0)
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => handleCatChange(c.id)}
-                      className="shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-all"
-                      style={active
-                        ? { background: c.bg, borderColor: c.border, color: c.color, boxShadow: `0 0 14px ${c.bg}`, transform: 'translateY(-1px)' }
-                        : { background: 'transparent', borderColor: '#2a2a3e', color: '#64748b' }
-                      }
-                    >
-                      {c.icon} {c.label}
-                      {count > 0 && (
-                        <span className="ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-black tabular-nums"
-                          style={active
-                            ? { background: `${c.color}30`, color: c.color }
-                            : { background: '#1e1e2e', color: '#475569' }
-                          }
-                        >
-                          {count}
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search markets…"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-7 pr-7 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-violet-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-700"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-[9px] text-slate-500 transition-colors hover:bg-slate-300"
+                  >✕</button>
+                )}
               </div>
 
-              {/* Sort */}
-              <div className="flex shrink-0 gap-1 rounded-xl border border-[#2a2a3e] bg-[#0d0d14] p-1">
+              {/* Sort — full width on mobile, shrink on desktop */}
+              <div className="flex w-full sm:w-auto sm:shrink-0 gap-0.5 rounded-xl border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-800">
                 {SORTS.map(s => (
                   <button
                     key={s.id}
                     onClick={() => setSort(s.id)}
-                    className={`rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all ${
+                    className={`flex-1 sm:flex-none rounded-lg px-2.5 py-1.5 text-[11px] font-bold transition-all ${
                       sort === s.id
-                        ? 'bg-violet-600 text-white shadow-sm shadow-violet-900/60'
-                        : 'text-slate-500 hover:text-slate-200'
+                        ? 'bg-violet-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300'
                     }`}
                   >
                     {s.label}
                   </button>
                 ))}
               </div>
+
+              {/* Stats + settled toggle */}
+              <span className="shrink-0 text-xs font-semibold text-slate-500 hidden sm:block">
+                <span className="font-black text-emerald-600">{openCount}</span> open
+              </span>
+              {closed.length > 0 && (
+                <button
+                  onClick={() => setShowClosed(v => !v)}
+                  className="shrink-0 text-xs text-slate-400 transition-colors hover:text-slate-700 hidden sm:block"
+                >
+                  {showClosed ? '← hide settled' : `+${closed.length} settled`}
+                </button>
+              )}
+            </div>
+
+            {/* Row 2: Categories as a wrapping grid */}
+            <div className="flex flex-wrap gap-2">
+              {CATS.map(c => {
+                const active = cat === c.id
+                const count  = c.id === 'all' ? open.length : (catCounts[c.id] ?? 0)
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => handleCatChange(c.id)}
+                    className="flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-black transition-all"
+                    style={active
+                      ? { background: c.color, borderColor: c.color, color: '#fff', boxShadow: `0 4px 14px ${c.color}55`, transform: 'translateY(-2px)' }
+                      : { background: `${c.color}12`, borderColor: `${c.color}35`, color: c.color }
+                    }
+                  >
+                    <span className="text-base leading-none">{c.icon}</span>
+                    <span>{c.label}</span>
+                    {count > 0 && (
+                      <span
+                        className="rounded-full px-1.5 py-0.5 text-[10px] font-black tabular-nums leading-none"
+                        style={active
+                          ? { background: 'rgba(255,255,255,0.25)', color: '#fff' }
+                          : { background: `${c.color}22`, color: c.color }
+                        }
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
 
           </div>
         </div>
       </div>
 
+      {/* ── Onboarding banner ── */}
+      <OnboardingBanner />
+
       {/* ── Market grid ── */}
-      <div className="mx-auto max-w-6xl px-4 py-10">
+      <div className="mx-auto max-w-6xl px-4 py-8">
         {filtered.length > 0 ? (
           <>
             <div className="mb-5 flex items-center justify-between">
-              <p className="text-xs text-slate-600">
-                <span className="text-slate-400 font-semibold">{filtered.length}</span> market{filtered.length !== 1 ? 's' : ''}
+              <p className="text-xs text-slate-400">
+                <span className="text-slate-700 font-semibold">{filtered.length}</span> market{filtered.length !== 1 ? 's' : ''}
                 {search && <> · &ldquo;{search}&rdquo;</>}
                 {cat !== 'all' && <> · {activeCat.icon} {activeCat.label}</>}
-                <span className="ml-2 text-slate-700">
+                <span className="ml-2 text-slate-300">
                   · sorted by <span className="text-violet-500">{SORTS.find(s => s.id === sort)?.label}</span>
                 </span>
               </p>
               {hasFilters && (
                 <button
                   onClick={() => { setSearch(''); setCat('all') }}
-                  className="text-[11px] text-violet-500 underline underline-offset-2 transition-colors hover:text-violet-300"
+                  className="text-[11px] text-violet-600 underline underline-offset-2 transition-colors hover:text-violet-400"
                 >
                   clear filters
                 </button>
@@ -270,7 +263,7 @@ export default function MarketsClient({ markets, openCount, initialCat = 'all' }
               {filtered.map(m => (
                 <div key={m.id} className="relative">
                   {m.metadata?.type === 'updown' && (
-                    <div className="absolute -top-2 left-4 z-10 flex items-center gap-1 rounded-full border border-emerald-700/50 bg-emerald-900/30 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                    <div className="absolute -top-2 left-4 z-10 flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-700">
                       📈 Up/Down
                     </div>
                   )}
@@ -282,15 +275,15 @@ export default function MarketsClient({ markets, openCount, initialCat = 'all' }
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#2a2a3e] bg-[#0d0d14] py-24 text-center">
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-24 text-center dark:border-slate-700 dark:bg-slate-800/50">
             <p className="text-5xl">{hasFilters ? '🔍' : '🔮'}</p>
-            <p className="mt-4 text-base font-semibold text-slate-400">
+            <p className="mt-4 text-base font-semibold text-slate-500">
               {hasFilters ? 'No markets match your filters.' : 'No open markets yet.'}
             </p>
             {hasFilters && (
               <button
                 onClick={() => { setSearch(''); setCat('all') }}
-                className="mt-3 text-sm text-violet-400 transition-colors hover:text-violet-300"
+                className="mt-3 text-sm text-violet-600 transition-colors hover:text-violet-400"
               >
                 Clear filters →
               </button>
