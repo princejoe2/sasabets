@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import OddsSparkline from '@/components/OddsSparkline'
 import { getPoolDepth, DEPTH_BADGE } from '@/lib/pool-depth'
+import { useWatchlist } from '@/hooks/useWatchlist'
 
 interface Opt { id: string; label: string; total_pool: number }
 interface Market {
@@ -121,6 +122,9 @@ export default function MarketCard({ market }: { market: Market }) {
 
   const { display: countdown, urgency, expired } = useCountdown(market.closes_at, market.id, isOpen)
   const effectivelyOpen = isOpen && !expired
+
+  const { isWatched, toggle, loaded } = useWatchlist()
+  const bookmarked = loaded && isWatched(market.id)
 
   const [shareOpen, setShareOpen] = useState(false)
   const shareRef = useRef<HTMLDivElement>(null)
@@ -381,6 +385,19 @@ export default function MarketCard({ market }: { market: Market }) {
                   </div>
                 )}
               </div>
+              <button
+                onClick={e => { e.preventDefault(); e.stopPropagation(); toggle(market.id) }}
+                aria-label={bookmarked ? 'Remove from watchlist' : 'Add to watchlist'}
+                className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+                  bookmarked
+                    ? 'text-amber-500 hover:text-amber-400'
+                    : 'text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400'
+                }`}
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill={bookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 3a2 2 0 00-2 2v16l7-3 7 3V5a2 2 0 00-2-2H5z"/>
+                </svg>
+              </button>
               <span className="text-base font-black transition-all group-hover:scale-110" style={{ color: cat.color }}>
                 {effectivelyOpen ? 'Predict →' : 'View →'}
               </span>

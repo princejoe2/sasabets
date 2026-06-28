@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import WhatsAppPopup from '@/components/WhatsAppPopup'
 import PhoneGate from '@/components/PhoneGate'
+import BottomNav from '@/components/BottomNav'
 
 export default async function ClientLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
@@ -22,10 +23,11 @@ export default async function ClientLayout({ children }: { children: React.React
   return (
     <>
       <Navbar />
-      <main>{children}</main>
+      <main className="pb-16 sm:pb-0">{children}</main>
       <Footer />
       <WhatsAppPopup />
       <PhoneGate />
+      <BottomNav />
     </>
   )
 }

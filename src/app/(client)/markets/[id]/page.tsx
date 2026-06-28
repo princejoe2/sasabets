@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import BetPanel from './BetPanel'
+import MarketComments from '@/components/MarketComments'
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const supabase = createClient()
@@ -109,6 +110,7 @@ export default async function MarketPage({
         userBet={userBet}
         predictorCount={predictorCount}
       />
+      <MarketComments marketId={params.id} isLoggedIn={!!user} />
     </>
   )
 }

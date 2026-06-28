@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import MarketCard from '@/components/MarketCard'
 import OnboardingBanner from '@/components/OnboardingBanner'
+import { useWatchlist } from '@/hooks/useWatchlist'
 
 function seededShuffle<T>(arr: T[], seed: number): T[] {
   const copy = [...arr]
@@ -68,6 +69,10 @@ export default function MarketsClient({ markets, openCount, initialCat = 'all' }
   const [cat, setCat]               = useState<Category>((initialCat as Category) ?? 'all')
   const [sort, setSort]             = useState<Sort>('random')
   const [showClosed, setShowClosed] = useState(false)
+  const [showWatchlist, setShowWatchlist] = useState(false)
+
+  const { watched, loaded: watchlistLoaded } = useWatchlist()
+  const watchlistCount = watchlistLoaded ? watched.size : 0
 
   function handleCatChange(newCat: Category) {
     setCat(newCat)
@@ -96,6 +101,11 @@ export default function MarketsClient({ markets, openCount, initialCat = 'all' }
   }, [open])
 
   const filtered = useMemo(() => {
+    // If watchlist mode, show only watched markets (skip all other filters)
+    if (showWatchlist) {
+      return markets.filter(m => watched.has(m.id))
+    }
+
     let list = showClosed ? markets : open
 
     if (search.trim()) {
@@ -129,7 +139,7 @@ export default function MarketsClient({ markets, openCount, initialCat = 'all' }
     }
 
     return list
-  }, [markets, open, search, cat, sort, showClosed, dailySeed])
+  }, [markets, open, search, cat, sort, showClosed, showWatchlist, watched, dailySeed])
 
   const activeCat  = CATS.find(c => c.id === cat)!
   const hasFilters = !!(search.trim() || cat !== 'all')
@@ -199,6 +209,23 @@ export default function MarketsClient({ markets, openCount, initialCat = 'all' }
 
             {/* Row 2: Categories as a wrapping grid */}
             <div className="flex flex-wrap gap-2">
+              {watchlistCount > 0 && (
+                <button
+                  onClick={() => setShowWatchlist(v => !v)}
+                  className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-black transition-all ${
+                    showWatchlist
+                      ? 'border-amber-500 bg-amber-500 text-white'
+                      : 'border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-800/40 dark:bg-amber-950/30 dark:text-amber-400'
+                  }`}
+                  style={showWatchlist ? { boxShadow: '0 4px 14px rgba(245,158,11,0.4)' } : undefined}
+                >
+                  <span>⭐</span>
+                  <span>Watchlist</span>
+                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-black ${
+                    showWatchlist ? 'bg-white/25 text-white' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                  }`}>{watchlistCount}</span>
+                </button>
+              )}
               {CATS.map(c => {
                 const active = cat === c.id
                 const count  = c.id === 'all' ? open.length : (catCounts[c.id] ?? 0)
@@ -276,17 +303,28 @@ export default function MarketsClient({ markets, openCount, initialCat = 'all' }
           </>
         ) : (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-24 text-center dark:border-slate-700 dark:bg-slate-800/50">
-            <p className="text-5xl">{hasFilters ? '🔍' : '🔮'}</p>
-            <p className="mt-4 text-base font-semibold text-slate-500">
-              {hasFilters ? 'No markets match your filters.' : 'No open markets yet.'}
-            </p>
-            {hasFilters && (
-              <button
-                onClick={() => { setSearch(''); setCat('all') }}
-                className="mt-3 text-sm text-violet-600 transition-colors hover:text-violet-400"
-              >
-                Clear filters →
-              </button>
+            {showWatchlist ? (
+              <>
+                <p className="text-5xl">⭐</p>
+                <p className="mt-4 text-base font-semibold text-slate-500">Your watchlist is empty.</p>
+                <p className="mt-1 text-sm text-slate-400">Click the bookmark icon on any market to save it here.</p>
+                <button onClick={() => setShowWatchlist(false)} className="mt-3 text-sm text-violet-600">Browse markets →</button>
+              </>
+            ) : (
+              <>
+                <p className="text-5xl">{hasFilters ? '🔍' : '🔮'}</p>
+                <p className="mt-4 text-base font-semibold text-slate-500">
+                  {hasFilters ? 'No markets match your filters.' : 'No open markets yet.'}
+                </p>
+                {hasFilters && (
+                  <button
+                    onClick={() => { setSearch(''); setCat('all') }}
+                    className="mt-3 text-sm text-violet-600 transition-colors hover:text-violet-400"
+                  >
+                    Clear filters →
+                  </button>
+                )}
+              </>
             )}
           </div>
         )}
