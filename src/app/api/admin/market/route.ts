@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
   if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { title, description, closesAt, options, verificationType, verificationConfig, rakePct, category } = await req.json()
+  const { title, description, closesAt, options, verificationType, verificationConfig, rakePct, category, partyImage, team1Image, team2Image } = await req.json()
   if (!title || !options || options.length < 2) {
     return NextResponse.json({ error: 'Invalid market data' }, { status: 400 })
   }
@@ -49,7 +49,12 @@ export async function POST(req: NextRequest) {
     rake_pct:            rake,
     verification_type:   verificationType   ?? 'manual',
     verification_config: verificationConfig ?? {},
-    metadata:            safeCategory ? { category: safeCategory } : undefined,
+    metadata: {
+      ...(safeCategory ? { category:   safeCategory } : {}),
+      ...(partyImage   ? { partyImage }               : {}),
+      ...(team1Image   ? { team1Image }               : {}),
+      ...(team2Image   ? { team2Image }               : {}),
+    },
   }).select().single()
 
   if (error) {

@@ -10,6 +10,8 @@ import MarketComments from '@/components/MarketComments'
 import BetDistribution from '@/components/BetDistribution'
 import RecentBets from '@/components/RecentBets'
 import { getPoolDepth, DEPTH_BADGE } from '@/lib/pool-depth'
+import { getEntityLogo, getEntityLogoFromTitle } from '@/lib/entity-logos'
+import EntityLogo from '@/components/EntityLogo'
 
 function friendlyBetError(data: Record<string, unknown>): string {
   const code = data.code as string | undefined
@@ -370,7 +372,7 @@ export default function BetPanel({
   const userLost = userBet && isSettled && userBet.option_id !== market.winning_option_id
   const userBetOpt = userBet ? liveOpts.find(o => o.id === userBet.option_id) : null
 
-  const shareText = encodeURIComponent(`"${market.title}" — Predict on Sabula 256 🔮 https://sabula256.com/markets/${market.id}`)
+const shareText = encodeURIComponent(`"${market.title}" — Predict on Sabula 256 🔮 https://sabula256.com/markets/${market.id}`)
   const waLink    = `https://wa.me/?text=${shareText}`
   const twLink    = `https://twitter.com/intent/tweet?text=${shareText}`
 
@@ -404,7 +406,7 @@ export default function BetPanel({
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-[#0a0a0f] page-enter">
       {/* Hero strip */}
       <div
         className="border-b px-4 py-10"
@@ -464,7 +466,7 @@ export default function BetPanel({
               <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] px-6 py-4 text-center">
                 <p className="text-xs text-slate-500 uppercase tracking-wider">Total Pool</p>
                 <p className="text-2xl font-black" style={{ color: cat.color }}>
-                  UGX {liveTotal.toLocaleString()}
+                  UGX {Number(liveTotal).toLocaleString()}
                 </p>
                 <p className="text-xs text-slate-600 mt-0.5">{(rake * 100).toFixed(0)}% platform fee</p>
               </div>
@@ -567,12 +569,39 @@ export default function BetPanel({
         </div>
       )}
 
-      <div className="mx-auto max-w-6xl px-4 py-10">
+      <div className="mx-auto max-w-6xl px-4 py-10 pb-20 sm:pb-10">
         <div className="grid gap-8 lg:grid-cols-3">
 
           {/* Binary head-to-head */}
           <div className="lg:col-span-2">
             <h2 className="mb-5 text-sm font-bold uppercase tracking-widest text-slate-600">Choose your side</h2>
+
+            {/* Entity matchup header */}
+            {liveOpts.length >= 2 && (() => {
+              let logoA = getEntityLogo(liveOpts[0].label)
+              let logoB = getEntityLogo(liveOpts[1].label)
+              if (!logoA && !logoB) {
+                const fromTitle = getEntityLogoFromTitle(market.title)
+                logoA = fromTitle.logoA
+                logoB = fromTitle.logoB
+              }
+              if (!logoA && !logoB) return null
+              return (
+                <div className="flex items-center justify-center gap-4 mb-5 py-3 rounded-2xl border border-[#1e1e2e] bg-[#0d0d14]">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <EntityLogo name={liveOpts[0].label} src={logoA} size={56} shape="circle" />
+                    <span className="text-xs font-bold text-slate-400 max-w-[80px] text-center truncate">{liveOpts[0].label}</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-2xl font-black text-slate-600">VS</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <EntityLogo name={liveOpts[1].label} src={logoB} size={56} shape="circle" />
+                    <span className="text-xs font-bold text-slate-400 max-w-[80px] text-center truncate">{liveOpts[1].label}</span>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* Settled winner banner */}
             {isSettled && winnerOpt && (
@@ -602,6 +631,7 @@ export default function BetPanel({
                 const isLoser     = isSettled && opt.id !== market.winning_option_id
                 const isUserPick  = userBet?.option_id === opt.id
                 const visual      = resolveVisual(opt.label, meta, color)
+                const entityLogo  = getEntityLogo(opt.label)
 
                 return (
                   <button
@@ -625,7 +655,11 @@ export default function BetPanel({
                       {isA ? 'Side A' : 'Side B'}
                     </span>
 
-                    <SideVisual v={visual} />
+                    {entityLogo ? (
+                      <EntityLogo name={opt.label} src={entityLogo} size={64} shape="circle" className="mb-3" />
+                    ) : (
+                      <SideVisual v={visual} />
+                    )}
 
                     <span
                       className="text-2xl font-black leading-tight"
@@ -696,7 +730,7 @@ export default function BetPanel({
                 </div>
                 <div className="mt-1.5 flex justify-between text-[11px] text-slate-600">
                   <span>{pctFor(liveOpts[0]).toFixed(1)}%</span>
-                  <span>UGX {liveTotal.toLocaleString()} total pool</span>
+                  <span>UGX {Number(liveTotal).toLocaleString()} total pool</span>
                   <span>{pctFor(liveOpts[1]).toFixed(1)}%</span>
                 </div>
               </div>
@@ -798,12 +832,12 @@ export default function BetPanel({
                           </div>
                           <div className="flex justify-between font-bold border-t border-[#1e1e2e] pt-1.5 mt-1">
                             <span className="text-slate-300">Est. return</span>
-                            <span style={{ color: cat.color }}>UGX {preview.estimated_payout.toLocaleString()}</span>
+                            <span style={{ color: cat.color }}>UGX {Number(preview.estimated_payout).toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between text-xs text-slate-500">
                             <span>Profit if correct</span>
                             <span className="text-emerald-400 font-semibold">
-                              +UGX {preview.estimated_profit.toLocaleString()} ({preview.estimated_roi_pct}%)
+                              +UGX {Number(preview.estimated_profit).toLocaleString()} ({preview.estimated_roi_pct}%)
                             </span>
                           </div>
                           {preview.probability_shift_pct > 0.5 && (
@@ -842,6 +876,7 @@ export default function BetPanel({
                   )}
 
                   {error && <p className="rounded-lg bg-red-900/20 px-4 py-2.5 text-sm text-red-400">{error}</p>}
+
 
                   {isLoggedIn ? (
                     <button
@@ -936,7 +971,8 @@ export default function BetPanel({
                   <span>Closes</span>
                   <span className="text-slate-300">
                     {new Date(market.closes_at).toLocaleString('en-UG', {
-                      day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                      day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                      timeZone: 'Africa/Kampala'
                     })}
                   </span>
                 </div>

@@ -200,7 +200,7 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
   const hasFilters = !!(search.trim() || cat !== 'all')
 
   return (
-    <div>
+    <div className="page-enter">
       {/* ── Sticky filter bar ── */}
       <div className="sticky top-[61px] z-10 border-b border-slate-200 bg-white/95 backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95">
 
@@ -232,20 +232,32 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
               </div>
 
               {/* Sort — full width on mobile, shrink on desktop */}
-              <div className="flex w-full sm:w-auto sm:shrink-0 gap-0.5 rounded-xl border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-800">
-                {SORTS.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => setSort(s.id)}
-                    className={`flex-1 sm:flex-none rounded-lg px-2.5 py-1.5 text-[11px] font-bold transition-all ${
-                      sort === s.id
-                        ? 'bg-violet-600 text-white shadow-sm'
-                        : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300'
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
+              <div className="flex w-full sm:w-auto sm:shrink-0 gap-2">
+                <div className="flex flex-1 sm:flex-none gap-0.5 rounded-xl border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-800">
+                  {SORTS.map(s => (
+                    <button
+                      key={s.id}
+                      onClick={() => setSort(s.id)}
+                      className={`flex-1 sm:flex-none rounded-lg px-2.5 py-2.5 sm:py-1.5 text-[11px] font-bold transition-all min-h-[44px] sm:min-h-0 ${
+                        sort === s.id
+                          ? 'bg-violet-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+                {/* Refresh button — mobile only */}
+                <button
+                  onClick={() => window.location.reload()}
+                  className="sm:hidden flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-800"
+                  aria-label="Refresh"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                </button>
               </div>
 
               {/* Stats + settled toggle */}
@@ -263,12 +275,12 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
               )}
             </div>
 
-            {/* Row 2: Categories as a wrapping grid */}
-            <div className="flex flex-wrap gap-2">
+            {/* Row 2: Categories — horizontally scrollable on mobile, wrapping on desktop */}
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 sm:flex-wrap sm:overflow-visible sm:pb-0 sm:mx-0 sm:px-0">
               {watchlistCount > 0 && (
                 <button
                   onClick={() => setShowWatchlist(v => !v)}
-                  className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-black transition-all ${
+                  className={`flex items-center gap-1.5 rounded-full border px-4 py-2.5 text-sm font-black transition-all min-h-[44px] shrink-0 ${
                     showWatchlist
                       ? 'border-amber-500 bg-amber-500 text-white'
                       : 'border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-800/40 dark:bg-amber-950/30 dark:text-amber-400'
@@ -289,7 +301,7 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
                   <button
                     key={c.id}
                     onClick={() => handleCatChange(c.id)}
-                    className="flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-black transition-all"
+                    className="flex items-center gap-1.5 rounded-full border px-4 py-2.5 text-sm font-black transition-all min-h-[44px] shrink-0"
                     style={active
                       ? { background: c.color, borderColor: c.color, color: '#fff', boxShadow: `0 4px 14px ${c.color}55`, transform: 'translateY(-2px)' }
                       : { background: `${c.color}12`, borderColor: `${c.color}35`, color: c.color }
@@ -321,7 +333,7 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
       <OnboardingBanner />
 
       {/* ── Market grid ── */}
-      <div className="mx-auto max-w-6xl px-4 py-8">
+      <div className="mx-auto max-w-6xl px-4 py-8 pb-24 sm:pb-8">
         {filtered.length > 0 ? (
           <>
             <div className="mb-5 flex items-center justify-between">

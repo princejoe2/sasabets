@@ -3,6 +3,9 @@ import './globals.css'
 import CursorEffects from '@/components/CursorEffects'
 import ThemeProvider from '@/components/ThemeProvider'
 import PushNotificationPrompt from '@/components/PushNotificationPrompt'
+import dynamic from 'next/dynamic'
+
+const MobileInstallGate = dynamic(() => import('@/components/MobileInstallGate'), { ssr: false })
 
 const BASE = 'https://sabula256.com'
 
@@ -65,6 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <ThemeProvider>
           <CursorEffects />
+          <MobileInstallGate />
           {children}
           <PushNotificationPrompt />
         </ThemeProvider>

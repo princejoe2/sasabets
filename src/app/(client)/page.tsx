@@ -47,12 +47,13 @@ const jsonLd = {
 export default async function HomePage() {
   const supabase = createClient()
 
-  const [{ data: markets }, { count: userCount }] = await Promise.all([
+  const [{ data: markets }, { count: userCount }, { data: { user } }] = await Promise.all([
     supabase
       .from('markets')
       .select('id, title, description, total_pool, options, closes_at, status, rake_pct, created_at, metadata')
       .order('created_at', { ascending: false }),
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
+    supabase.auth.getUser(),
   ])
 
   const all       = markets ?? []
@@ -60,13 +61,21 @@ export default async function HomePage() {
   const totalPool = all.reduce((s, m) => s + Number(m.total_pool), 0)
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 page-enter">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      {/* ── Compact hero ── */}
-      <div className="border-b border-slate-200 px-4 py-6 dark:border-slate-700" style={{ background: 'linear-gradient(135deg, #f5f3ff 0%, #fff 50%, #f0fdf4 100%)' }}>
+      {/* ── Compact hero — hidden on mobile when logged in ── */}
+      <div className={`border-b border-slate-200 px-4 py-6 dark:border-slate-700 ${user ? 'hidden sm:block' : ''}`} style={{ background: 'linear-gradient(135deg, #f5f3ff 0%, #fff 50%, #f0fdf4 100%)' }}>
         <div className="mx-auto flex max-w-6xl flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
           <div>
+            {/* Live now pill — mobile only, logged-out */}
+            {!user && (
+              <div className="mb-3 sm:hidden">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-sm font-black text-violet-700">
+                  🔮 {openCount} markets open now
+                </span>
+              </div>
+            )}
             <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
               Uganda&apos;s prediction market.
             </h1>

@@ -1,9 +1,10 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import CreateMarketForm from '@/components/CreateMarketForm'
+import CreateMarketForm, { type EditMarket } from '@/components/CreateMarketForm'
 import SettleMarketForm from '@/components/SettleMarketForm'
 import PolymarketImport from '@/components/admin/PolymarketImport'
+import KalshiImport from '@/components/admin/KalshiImport'
 import PoolDepthSparkline from '@/components/admin/PoolDepthSparkline'
 
 interface Market {
@@ -11,6 +12,8 @@ interface Market {
   options: Array<{ id: string; label: string; total_pool: number }>;
   closes_at: string | null; created_at: string; rake_pct: number;
   verification_type?: string; verification_config?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+  description?: string | null;
   surge_flag?: boolean;
 }
 
@@ -30,6 +33,9 @@ interface AutoSettleResult {
 export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
   const router = useRouter()
   const [clearingSurge, setClearingSurge] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [deleting,      setDeleting]      = useState<string | null>(null)
+  const [deleteError,   setDeleteError]   = useState<string | null>(null)
 
   async function clearSurge(marketId: string) {
     setClearingSurge(marketId)
@@ -38,10 +44,25 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
     router.refresh()
   }
 
+  async function deleteMarket(marketId: string) {
+    setDeleting(marketId); setDeleteError(null)
+    const res  = await fetch(`/api/admin/market/${marketId}`, { method: 'DELETE' })
+    const data = await res.json()
+    if (res.ok) {
+      setConfirmDelete(null)
+      router.refresh()
+    } else {
+      setDeleteError(data.error ?? 'Failed to delete')
+    }
+    setDeleting(null)
+  }
+
   const [showCreate,     setShowCreate]     = useState(false)
   const [showPolyImport, setShowPolyImport] = useState(false)
+  const [importSource,   setImportSource]   = useState<'polymarket' | 'kalshi'>('polymarket')
   const [prefill,        setPrefill]        = useState<Prefill | undefined>()
   const [settleMarket,   setSettleMarket]   = useState<Market | null>(null)
+  const [editingMarket,  setEditingMarket]  = useState<EditMarket | null>(null)
   const [filter,         setFilter]         = useState<'all' | 'open' | 'closed' | 'settled' | 'suspended'>('all')
 
   // Auto-settle state
@@ -54,7 +75,25 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
     setPrefill({ title, optA, optB, conditionId })
     setShowCreate(true)
     setSettleMarket(null)
+    setEditingMarket(null)
     setTimeout(() => document.getElementById('create-market-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+  }
+
+  function openEdit(m: Market) {
+    setEditingMarket({
+      id:                  m.id,
+      title:               m.title,
+      description:         m.description ?? null,
+      closes_at:           m.closes_at,
+      rake_pct:            m.rake_pct,
+      options:             m.options,
+      verification_type:   m.verification_type ?? 'manual',
+      verification_config: m.verification_config ?? {},
+      metadata:            m.metadata ?? {},
+    })
+    setShowCreate(false)
+    setSettleMarket(null)
+    setTimeout(() => document.getElementById('edit-market-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
 
   async function runAutoSettle() {
@@ -102,7 +141,7 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
                 : 'border-violet-800/50 bg-violet-900/20 text-violet-400 hover:bg-violet-900/40'
             }`}
           >
-            {showPolyImport ? '✕ Close Import' : '🔍 Import from Polymarket'}
+            {showPolyImport ? '✕ Close Import' : '🔍 Import Markets'}
           </button>
           <button
             onClick={() => { setShowCreate(!showCreate); setSettleMarket(null); if (showCreate) setPrefill(undefined) }}
@@ -138,14 +177,47 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
         </div>
       )}
 
-      {/* Polymarket import panel */}
+      {/* Market import panel */}
       {showPolyImport && (
         <div className="mb-5 rounded-2xl border border-violet-800/30 bg-[#0d0d14] p-6">
-          <div className="mb-4">
-            <h3 className="font-bold text-violet-400">Import from Polymarket</h3>
-            <p className="mt-0.5 text-xs text-slate-600">Search global prediction markets and click Import to pre-fill the create form. Polymarket auto-verification is wired automatically.</p>
+          {/* Source tabs */}
+          <div className="mb-4 flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h3 className={`font-bold ${importSource === 'polymarket' ? 'text-violet-400' : 'text-teal-400'}`}>
+                Import from {importSource === 'polymarket' ? 'Polymarket' : 'Kalshi'}
+              </h3>
+              <p className="mt-0.5 text-xs text-slate-600">
+                {importSource === 'polymarket'
+                  ? 'Global prediction markets. Polymarket auto-verification is wired automatically.'
+                  : 'US regulated prediction markets. Imported as manual-verification.'}
+              </p>
+            </div>
+            <div className="flex gap-1 rounded-xl border border-[#1e1e2e] bg-[#08080e] p-1">
+              <button
+                onClick={() => setImportSource('polymarket')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                  importSource === 'polymarket'
+                    ? 'bg-violet-900/50 text-violet-300 border border-violet-700/50'
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                🌐 Polymarket
+              </button>
+              <button
+                onClick={() => setImportSource('kalshi')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                  importSource === 'kalshi'
+                    ? 'bg-teal-900/50 text-teal-300 border border-teal-700/50'
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                🏛️ Kalshi
+              </button>
+            </div>
           </div>
-          <PolymarketImport onImport={handleImport} />
+
+          {importSource === 'polymarket' && <PolymarketImport onImport={handleImport} />}
+          {importSource === 'kalshi'     && <KalshiImport     onImport={handleImport} />}
         </div>
       )}
 
@@ -172,6 +244,23 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
           <h3 className="mb-1 font-bold text-amber-400">Settle Market</h3>
           <p className="mb-4 text-sm text-slate-500">{settleMarket.title}</p>
           <SettleMarketForm market={settleMarket} onDone={() => setSettleMarket(null)} />
+        </div>
+      )}
+
+      {editingMarket && (
+        <div id="edit-market-form" className="mb-6 rounded-2xl border border-violet-800/30 bg-[#0d0d18] p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-violet-400">Edit Market</h3>
+              <p className="mt-0.5 text-xs text-slate-600 line-clamp-1">{editingMarket.title}</p>
+            </div>
+            <button onClick={() => setEditingMarket(null)} className="text-slate-600 hover:text-slate-400 text-sm">✕</button>
+          </div>
+          <CreateMarketForm
+            key={editingMarket.id}
+            editMarket={editingMarket}
+            onCreated={() => setEditingMarket(null)}
+          />
         </div>
       )}
 
@@ -228,9 +317,19 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
                 {m.closes_at ? new Date(m.closes_at).toLocaleDateString('en-UG', { day:'numeric', month:'short' }) : '—'}
               </span>
               <div className="flex flex-col gap-1.5">
+                <button
+                  onClick={() => openEdit(m)}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
+                    editingMarket?.id === m.id
+                      ? 'border-violet-700 bg-violet-900/30 text-violet-300'
+                      : 'border-violet-900/50 text-violet-500 hover:bg-violet-900/20'
+                  }`}
+                >
+                  Edit
+                </button>
                 {m.status === 'open' && (
                   <button
-                    onClick={() => { setSettleMarket(m); setShowCreate(false) }}
+                    onClick={() => { setSettleMarket(m); setShowCreate(false); setEditingMarket(null) }}
                     className="rounded-lg border border-amber-800/50 px-3 py-1.5 text-xs font-bold text-amber-400 hover:bg-amber-900/20 transition-colors"
                   >
                     Settle
@@ -243,6 +342,38 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
                     className="rounded-lg border border-emerald-800/50 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-900/20 disabled:opacity-40 transition-colors"
                   >
                     {clearingSurge === m.id ? '…' : 'Clear ⚡'}
+                  </button>
+                )}
+
+                {/* Delete — inline confirmation */}
+                {confirmDelete === m.id ? (
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[10px] text-red-400 font-bold">Sure?</p>
+                    {deleteError && confirmDelete === m.id && (
+                      <p className="text-[10px] text-red-500 leading-tight">{deleteError}</p>
+                    )}
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => deleteMarket(m.id)}
+                        disabled={deleting === m.id}
+                        className="rounded-lg bg-red-700 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
+                      >
+                        {deleting === m.id ? '…' : 'Yes'}
+                      </button>
+                      <button
+                        onClick={() => { setConfirmDelete(null); setDeleteError(null) }}
+                        className="rounded-lg border border-[#2a2a3e] px-2.5 py-1 text-[11px] font-bold text-slate-500 hover:text-slate-300 transition-colors"
+                      >
+                        No
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setConfirmDelete(m.id); setDeleteError(null) }}
+                    className="rounded-lg border border-red-900/50 px-3 py-1.5 text-xs font-bold text-red-500 hover:bg-red-900/20 transition-colors"
+                  >
+                    Delete
                   </button>
                 )}
               </div>

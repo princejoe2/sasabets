@@ -121,7 +121,7 @@ export default function RecentBets({ marketId, optionLabels }: Props) {
                   <span className="text-slate-400">{who}</span>
                   {' bet '}
                   <span className="font-semibold text-slate-300">
-                    UGX {bet.amount.toLocaleString()}
+                    UGX {Number(bet.amount).toLocaleString()}
                   </span>
                   {' on '}
                   <span className="font-semibold" style={{ color }}>

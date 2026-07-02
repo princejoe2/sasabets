@@ -42,7 +42,7 @@ export default async function MarketsPage({
   const initialCat = (searchParams?.cat ?? 'all') as string
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 page-enter">
       <div className="border-b border-slate-200 bg-white px-4 py-8">
         <div className="mx-auto max-w-6xl">
           <h1 className="text-4xl font-black tracking-tight">

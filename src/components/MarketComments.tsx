@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useId } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Comment {
@@ -45,6 +45,7 @@ export default function MarketComments({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | undefined>()
   const bottomRef = useRef<HTMLDivElement>(null)
+  const instanceId = useId()
 
   useEffect(() => {
     if (!isLoggedIn) return
@@ -74,8 +75,9 @@ export default function MarketComments({
   // Real-time new comments via Supabase
   useEffect(() => {
     const supabase = createClient()
+    // Include instanceId to avoid channel name collision on StrictMode double-mount
     const channel = supabase
-      .channel(`comments:${marketId}`)
+      .channel(`comments:${marketId}:${instanceId.replace(/:/g, '')}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'market_comments', filter: `market_id=eq.${marketId}` },

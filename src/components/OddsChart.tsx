@@ -18,12 +18,12 @@ function yOf(pct: number) {
 
 function formatTime(iso: string) {
   const d = new Date(iso)
-  return d.toLocaleDateString('en-UG', { day: 'numeric', month: 'short' })
+  return d.toLocaleDateString('en-UG', { day: 'numeric', month: 'short', timeZone: 'Africa/Kampala' })
 }
 
 function formatTooltipTime(iso: string) {
   const d = new Date(iso)
-  return d.toLocaleString('en-UG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleString('en-UG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Kampala' })
 }
 
 interface Props {

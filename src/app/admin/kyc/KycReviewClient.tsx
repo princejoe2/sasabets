@@ -8,7 +8,7 @@ type Submission = {
   kyc_status: string
   kyc_id_type: string | null
   kyc_id_number: string | null
-  updated_at: string | null
+  created_at: string | null
 }
 
 const ID_TYPE_LABEL: Record<string, string> = {
@@ -96,9 +96,9 @@ export default function KycReviewClient({ submissions }: { submissions: Submissi
                   <span className="text-slate-700">·</span>
                   <span className="font-mono text-xs text-slate-400">{s.kyc_id_number}</span>
                 </div>
-                {s.updated_at && (
+                {s.created_at && (
                   <p className="text-[11px] text-slate-700">
-                    {new Date(s.updated_at).toLocaleString('en-UG', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(s.created_at).toLocaleString('en-UG', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}
               </div>

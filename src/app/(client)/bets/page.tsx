@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import WinCelebration from '@/components/WinCelebration'
 
 type BetStatus = 'active' | 'won' | 'lost' | 'cancelled' | 'exited'
 type Category = 'football' | 'politics' | 'economy' | 'entertainment' | 'tech' | 'infrastructure' | 'agriculture' | 'default'
@@ -71,6 +72,24 @@ const TAB_FILTERS: Record<string, (b: Bet) => boolean> = {
   lost:   b => b.status === 'lost' || b.status === 'exited',
 }
 
+function sendSettlementNotification(status: 'won' | 'lost', marketTitle: string, payout?: number) {
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) return
+  if (Notification.permission !== 'granted') return
+
+  navigator.serviceWorker.ready.then(reg => {
+    const isWin = status === 'won'
+    reg.showNotification(isWin ? '🏆 You won!' : '😔 Prediction settled', {
+      body: isWin
+        ? `You won UGX ${(payout ?? 0).toLocaleString()} on "${marketTitle}"! Tap to see your winnings.`
+        : `"${marketTitle}" has settled. Better luck next time!`,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: `settlement-${Date.now()}`,
+      data: { url: '/bets' },
+    })
+  })
+}
+
 export default function BetsPage() {
   const supabase = createClient()
   const router = useRouter()
@@ -82,6 +101,7 @@ export default function BetsPage() {
   const [exitingBet, setExitingBet] = useState<string | null>(null)
   const [exitLoading, setExitLoading] = useState(false)
   const [exitMsg, setExitMsg]     = useState<{ betId: string; text: string; ok: boolean } | null>(null)
+  const [celebration, setCelebration] = useState<{ marketTitle: string; payout: number } | null>(null)
 
   const loadBets = useCallback(async (uid: string) => {
     const { data, error } = await supabase
@@ -104,6 +124,15 @@ export default function BetsPage() {
     init()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // On first load, mark all existing 'won' bets as already-seen so we don't
+  // re-show the celebration for bets that were already won before this session.
+  useEffect(() => {
+    if (bets.length > 0) {
+      const wonIds = bets.filter(b => b.status === 'won').map(b => b.id)
+      sessionStorage.setItem('seen-won-bets', JSON.stringify(wonIds))
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Real-time subscription: update bet status live when markets settle
   useEffect(() => {
     if (!userId) return
@@ -119,6 +148,37 @@ export default function BetsPage() {
               ? { ...b, ...(payload.new as Partial<Bet>) }
               : b
           ))
+
+          // Trigger win celebration for real-time won bets not already seen
+          if ((payload.new as { status: string }).status === 'won' &&
+              (payload.old as { status?: string } | undefined)?.status !== 'won') {
+            const betId = (payload.new as { id: string }).id
+            const seenRaw = sessionStorage.getItem('seen-won-bets')
+            const seen: string[] = seenRaw ? JSON.parse(seenRaw) : []
+            if (!seen.includes(betId)) {
+              setBets(prev => {
+                const wonBet = prev.find(b => b.id === betId)
+                const title = wonBet?.markets?.title ?? 'your market'
+                const payout = Number((payload.new as { settled_payout?: number }).settled_payout ?? 0)
+                if (payout > 0) setCelebration({ marketTitle: title, payout })
+                return prev
+              })
+            }
+          }
+
+          // Push notification for won or lost settlement transitions
+          const newStatus = (payload.new as { status: string }).status
+          const oldStatus = (payload.old as { status?: string } | undefined)?.status ?? ''
+          if (['won', 'lost'].includes(newStatus) && !['won', 'lost'].includes(oldStatus)) {
+            const betId = (payload.new as { id: string }).id
+            const payout = Number((payload.new as { settled_payout?: number }).settled_payout ?? 0)
+            setBets(prev => {
+              const settledBet = prev.find(b => b.id === betId)
+              const title = settledBet?.markets?.title ?? 'Your prediction'
+              sendSettlementNotification(newStatus as 'won' | 'lost', title, payout)
+              return prev
+            })
+          }
         }
       )
       .on(
@@ -170,6 +230,13 @@ export default function BetsPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
+      {celebration && (
+        <WinCelebration
+          marketTitle={celebration.marketTitle}
+          payout={celebration.payout}
+          onClose={() => setCelebration(null)}
+        />
+      )}
       {/* Page header */}
       <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-10">
         <div className="mx-auto max-w-4xl">

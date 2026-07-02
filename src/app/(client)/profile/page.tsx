@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import ReferralCard from '@/components/ReferralCard'
 import NotificationPreferences from '@/components/NotificationPreferences'
+import AchievementBadges from '@/components/AchievementBadges'
 
 interface Stats {
   total: number; active: number; won: number; lost: number
@@ -22,6 +23,7 @@ export default function ProfilePage() {
   const [stats,       setStats]       = useState<Stats | null>(null)
   const [memberSince, setMemberSince] = useState('')
   const [has2fa,      setHas2fa]      = useState(false)
+  const [streakDays,  setStreakDays]  = useState<number | null>(null)
   const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported' | null>(null)
   const [pushLoading,    setPushLoading]    = useState(false)
   const [userId,        setUserId]        = useState('')
@@ -54,7 +56,7 @@ export default function ProfilePage() {
       }))
 
       const [{ data: profile }, { data: wallet }, { data: bets }, { data: txns }] = await Promise.all([
-        supabase.from('profiles').select('phone, full_name, totp_enabled').eq('id', user.id).single(),
+        supabase.from('profiles').select('phone, full_name, totp_enabled, streak_days').eq('id', user.id).single(),
         supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
         supabase.from('bets').select('amount, potential_payout, status').eq('user_id', user.id),
         supabase.from('transactions').select('amount').eq('user_id', user.id).eq('type', 'payout').eq('status', 'completed'),
@@ -65,6 +67,7 @@ export default function ProfilePage() {
       if (profile?.phone)       setPhone(profile.phone)
       if (profile?.totp_enabled) setHas2fa(true)
       if (wallet) setBalance(Number(wallet.balance))
+      if (profile?.streak_days != null) setStreakDays(Number(profile.streak_days))
 
       if (bets) {
         const won     = bets.filter(b => b.status === 'won')
@@ -184,6 +187,33 @@ export default function ProfilePage() {
       </div>
 
       <div className="mx-auto max-w-3xl px-4 py-8 space-y-5">
+
+        {/* ── Login Streak ── */}
+        {streakDays != null && streakDays > 0 && (
+          <div className="flex items-center gap-4 rounded-2xl border border-orange-800/30 bg-gradient-to-r from-orange-950/30 to-amber-950/30 p-4">
+            <span className="text-4xl">🔥</span>
+            <div className="flex-1">
+              <p className="text-2xl font-black text-orange-400">{streakDays}-day streak</p>
+              <p className="text-xs text-orange-600/80 mt-0.5">
+                {streakDays >= 30
+                  ? 'Max milestone reached — keep the streak alive!'
+                  : streakDays >= 14
+                  ? `${30 - streakDays} more days to the 30-day bonus (UGX 5,000)`
+                  : streakDays >= 7
+                  ? `${14 - streakDays} more days to the 14-day bonus (UGX 2,000)`
+                  : `${7 - streakDays} more days to the 7-day bonus (UGX 1,000)`
+                }
+              </p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-orange-700">Next bonus</p>
+              <p className="text-sm font-black text-orange-400">
+                {streakDays >= 30 ? '—' : streakDays >= 14 ? 'UGX 5,000' : streakDays >= 7 ? 'UGX 2,000' : 'UGX 1,000'}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-5 sm:grid-cols-2">
 
           {/* ── Account card ── */}
@@ -415,6 +445,11 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* ── Achievement Badges ── */}
+        <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-6">
+          <AchievementBadges />
         </div>
 
         {/* ── Push Notifications ── */}

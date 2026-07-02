@@ -14,9 +14,9 @@ export default async function AdminKycPage() {
 
   const { data: submissions } = await admin
     .from('profiles')
-    .select('id, full_name, phone, kyc_status, kyc_id_type, kyc_id_number, updated_at')
+    .select('id, full_name, phone, kyc_status, kyc_id_type, kyc_id_number, created_at')
     .in('kyc_status', ['pending', 'approved', 'rejected'])
-    .order('updated_at', { ascending: false })
+    .order('created_at', { ascending: false })
 
   return <KycReviewClient submissions={submissions ?? []} />
 }

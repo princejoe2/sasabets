@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
-  const VALID_ID_TYPES = ['national_id', 'passport', 'drivers_license']
+  const VALID_ID_TYPES = ['national_id', 'passport', 'drivers_license', 'refugee_id']
   if (!VALID_ID_TYPES.includes(String(id_type))) {
     return NextResponse.json({ error: 'Invalid ID type' }, { status: 400 })
   }
