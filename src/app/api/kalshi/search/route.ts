@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 
-interface KalshiMarket {
+interface KalshiNestedMarket {
   ticker: string
-  event_ticker: string
   title: string
   yes_bid_dollars: string
   no_bid_dollars: string
@@ -10,32 +9,39 @@ interface KalshiMarket {
   volume_fp: string
   volume_24h_fp: string
   close_time: string | null
-  status: string
   market_type: string
+  mve_collection_ticker?: string
 }
 
-interface KalshiResponse {
+interface KalshiEvent {
+  event_ticker: string
+  title: string
+  markets: KalshiNestedMarket[]
+}
+
+interface KalshiEventsResponse {
   cursor?: string
-  markets?: KalshiMarket[]
+  events?: KalshiEvent[]
 }
 
 const BASE = 'https://api.elections.kalshi.com/trade-api/v2'
 
-async function fetchPage(cursor: string): Promise<{ markets: KalshiMarket[]; nextCursor: string }> {
-  const url = new URL(`${BASE}/markets`)
-  url.searchParams.set('status', 'active')
+async function fetchPage(cursor: string): Promise<{ events: KalshiEvent[]; nextCursor: string }> {
+  const url = new URL(`${BASE}/events`)
+  url.searchParams.set('status', 'open')
   url.searchParams.set('limit', '200')
+  url.searchParams.set('with_nested_markets', 'true')
   if (cursor) url.searchParams.set('cursor', cursor)
 
   const res = await fetch(url.toString(), {
     headers: { 'Accept': 'application/json' },
     next: { revalidate: 120 },
   })
-  if (!res.ok) return { markets: [], nextCursor: '' }
+  if (!res.ok) return { events: [], nextCursor: '' }
 
-  const data: KalshiResponse = await res.json()
+  const data: KalshiEventsResponse = await res.json()
   return {
-    markets:    Array.isArray(data.markets) ? data.markets : [],
+    events:    Array.isArray(data.events) ? data.events : [],
     nextCursor: data.cursor ?? '',
   }
 }
@@ -46,18 +52,22 @@ export async function GET(req: Request) {
   const cursor = searchParams.get('cursor') ?? ''
 
   try {
-    const { markets: raw, nextCursor } = await fetchPage(cursor)
+    const { events, nextCursor } = await fetchPage(cursor)
 
-    const markets = raw
-      .filter(m => m.market_type === 'binary' && m.title)
-      .filter(m => q === '' || m.title.toLowerCase().includes(q))
-      .map(m => {
+    const markets = events
+      .filter(e => {
+        const m = e.markets?.[0]
+        return m && m.market_type === 'binary' && !m.mve_collection_ticker && e.title
+      })
+      .filter(e => q === '' || e.title.toLowerCase().includes(q))
+      .map(e => {
+        const m = e.markets[0]
         const yesBid = Math.round(parseFloat(m.yes_bid_dollars ?? '0') * 100)
         const noBid  = Math.round(parseFloat(m.no_bid_dollars  ?? '0') * 100)
         const last   = Math.round(parseFloat(m.last_price_dollars ?? '0.5') * 100)
         return {
           ticker:    m.ticker,
-          title:     m.title,
+          title:     e.title,
           yesBid:    yesBid || last || 50,
           noBid:     noBid  || (100 - (last || 50)),
           volume:    Math.round(parseFloat(m.volume_fp    ?? '0')),
