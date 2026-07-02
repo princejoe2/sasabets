@@ -188,6 +188,17 @@ export default function MarketCard({ market }: { market: Market }) {
         transition: 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease',
       }}
     >
+      {/* Community badge */}
+      {market.metadata?.user_created && (
+        <div
+          className="flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-wider"
+          style={{ background: 'rgba(124,58,237,0.10)', borderBottom: '1px solid rgba(124,58,237,0.18)', color: '#a78bfa' }}
+        >
+          <span>🌍</span>
+          Community · {(market.metadata.creator_name as string) || 'Member'}
+        </div>
+      )}
+
       {/* Urgency top strip */}
       {effectivelyOpen && (urgency === 'final' || urgency === 'hour' || urgency === 'day') && (
         <div

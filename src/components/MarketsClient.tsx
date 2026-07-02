@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import MarketCard from '@/components/MarketCard'
 import OnboardingBanner from '@/components/OnboardingBanner'
 import { useWatchlist } from '@/hooks/useWatchlist'
@@ -331,6 +332,24 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
 
       {/* ── Onboarding banner ── */}
       <OnboardingBanner />
+
+      {/* ── Create market CTA ── */}
+      <div className="mx-auto max-w-6xl px-4 pt-5">
+        <Link href="/create"
+          className="group flex items-center justify-between rounded-2xl border border-violet-800/30 bg-gradient-to-r from-violet-900/20 to-[#0d0d14] px-5 py-4 transition-all hover:border-violet-600/50 hover:from-violet-900/30"
+        >
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-600/20 text-xl">💡</span>
+            <div>
+              <p className="text-sm font-black text-white">Create your own market</p>
+              <p className="text-xs text-slate-500">Launch a question · Stake UGX 5K · Share the link</p>
+            </div>
+          </div>
+          <span className="shrink-0 rounded-xl bg-violet-600 px-4 py-2 text-xs font-black text-white transition-colors group-hover:bg-violet-500">
+            Create →
+          </span>
+        </Link>
+      </div>
 
       {/* ── Market grid ── */}
       <div className="mx-auto max-w-6xl px-4 py-8 pb-24 sm:pb-8">

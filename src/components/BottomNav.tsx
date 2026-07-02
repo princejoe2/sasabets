@@ -60,12 +60,16 @@ export default function BottomNav() {
 
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href)
 
-  const tabs = [
+  const leftTabs  = [
     { href: '/',        Icon: HomeIcon,    label: 'Home'    },
     { href: '/markets', Icon: MarketsIcon, label: 'Markets' },
-    { href: '/bets',    Icon: BetsIcon,    label: 'My Bets' },
-    { href: '/wallet',  Icon: WalletIcon,  label: 'Wallet'  },
   ]
+  const rightTabs = [
+    { href: '/bets',   Icon: BetsIcon,   label: 'My Bets' },
+    { href: '/wallet', Icon: WalletIcon, label: 'Wallet'  },
+  ]
+
+  const createActive = pathname.startsWith('/create')
 
   return (
     <nav
@@ -73,20 +77,47 @@ export default function BottomNav() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="flex items-stretch">
-        {tabs.map(({ href, Icon, label }) => {
+        {leftTabs.map(({ href, Icon, label }) => {
           const active = isActive(href)
-          const isWallet = href === '/wallet'
           return (
-            <Link
-              key={href}
-              href={href}
+            <Link key={href} href={href}
               className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 transition-colors ${
                 active ? 'text-violet-600 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'
               }`}
             >
-              {active && (
-                <span className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-violet-500" />
-              )}
+              {active && <span className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-violet-500" />}
+              <Icon active={active} />
+              <span className="text-[10px] font-semibold">{label}</span>
+            </Link>
+          )
+        })}
+
+        {/* Centre create button */}
+        <Link href="/create"
+          className="relative flex flex-col items-center justify-center px-5 -mt-4"
+        >
+          <div className={`flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all ${
+            createActive
+              ? 'bg-violet-500 shadow-violet-500/40'
+              : 'bg-violet-600 shadow-violet-600/30 hover:bg-violet-500'
+          }`}>
+            <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+          </div>
+          <span className={`mt-1 text-[10px] font-black ${createActive ? 'text-violet-600 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'}`}>Create</span>
+        </Link>
+
+        {rightTabs.map(({ href, Icon, label }) => {
+          const active   = isActive(href)
+          const isWallet = href === '/wallet'
+          return (
+            <Link key={href} href={href}
+              className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 transition-colors ${
+                active ? 'text-violet-600 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'
+              }`}
+            >
+              {active && <span className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-violet-500" />}
               <div className="relative">
                 <Icon active={active} />
                 {isWallet && notifCount > 0 && (
