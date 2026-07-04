@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Sign in to create a market' }, { status: 401 })
 
-  const { title, description, optionA, optionB, category, closesAt, betSide, isPrivate } = await req.json()
+  const { title, description, optionA, optionB, category, resolutionCriteria, closesAt, betSide, isPrivate } = await req.json()
 
   if (!title?.trim() || !optionA?.trim() || !optionB?.trim()) {
     return NextResponse.json({ error: 'Title and both sides are required' }, { status: 400 })
@@ -46,6 +46,12 @@ export async function POST(req: NextRequest) {
   if (typeof description === 'string' && description.length > 2000) {
     return NextResponse.json({ error: 'Description is too long (max 2,000 characters)' }, { status: 400 })
   }
+  if (typeof resolutionCriteria === 'string' && resolutionCriteria.length > 500) {
+    return NextResponse.json({ error: 'Resolution criteria is too long (max 500 characters)' }, { status: 400 })
+  }
+  const resolutionText = typeof resolutionCriteria === 'string' && resolutionCriteria.trim()
+    ? resolutionCriteria.trim()
+    : null
 
   // Closing date must be a real timestamp in the future (max 1 year out)
   let closesAtIso: string | null = null
@@ -61,7 +67,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Content filter
-  const allText = [title, optionA, optionB, description ?? ''].join(' ')
+  const allText = [title, optionA, optionB, description ?? '', resolutionText ?? ''].join(' ')
   if (containsBlocked(allText)) {
     return NextResponse.json({
       error: 'Your market contains content that is not allowed. Please revise the title or options.',
@@ -140,6 +146,7 @@ export async function POST(req: NextRequest) {
       user_created:      true,
       creator_name:      profile?.full_name ?? 'Community',
       creator_max_stake: LAUNCH_STAKE,
+      ...(resolutionText ? { resolution_criteria: resolutionText } : {}),
       ...(isPrivate && accessToken ? { private: true, access_token_hash: hashAccessToken(accessToken) } : {}),
     },
   }).select('id').single()

@@ -489,6 +489,12 @@ const marketUrl  = accessToken
               {market.description && (
                 <p className="mt-2 text-slate-400 max-w-2xl">{market.description}</p>
               )}
+              {typeof meta.resolution_criteria === 'string' && meta.resolution_criteria.trim() && (
+                <div className="mt-3 max-w-2xl rounded-xl border border-sky-800/30 bg-sky-900/10 px-4 py-3">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-sky-400">⚖️ How this resolves</p>
+                  <p className="mt-1 text-sm text-slate-300 leading-relaxed">{meta.resolution_criteria}</p>
+                </div>
+              )}
             </div>
 
             {/* Pool stat + share */}

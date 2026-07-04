@@ -84,6 +84,7 @@ export default function CreateMarketPage() {
 
   const [title,       setTitle]       = useState('')
   const [description, setDescription] = useState('')
+  const [resolutionCriteria, setResolutionCriteria] = useState('')
   const [optionA,     setOptionA]     = useState('Yes')
   const [optionB,     setOptionB]     = useState('No')
   const [category,    setCategory]    = useState('other')
@@ -131,6 +132,7 @@ export default function CreateMarketPage() {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
         title, description, optionA, optionB, category,
+        resolutionCriteria: resolutionCriteria || null,
         closesAt: closesAt || null,
         betSide:  side,
         isPrivate,
@@ -406,9 +408,21 @@ export default function CreateMarketPage() {
               Context <span className="font-normal text-slate-700">(optional)</span>
             </label>
             <textarea value={description} onChange={e => setDescription(e.target.value)}
-              placeholder="Add context, resolution criteria, or a news link…"
+              placeholder="Add context or a news link…"
               rows={2} maxLength={500}
               className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors resize-none placeholder:text-slate-700" />
+          </div>
+
+          {/* Resolution criteria */}
+          <div>
+            <label className="mb-1.5 block text-xs font-black uppercase tracking-wider text-slate-600">
+              How will this be resolved? <span className="font-normal text-slate-700">(optional but recommended)</span>
+            </label>
+            <textarea value={resolutionCriteria} onChange={e => setResolutionCriteria(e.target.value)}
+              placeholder="e.g. Resolves YES if the official FUFA result shows Vipers winning. Source: fufa.co.ug"
+              rows={2} maxLength={500}
+              className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors resize-none placeholder:text-slate-700" />
+            <p className="mt-1 text-xs text-slate-700">A clear rule and source reduces disputes and helps people trust your market.</p>
           </div>
 
           {/* Close date */}
