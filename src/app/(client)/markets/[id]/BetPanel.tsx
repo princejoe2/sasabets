@@ -68,7 +68,6 @@ type Market = {
   status: string
   rake_pct: number
   winning_option_id: string | null
-  settlement_note: string | null
   settlement_evidence_url: string | null
   metadata: Record<string, unknown> | null
   created_by: string | null
@@ -252,6 +251,8 @@ export default function BetPanel({
   const { display: countdown, urgency } = useCountdown(isOpen ? market.closes_at : null)
 
   const meta        = market.metadata ?? {}
+  // Settlement note is stored in metadata (jsonb), not a top-level column.
+  const settlementNote = typeof meta.settlement_note === 'string' ? meta.settlement_note : null
   const isUpDown    = meta.type === 'updown'
   const assetId     = isUpDown ? String(meta.asset ?? 'bitcoin') : null
   const entryPrice  = isUpDown ? Number(meta.entry_price ?? 0) : 0
@@ -1003,10 +1004,10 @@ const marketUrl  = accessToken
                     ? 'Winnings have been distributed to correct predictors.'
                     : 'This market is no longer accepting predictions.'}
                 </p>
-                {isSettled && market.settlement_note && (
+                {isSettled && settlementNote && (
                   <div className="rounded-xl border border-violet-800/30 bg-violet-900/10 px-4 py-3 text-left">
                     <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-violet-500">Admin note</p>
-                    <p className="text-sm text-slate-300 leading-relaxed">{market.settlement_note}</p>
+                    <p className="text-sm text-slate-300 leading-relaxed">{settlementNote}</p>
                   </div>
                 )}
                 {isSettled && market.settlement_evidence_url && (() => {

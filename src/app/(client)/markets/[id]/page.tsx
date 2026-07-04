@@ -57,7 +57,6 @@ type Market = {
   status: string
   rake_pct: number
   winning_option_id: string | null
-  settlement_note: string | null
   settlement_evidence_url: string | null
   metadata: Record<string, unknown> | null
   created_by: string | null
@@ -76,7 +75,7 @@ export default async function MarketPage({
 
   const { data: market } = await supabase
     .from('markets')
-    .select('id, title, description, total_pool, options, closes_at, status, rake_pct, winning_option_id, settlement_note, settlement_evidence_url, metadata, created_by')
+    .select('id, title, description, total_pool, options, closes_at, status, rake_pct, winning_option_id, settlement_evidence_url, metadata, created_by')
     .eq('id', id)
     .single()
 
