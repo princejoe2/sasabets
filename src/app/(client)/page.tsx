@@ -36,13 +36,33 @@ function fmtPool(n: number) {
   return `UGX ${n.toLocaleString()}`
 }
 
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  name: 'Sabula 256',
-  url: 'https://sabula256.com',
-  description: "Uganda's community prediction market — create your own markets, predict politics, football, economy using Mobile Money",
-}
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Sabula 256',
+    url: 'https://sabula256.com',
+    description: "Uganda's community prediction market — create your own prediction markets, bet on politics, football, economy and more using MTN or Airtel Mobile Money.",
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: { '@type': 'EntryPoint', urlTemplate: 'https://sabula256.com/markets?q={search_term_string}' },
+      'query-input': 'required name=search_term_string',
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Sabula 256',
+    url: 'https://sabula256.com',
+    applicationCategory: 'FinanceApplication',
+    operatingSystem: 'Any',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'UGX' },
+    description: 'Create your own prediction market or join one. Predict Uganda politics, football, economy and more. Win via MTN or Airtel Mobile Money.',
+    provider: { '@type': 'Organization', name: 'Sabula 256', url: 'https://sabula256.com' },
+    inLanguage: 'en-UG',
+    countriesSupported: 'UG',
+  },
+]
 
 export default async function HomePage() {
   const supabase = createClient()

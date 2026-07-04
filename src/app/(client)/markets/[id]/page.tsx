@@ -30,16 +30,17 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       description: 'This market is invite-only. You need the creator\'s secret link to access it.',
     }
   }
-  const ogImage = (meta.og_image ?? meta.image ?? null) as string | null
   const canonical = `https://sabula256.com/markets/${params.id}`
+  const ogImageUrl = `/markets/${params.id}/opengraph-image`
   return {
     title: m.title,
     description: desc,
     alternates: { canonical },
-    openGraph: { title: m.title, description: desc, siteName: 'Sabula 256', type: 'website', ...(ogImage ? { images: [ogImage] } : {}) },
-    twitter: ogImage
-      ? { card: 'summary_large_image', title: m.title, description: desc, images: [ogImage] }
-      : { card: 'summary',             title: m.title, description: desc },
+    openGraph: {
+      title: m.title, description: desc, siteName: 'Sabula 256', type: 'website', url: canonical,
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: m.title }],
+    },
+    twitter: { card: 'summary_large_image', title: m.title, description: desc, images: [ogImageUrl] },
   }
 }
 

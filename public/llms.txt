@@ -1,0 +1,61 @@
+# Sabula 256
+
+> Uganda's community prediction market — create your own market, invite friends, win real money via Mobile Money.
+
+Sabula 256 (sabula256.com) is a parimutuel prediction market platform built for Uganda. Anyone can create a prediction market on any topic, share the link, and win money when the market settles. Payouts go via MTN or Airtel Mobile Money.
+
+## What is Sabula 256?
+
+Sabula 256 is NOT a sports betting site. It is a prediction market — a platform where users put real money on the outcome of future events, and winners split the pool. The platform takes an 8% rake on qualifying markets (pools of UGX 50,000 or more). There is no house edge in the traditional sense — the platform does not take the opposite side of any bet.
+
+## How it works
+
+1. **Create a market** — Any user can create a binary prediction market (Yes/No, Team A/Team B, etc.) on any topic by staking UGX 5,000 as a launch bet.
+2. **Share the link** — The creator shares the market URL. Others join by placing bets on their preferred outcome.
+3. **Settlement** — When the event resolves, admin settles the market by declaring the winning outcome. Winners split the entire prize pool proportionally to their stake.
+4. **Payout** — Winnings are credited to the user's in-app wallet and can be withdrawn to MTN or Airtel Mobile Money instantly.
+
+## Platform economics
+
+- **Rake**: 8% of total pool, only on markets with pool >= UGX 50,000
+- **Creator share**: 2% of total pool credited to market creator on qualifying markets
+- **Minimum bet**: UGX 1,000
+- **Maximum withdrawal**: UGX 1,000,000 per transaction
+- **KYC required** for withdrawals above UGX 5,000,000
+
+## Market categories
+
+- **Football** — FUFA Premier League, Uganda Cranes, Premier League, Champions League
+- **Politics** — Uganda elections, parliament, government policy
+- **Economy** — UGX exchange rate, fuel prices, inflation
+- **Entertainment** — Music, TV, film, celebrity
+- **Tech** — Startup funding, product launches, crypto
+- **Infrastructure** — Roads, power, construction
+- **Agriculture** — Harvest prices, seasonal events
+- **Other** — Anything else
+
+## Key pages
+
+- Homepage: https://sabula256.com
+- Browse markets: https://sabula256.com/markets
+- Create a market: https://sabula256.com/create
+- Leaderboard: https://sabula256.com/leaderboard
+- Up/Down game: https://sabula256.com/updown (quick binary prediction game)
+- About: https://sabula256.com/about
+- Help: https://sabula256.com/help
+- Terms: https://sabula256.com/terms
+
+## Technical details
+
+- Built with Next.js 14, Supabase (Postgres), deployed on Vercel
+- Payments via Relworx and MarzPay (MTN/Airtel Mobile Money aggregators)
+- Real-time odds — live probability updates as bets come in
+- PWA — installable as a mobile app
+- Push notifications for market closings and settlement results
+
+## Contact
+
+- Website: https://sabula256.com
+- Support email: support@sabula256.com
+- Country: Uganda
+- Currency: Uganda Shillings (UGX)
