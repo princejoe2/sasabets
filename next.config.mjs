@@ -10,16 +10,11 @@ const nextConfig = {
     ],
   },
   typescript: { ignoreBuildErrors: false },
+  // Unique build id per build. The Supabase URL/anon key are hardcoded string
+  // literals (see lib/supabase/*), not env vars, so there is no NEXT_PUBLIC_
+  // inlining for any bundler to BOM-corrupt — the old webpack cache-version hack
+  // is no longer needed under Turbopack.
   generateBuildId: async () => `build-${Date.now()}`,
-  // Kept on the Webpack bundler for now (build/dev run with `--webpack`). This
-  // cache-version hack + the .next wipe in the build script guard against Vercel
-  // serving a stale build cache. Revisit migrating to Turbopack separately.
-  webpack: (config, { buildId }) => {
-    if (config.cache && typeof config.cache === 'object') {
-      config.cache.version = buildId
-    }
-    return config
-  },
   async headers() {
     return [
       {

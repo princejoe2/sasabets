@@ -1,8 +1,10 @@
+/* @import must precede all other rules (incl. @tailwind, which expands into
+   base styles) — Turbopack enforces this strictly, unlike webpack. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 body {
   background-color: #f8fafc;
