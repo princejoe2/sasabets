@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { authenticator } from 'otplib'
 import { buildTotpCookie } from '@/lib/totp-session'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   const supabase = createClient()
@@ -9,6 +10,10 @@ export async function POST(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // 5 attempts per minute per user
+  const { allowed } = await rateLimit(`2fa_admin:${user.id}`, 5, 60)
+  if (!allowed) return NextResponse.json({ error: 'Too many attempts. Wait a minute.' }, { status: 429 })
 
   const { data: profile } = await admin
     .from('profiles')

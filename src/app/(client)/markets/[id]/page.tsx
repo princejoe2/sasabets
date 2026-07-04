@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { verifyAccessToken } from '@/lib/market-token'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import BetPanel from './BetPanel'
@@ -81,9 +82,8 @@ export default async function MarketPage({
   // Private market gate — check access token
   const meta = (market.metadata ?? {}) as Record<string, unknown>
   if (meta.private === true) {
-    const urlToken     = searchParams.t ?? ''
-    const marketToken  = (meta.access_token as string | undefined) ?? ''
-    if (!urlToken || urlToken !== marketToken) {
+    const urlToken = searchParams.t ?? ''
+    if (!verifyAccessToken(meta, urlToken)) {
       return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0f] px-4 text-center">
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-amber-800/40 bg-amber-900/20 text-4xl">

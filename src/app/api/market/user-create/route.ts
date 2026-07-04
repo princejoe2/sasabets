@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { randomBytes } from 'crypto'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { sendPush, type StoredSubscription } from '@/lib/push'
+import { generateAccessToken, hashAccessToken } from '@/lib/market-token'
 
 const LAUNCH_STAKE = 5_000
-
-function generateAccessToken(): string {
-  return randomBytes(12).toString('base64url').slice(0, 16)
-}
 
 const CATEGORY_MAP: Record<string, string> = {
   football: 'football', politics: 'politics', economy: 'economy',
@@ -43,6 +39,25 @@ export async function POST(req: NextRequest) {
   }
   if (!['a', 'b'].includes(betSide)) {
     return NextResponse.json({ error: 'Choose which side you are backing to launch' }, { status: 400 })
+  }
+  if (optionA.trim().length > 80 || optionB.trim().length > 80) {
+    return NextResponse.json({ error: 'Option labels are too long (max 80 characters)' }, { status: 400 })
+  }
+  if (typeof description === 'string' && description.length > 2000) {
+    return NextResponse.json({ error: 'Description is too long (max 2,000 characters)' }, { status: 400 })
+  }
+
+  // Closing date must be a real timestamp in the future (max 1 year out)
+  let closesAtIso: string | null = null
+  if (closesAt) {
+    const d = new Date(closesAt)
+    if (isNaN(d.getTime()) || d <= new Date()) {
+      return NextResponse.json({ error: 'Closing date must be in the future' }, { status: 400 })
+    }
+    if (d > new Date(Date.now() + 366 * 24 * 60 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Closing date cannot be more than a year away' }, { status: 400 })
+    }
+    closesAtIso = d.toISOString()
   }
 
   // Content filter
@@ -116,7 +131,7 @@ export async function POST(req: NextRequest) {
     description: description?.trim() || null,
     options,
     status:      'open',
-    closes_at:   closesAt || null,
+    closes_at:   closesAtIso,
     rake_pct:    0.08,
     total_pool:  0,
     created_by:  user.id,
@@ -125,7 +140,7 @@ export async function POST(req: NextRequest) {
       user_created:      true,
       creator_name:      profile?.full_name ?? 'Community',
       creator_max_stake: LAUNCH_STAKE,
-      ...(isPrivate && accessToken ? { private: true, access_token: accessToken } : {}),
+      ...(isPrivate && accessToken ? { private: true, access_token_hash: hashAccessToken(accessToken) } : {}),
     },
   }).select('id').single()
 

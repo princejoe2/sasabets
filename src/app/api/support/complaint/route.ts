@@ -15,6 +15,9 @@ export async function POST(req: NextRequest) {
   if (typeof subject !== 'string' || !subject.trim() || typeof message !== 'string' || !message.trim()) {
     return NextResponse.json({ error: 'Subject and message are required' }, { status: 400 })
   }
+  if (subject.length > 200 || message.length > 5000) {
+    return NextResponse.json({ error: 'Subject (max 200) or message (max 5,000) is too long' }, { status: 400 })
+  }
 
   const { data, error } = await admin
     .from('complaints')

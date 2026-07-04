@@ -22,14 +22,26 @@ export async function GET() {
   return NextResponse.json(settings)
 }
 
+const ALLOWED_SETTING_KEYS = new Set([
+  'maintenance_mode', 'deposits_enabled', 'withdrawals_enabled',
+  'market_creation_enabled', 'min_bet', 'max_bet', 'rake_pct_default',
+  'kyc_threshold', 'max_withdrawal', 'daily_deposit_limit_default',
+  'announcement_banner', 'referral_bonus_amount', 'streak_bonus_7',
+  'streak_bonus_14', 'streak_bonus_30',
+])
+
 export async function POST(req: NextRequest) {
   const result = await getAdminOrUnauthorized()
   if ('error' in result) return result.error
 
   const body = await req.json()
+  const entries = Object.entries(body).filter(([key]) => ALLOWED_SETTING_KEYS.has(key))
+  if (entries.length === 0) {
+    return NextResponse.json({ error: 'No valid setting keys provided' }, { status: 400 })
+  }
 
   const { error } = await result.admin.from('platform_settings').upsert(
-    Object.entries(body).map(([key, value]) => ({
+    entries.map(([key, value]) => ({
       key,
       value: String(value),
       updated_at: new Date().toISOString(),

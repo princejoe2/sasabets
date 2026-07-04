@@ -28,7 +28,7 @@ async function handleDeposit(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { amount, phone } = await req.json()
-  if (typeof amount !== 'number' || !Number.isFinite(amount) || amount < 1000 || amount > 200_000) {
+  if (typeof amount !== 'number' || !Number.isInteger(amount) || amount < 1000 || amount > 200_000) {
     return NextResponse.json({ error: 'Deposit must be between UGX 1,000 and UGX 200,000' }, { status: 400 })
   }
 
@@ -54,6 +54,12 @@ async function handleDeposit(req: NextRequest) {
 
   const rawPhone = phone ?? profile?.phone ?? ''
   if (!rawPhone) return NextResponse.json({ error: 'No phone number on file' }, { status: 400 })
+
+  // Validate Uganda MTN/Airtel format before sending to gateway
+  const digitsOnly = rawPhone.replace(/[\s\-()]/g, '')
+  if (!/^(\+?256[67]\d{8}|0[67]\d{8})$/.test(digitsOnly)) {
+    return NextResponse.json({ error: 'Please enter a valid Uganda mobile number (MTN or Airtel)' }, { status: 400 })
+  }
 
   if (profile?.self_excluded_until && new Date(profile.self_excluded_until) > new Date()) {
     const until = new Date(profile.self_excluded_until).toLocaleDateString('en-UG', { day: 'numeric', month: 'long', year: 'numeric' })

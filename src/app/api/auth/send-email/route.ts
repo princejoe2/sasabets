@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createHash, timingSafeEqual } from 'crypto'
 
 const e = (k: string) => (process.env[k] ?? '').replace(/^﻿/, '').trim()
 const RESEND_API_KEY = e('RESEND_API_KEY')
@@ -43,8 +44,13 @@ const btn = (href: string, label: string, color = '#16a34a') =>
   `<p style="text-align:center;margin:32px 0"><a href="${href}" style="background:${color};color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">${label}</a></p>`
 
 export async function POST(req: NextRequest) {
-  const urlSecret = req.nextUrl.searchParams.get('secret')
-  if (!HOOK_SECRET || urlSecret !== HOOK_SECRET) {
+  const urlSecret = req.nextUrl.searchParams.get('secret') ?? ''
+  const secretOk = HOOK_SECRET &&
+    timingSafeEqual(
+      createHash('sha256').update(urlSecret).digest(),
+      createHash('sha256').update(HOOK_SECRET).digest(),
+    )
+  if (!secretOk) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

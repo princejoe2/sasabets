@@ -12,6 +12,9 @@ export async function POST(req: NextRequest) {
   if (!endpoint || !p256dh || !auth) {
     return NextResponse.json({ error: 'Invalid subscription' }, { status: 400 })
   }
+  if (typeof endpoint !== 'string' || !endpoint.startsWith('https://')) {
+    return NextResponse.json({ error: 'Invalid subscription endpoint' }, { status: 400 })
+  }
 
   // Upsert — same endpoint on same device just refreshes the record
   const { error } = await admin

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { verifyAccessToken } from '@/lib/market-token'
 
 type Opt = { id: string; label: string; total_pool: number }
 
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
   if (!marketId || !optionId) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
-  if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0 || amount > 100_000_000) {
+  if (typeof amount !== 'number' || !Number.isInteger(amount) || amount <= 0 || amount > 100_000_000) {
     return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
   }
   if (amount < 1000) {
@@ -68,10 +69,9 @@ export async function POST(req: NextRequest) {
 
   const meta = (market.metadata ?? {}) as Record<string, unknown>
 
-  // GUARD 2 — Private market token
+  // GUARD 2 — Private market token (hash comparison; raw token never stored)
   if (meta.private === true) {
-    const expectedToken = (meta.access_token as string | undefined) ?? ''
-    if (!accessToken || accessToken !== expectedToken) {
+    if (!verifyAccessToken(meta, typeof accessToken === 'string' ? accessToken : null)) {
       return guardError(403, 'private_market', 'You need the secret link to bet on this market')
     }
   }

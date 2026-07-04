@@ -10,8 +10,8 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { amount } = await req.json()
-  if (!amount || amount < 1000) {
-    return NextResponse.json({ error: 'Minimum deposit is UGX 1,000' }, { status: 400 })
+  if (typeof amount !== 'number' || !Number.isInteger(amount) || amount < 1000 || amount > 200_000) {
+    return NextResponse.json({ error: 'Deposit must be a whole number between UGX 1,000 and UGX 200,000' }, { status: 400 })
   }
 
   // Get phone + name from profile

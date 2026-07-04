@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { randomBytes } from 'crypto'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
-
-function generateAccessToken(): string {
-  return randomBytes(12).toString('base64url').slice(0, 16)
-}
+import { generateAccessToken, hashAccessToken } from '@/lib/market-token'
 
 export async function PATCH(req: NextRequest) {
   const supabase = createClient()
@@ -31,12 +27,15 @@ export async function PATCH(req: NextRequest) {
   let updatedMeta: Record<string, unknown>
 
   if (isPrivate) {
-    // Reuse existing token if already private, generate new one otherwise
-    accessToken = (meta.access_token as string | undefined) ?? generateAccessToken()
-    updatedMeta = { ...meta, private: true, access_token: accessToken }
+    // Only the hash is stored (metadata is world-readable via PostgREST), so a
+    // fresh token is issued every time the market is made private. The raw token
+    // is returned once in this response and never persisted.
+    accessToken = generateAccessToken()
+    const { access_token: _legacy, ...rest } = meta
+    updatedMeta = { ...rest, private: true, access_token_hash: hashAccessToken(accessToken) }
   } else {
-    // Strip private flag and token
-    const { private: _p, access_token: _t, ...rest } = meta
+    // Strip private flag and any token material
+    const { private: _p, access_token: _t, access_token_hash: _h, ...rest } = meta
     updatedMeta = rest
   }
 

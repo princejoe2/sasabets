@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto'
+import { createHmac, timingSafeEqual } from 'crypto'
 
 const COOKIE_NAME = 'sb_admin_2fa'
 const TTL_MS = 8 * 60 * 60 * 1000 // 8 hours
@@ -39,7 +39,9 @@ export function verifyTotpCookie(cookieValue: string | undefined, userId: string
     const ts = Number(tsStr)
     if (uid !== userId) return false
     if (Date.now() - ts > TTL_MS) return false
-    return createHmac('sha256', secret()).update(`${userId}:${ts}`).digest('hex') === sig
+    const expected = Buffer.from(sign(userId, ts), 'hex')
+    const provided = Buffer.from(sig, 'hex')
+    return provided.length === expected.length && timingSafeEqual(expected, provided)
   } catch {
     return false
   }

@@ -19,6 +19,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'file and marketId required' }, { status: 400 })
   }
 
+  // marketId becomes a storage path segment — must be a UUID, never raw input
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(marketId)) {
+    return NextResponse.json({ error: 'Invalid marketId' }, { status: 400 })
+  }
+
   if (!file.type.startsWith('image/')) {
     return NextResponse.json({ error: 'Only image files allowed' }, { status: 400 })
   }

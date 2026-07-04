@@ -15,6 +15,15 @@ export async function GET() {
   return NextResponse.json(data)
 }
 
+const BLOCKED_PHRASES = [
+  'fuck', 'shit', 'nigger', 'nigga', 'kaffir', 'bitch', 'whore', 'cunt',
+  'kill yourself', 'suicide', 'rape', 'porn', 'sex tape', 'naked',
+  'child porn', 'pedophil', 'terrorist', 'bomb', 'genocide',
+]
+function containsBlocked(text: string): boolean {
+  return BLOCKED_PHRASES.some(p => text.toLowerCase().includes(p))
+}
+
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const admin    = createAdminClient()
@@ -28,6 +37,14 @@ export async function POST(req: NextRequest) {
   }
   if (String(title).length > 200 || String(option_a).length > 100 || String(option_b).length > 100) {
     return NextResponse.json({ error: 'Input too long' }, { status: 400 })
+  }
+  if (
+    containsBlocked(String(title)) ||
+    containsBlocked(String(option_a)) ||
+    containsBlocked(String(option_b)) ||
+    (description && containsBlocked(String(description)))
+  ) {
+    return NextResponse.json({ error: 'Proposal contains prohibited content' }, { status: 400 })
   }
 
   // Rate limit: max 3 proposals per user per day

@@ -29,19 +29,24 @@ export async function POST() {
     const status = await getTransactionStatus(token, txn.pesapal_tracking_id)
 
     if (status.payment_status_description === 'Completed') {
-      const { data: wallet } = await admin
-        .from('wallets')
-        .select('balance')
-        .eq('user_id', user.id)
+      // Atomic idempotency flip — only one winner (poll vs webhook) credits the wallet
+      const { data: claimed } = await admin
+        .from('transactions')
+        .update({ status: 'processing' })
+        .eq('id', txn.id)
+        .eq('status', 'pending')
+        .select('amount')
         .single()
-
-      const newBalance = parseFloat(wallet?.balance ?? 0) + parseFloat(txn.amount)
-
-      await Promise.all([
-        admin.from('wallets').update({ balance: newBalance, updated_at: new Date().toISOString() }).eq('user_id', user.id),
-        admin.from('transactions').update({ status: 'completed', balance_after: newBalance }).eq('id', txn.id),
-      ])
-
+      if (!claimed) {
+        const { data: fresh } = await admin.from('transactions').select('status, balance_after').eq('id', txn.id).single()
+        if (fresh?.status === 'completed') return NextResponse.json({ credited: true, amount: txn.amount, newBalance: fresh.balance_after })
+        return NextResponse.json({ credited: false, reason: 'pending' })
+      }
+      const { data: newBalance } = await admin.rpc('adjust_wallet_balance', {
+        p_user_id: user.id,
+        p_delta:   Number(claimed.amount),
+      })
+      await admin.from('transactions').update({ status: 'completed', balance_after: newBalance ?? null }).eq('id', txn.id)
       return NextResponse.json({ credited: true, amount: txn.amount, newBalance })
     }
 
