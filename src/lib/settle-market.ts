@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { sendEmail, btn } from './email'
+import { sendPush, type StoredSubscription } from './push'
 
 const SITE = 'https://sabula256.com'
 const CREATOR_SHARE_PCT = 0.02
@@ -164,7 +165,82 @@ export async function settleMarket(
     winningLabel: winningOption.label, settlementNote,
   }).catch(err => console.error('[settle-market] Settlement email error:', err))
 
+  // Fire settlement push notifications — non-blocking
+  sendSettlementPush(admin, {
+    marketId, marketTitle: claimed.title, winningOptionId,
+  }).catch(err => console.error('[settle-market] Settlement push error:', err))
+
   return { success: true }
+}
+
+// Push every bettor a settlement notification (win or lose). Non-blocking; never
+// delays settlement. Mirrors the email recipient logic but delivers via web-push.
+async function sendSettlementPush(
+  admin: SupabaseClient,
+  opts: { marketId: string; marketTitle: string; winningOptionId: string },
+) {
+  const { marketId, marketTitle, winningOptionId } = opts
+
+  const { data: bets } = await admin
+    .from('bets')
+    .select('user_id, option_id, settled_payout')
+    .eq('market_id', marketId)
+    .in('status', ['won', 'lost'])
+
+  if (!bets?.length) return
+
+  // Aggregate per user: won if any of their bets was on the winning side; sum payout.
+  const perUser: Record<string, { won: boolean; payout: number }> = {}
+  for (const b of bets) {
+    const cur = perUser[b.user_id] ?? { won: false, payout: 0 }
+    if (b.option_id === winningOptionId) {
+      cur.won = true
+      cur.payout += Number(b.settled_payout ?? 0)
+    }
+    perUser[b.user_id] = cur
+  }
+
+  const userIds = Object.keys(perUser)
+  if (!userIds.length) return
+
+  const { data: subs } = await admin
+    .from('push_subscriptions')
+    .select('user_id, endpoint, p256dh, auth')
+    .in('user_id', userIds)
+
+  if (!subs?.length) return
+
+  const marketUrl = `${SITE}/markets/${marketId}`
+  const shortTitle = marketTitle.length > 70 ? marketTitle.slice(0, 67) + '…' : marketTitle
+
+  const results = await Promise.allSettled(
+    subs.map(s => {
+      const agg = perUser[s.user_id]
+      const payload = agg?.won
+        ? {
+            title: '🏆 You won on Sabula 256!',
+            body: `You won UGX ${Math.round(agg.payout).toLocaleString()} on "${shortTitle}"`,
+            url: marketUrl,
+          }
+        : {
+            title: 'Market settled',
+            body: `"${shortTitle}" has been settled — tap to see the result.`,
+            url: marketUrl,
+          }
+      return sendPush(s as StoredSubscription, payload)
+    }),
+  )
+
+  // Clean up expired subscriptions (410 Gone)
+  const gone: string[] = []
+  results.forEach((r, i) => {
+    if (r.status === 'rejected' && (r.reason as { statusCode?: number })?.statusCode === 410) {
+      gone.push(subs[i].endpoint)
+    }
+  })
+  if (gone.length) {
+    await admin.from('push_subscriptions').delete().in('endpoint', gone)
+  }
 }
 
 async function sendSettlementEmails(
