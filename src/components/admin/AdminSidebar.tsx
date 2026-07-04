@@ -46,6 +46,7 @@ const NAV_GROUPS = [
     label: 'Intelligence',
     items: [
       { href: '/admin/market-events',  icon: '⚡', label: 'Market Events' },
+      { href: '/admin/community',      icon: '🌍', label: 'Community Review' },
       { href: '/admin/account-flags',  icon: '🚩', label: 'Account Flags' },
       { href: '/admin/flags',          icon: '🏴', label: 'Market Disputes' },
     ],
