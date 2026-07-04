@@ -11,7 +11,7 @@ const SECTIONS = [
     faqs: [
       {
         q: 'What is Sabula 256?',
-        a: 'Sabula 256 is Uganda\'s parimutuel prediction market. You stake money on the outcome of real-world events — politics, football, economy and more. If your prediction is correct, you share the full pot (minus our 8% fee) with other winners.',
+        a: 'Sabula 256 is Uganda\'s community prediction market. You stake money on the outcome of real-world events — politics, football, economy and more. If your prediction is correct, you share the full pool with other winners. You can also create your own markets and invite friends to predict.',
       },
       {
         q: 'How do I create an account?',
@@ -103,15 +103,15 @@ const SECTIONS = [
     faqs: [
       {
         q: 'How are the odds calculated?',
-        a: 'Odds are parimutuel — they come from the pool itself, not set by us. The formula is: Odds = (Total Pool × 0.92) ÷ Winning Side Pool. If more money flows to one side, those odds drop; the other side\'s odds rise. Odds update in real time as bets come in.',
+        a: 'Odds are parimutuel — they come from the pool itself, not set by us. The more money that flows to one side, the lower the odds on that side become, and the higher the odds on the other side. Odds update in real time as bets come in.',
       },
       {
         q: 'What does the percentage on each outcome mean?',
         a: 'The percentage is the share of the total pool on that side. 60% on Option A means 60% of all staked money is on Option A. It reflects market consensus on the likely outcome — but not our official prediction.',
       },
       {
-        q: 'What is the 8% fee?',
-        a: 'Sabula 256 takes 8% of every market\'s total pool as the platform fee (called the rake). The remaining 92% is paid out to winners. There are no other fees on standard bets.',
+        q: 'Are there any fees?',
+        a: 'Sabula 256 keeps the lights on through a small platform fee on qualifying markets. There are no fees on deposits or withdrawals from our side. Your mobile network operator may apply standard Mobile Money charges.',
       },
       {
         q: 'What are Up/Down markets?',
@@ -119,7 +119,7 @@ const SECTIONS = [
       },
       {
         q: 'Who creates the markets?',
-        a: 'Markets are created by Sabula 256 admin. However, the community can submit proposals — go to Proposals, suggest a market, and the community votes. Markets with enough votes get reviewed and potentially opened by admin.',
+        a: 'Anyone can create a market! Go to the Create page, write your question, set two sides, and stake UGX 5,000 to launch it instantly. Admin also publishes markets on Uganda politics, football, economy, and more. You can also submit proposals via the Proposals page for the community to vote on.',
       },
       {
         q: 'What does "Pool depth" mean?',
@@ -135,7 +135,7 @@ const SECTIONS = [
     faqs: [
       {
         q: 'How is the payout calculated?',
-        a: 'Payout = (Your Stake ÷ Total Winning Pool) × (Total Pool × 0.92). Example: You staked UGX 10,000 on the winning side. Total pool is UGX 100,000 and the winning pool is UGX 40,000. Your payout = (10,000 ÷ 40,000) × (100,000 × 0.92) = UGX 23,000.',
+        a: 'Payout = (Your Stake ÷ Total Winning Pool) × Total Pool. Example: You staked UGX 10,000 on the winning side. Total pool is UGX 100,000 and the winning pool is UGX 40,000. Your payout = (10,000 ÷ 40,000) × 100,000 = UGX 25,000.',
       },
       {
         q: 'When do I get paid?',
@@ -147,7 +147,7 @@ const SECTIONS = [
       },
       {
         q: 'What happens if my side wins but only I bet on it?',
-        a: 'You get the entire pool (minus 8%). The formula rewards the winning side regardless of how many people were on it.',
+        a: 'You get the entire pool. The formula rewards the winning side regardless of how many people were on it.',
       },
       {
         q: 'What happens if a market is suspended?',

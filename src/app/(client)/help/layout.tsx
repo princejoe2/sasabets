@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Help Centre — Sabula 256',
-  description: 'Predict on Sabula 256 — Uganda\'s #1 prediction market — and get answers fast. Full guide to deposits, betting, payouts and your account. Win on MTN or Airtel Mobile Money.',
+  title: 'Help Centre',
+  description: 'How to create markets, place predictions, deposit and withdraw on Sabula 256 — Uganda\'s community prediction market. Get paid via MTN or Airtel Mobile Money.',
   openGraph: {
     title: 'Help Centre | Sabula 256',
-    description: 'Everything you need to know about deposits, bets, payouts and your Sabula 256 account. Uganda\'s prediction market powered by Mobile Money.',
+    description: 'How to create markets, predict, deposit and withdraw on Uganda\'s community prediction market.',
     url: 'https://sabula256.com/help',
   },
 }

@@ -1,9 +1,15 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { sendEmail, btn } from './email'
+
+const SITE = 'https://sabula256.com'
+const CREATOR_SHARE_PCT = 0.02
 
 export async function settleMarket(
   admin: SupabaseClient,
   marketId: string,
   winningOptionId: string,
+  settlementNote?: string,
+  evidenceUrl?: string,
 ): Promise<{ success: boolean; error?: string }> {
   // Atomically claim the market for settlement — prevents double-payout under concurrency
   const { data: claimedRaw, error: claimErr } = await admin
@@ -21,6 +27,7 @@ export async function settleMarket(
   const claimed = claimedRaw as {
     id: string; title: string; status: string; options: unknown
     total_pool: number; rake_pct: number; winning_option_id: string | null
+    created_by: string | null; metadata: Record<string, unknown> | null
   }
   const opts = claimed.options as Array<{ id: string; label: string; total_pool: number }>
   const winningOption = opts.find(o => o.id === winningOptionId)
@@ -31,7 +38,9 @@ export async function settleMarket(
   }
 
   const totalPool   = Number(claimed.total_pool)
-  const rakePct     = Math.min(Math.max(Number(claimed.rake_pct ?? 0.08), 0), 0.99)
+  const configRake  = Math.min(Math.max(Number(claimed.rake_pct ?? 0.08), 0), 0.99)
+  // Only apply rake on markets that reached UGX 50,000+ in total pool
+  const rakePct     = totalPool >= 50_000 ? configRake : 0
   const prizePool   = totalPool * (1 - rakePct)
   const winningPool = Number(winningOption.total_pool)
 
@@ -107,9 +116,141 @@ export async function settleMarket(
     }
   }
 
+  // Creator 2% revenue share on qualifying markets (pool >= 50k, non-admin creator)
+  if (totalPool >= 50_000 && claimed.created_by) {
+    const { data: creatorProfile } = await admin
+      .from('profiles').select('is_admin').eq('id', claimed.created_by).single()
+    if (!creatorProfile?.is_admin) {
+      const creatorShare = Math.floor(totalPool * CREATOR_SHARE_PCT)
+      const { data: newBal } = await admin.rpc('adjust_wallet_balance', {
+        p_user_id: claimed.created_by,
+        p_delta: creatorShare,
+      })
+      const { error: shareErr } = await admin.from('transactions').insert({
+        user_id:   claimed.created_by,
+        type:      'creator_share',
+        amount:    creatorShare,
+        balance_after: newBal ?? undefined,
+        status:    'completed',
+        reference: `creator-${marketId}`,
+        metadata:  { marketId, market_title: claimed.title, totalPool, pct: CREATOR_SHARE_PCT },
+      })
+      if (shareErr && (shareErr as { code?: string }).code !== '23505') {
+        console.error(`[settle-market] Creator share insert failed for market ${marketId}:`, shareErr.message)
+      }
+    }
+  }
+
+  const settleMeta: Record<string, unknown> = { winningOptionId }
+  if (settlementNote?.trim()) settleMeta.settlement_note = settlementNote.trim()
+
   await admin.from('markets')
-    .update({ status: 'settled', winning_option_id: winningOptionId, settled_at: new Date().toISOString() })
+    .update({
+      status: 'settled',
+      winning_option_id: winningOptionId,
+      settled_at: new Date().toISOString(),
+      ...(settlementNote?.trim() ? { settlement_note: settlementNote.trim() } : {}),
+      ...(evidenceUrl?.trim() ? { settlement_evidence_url: evidenceUrl.trim() } : {}),
+    })
     .eq('id', marketId)
 
+  // Fire settlement emails — non-blocking, never delay settlement
+  sendSettlementEmails(admin, {
+    marketId, marketTitle: claimed.title, winningOptionId,
+    winningLabel: winningOption.label, settlementNote,
+  }).catch(err => console.error('[settle-market] Settlement email error:', err))
+
   return { success: true }
+}
+
+async function sendSettlementEmails(
+  admin: SupabaseClient,
+  opts: {
+    marketId: string
+    marketTitle: string
+    winningOptionId: string
+    winningLabel: string
+    settlementNote?: string
+  },
+) {
+  const { marketId, marketTitle, winningOptionId, winningLabel, settlementNote } = opts
+
+  const { data: bets } = await admin
+    .from('bets')
+    .select('user_id, option_id, settled_payout, amount')
+    .eq('market_id', marketId)
+    .in('status', ['won', 'lost'])
+
+  if (!bets?.length) return
+
+  let emailMap: Record<string, string> = {}
+  try {
+    const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    emailMap = Object.fromEntries(users.map(u => [u.id, u.email ?? '']))
+  } catch { return }
+
+  const marketUrl = `${SITE}/markets/${marketId}`
+  const seen = new Set<string>()
+
+  for (const bet of bets) {
+    if (seen.has(bet.user_id)) continue
+    seen.add(bet.user_id)
+
+    const email = emailMap[bet.user_id]
+    if (!email) continue
+
+    const won = bet.option_id === winningOptionId
+    const payout = Number(bet.settled_payout ?? 0)
+    const stake = Number(bet.amount)
+    const profit = payout - stake
+
+    await sendEmail(
+      email,
+      won ? `🏆 You won UGX ${Math.round(payout).toLocaleString()} on Sabula 256!` : `Market settled: "${marketTitle}"`,
+      `
+      <div style="background:#0a0a0f;color:#e2e8f0;font-family:system-ui,sans-serif;max-width:580px;margin:0 auto;border-radius:16px;overflow:hidden;border:1px solid #1e1e2e">
+        <div style="background:linear-gradient(135deg,${won ? '#064e3b,#065f46' : '#1e1b4b,#312e81'});padding:32px;text-align:center">
+          <p style="margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:${won ? '#6ee7b7' : '#c4b5fd'}">Sabula 256</p>
+          <h1 style="margin:0;font-size:28px;font-weight:900;color:#fff">${won ? '🏆 You Won!' : 'Market Settled'}</h1>
+          <p style="margin:12px 0 0;font-size:42px">${won ? '🎉' : '🔒'}</p>
+        </div>
+
+        <div style="padding:32px 28px">
+          <p style="color:#94a3b8;margin:0 0 8px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px">Market</p>
+          <h2 style="margin:0 0 20px;font-size:20px;font-weight:900;color:#f1f5f9;line-height:1.3">${marketTitle}</h2>
+
+          <div style="background:#111118;border:1px solid #1e1e2e;border-radius:12px;padding:16px 20px;margin:0 0 16px">
+            <p style="margin:0 0 4px;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:1px">Winning outcome</p>
+            <p style="margin:0;font-size:18px;font-weight:900;color:#fbbf24">🏆 ${winningLabel}</p>
+          </div>
+
+          ${won ? `
+          <div style="background:#064e3b20;border:1px solid #065f46;border-radius:12px;padding:16px 20px;margin:0 0 16px">
+            <p style="margin:0 0 4px;font-size:12px;color:#6ee7b7;text-transform:uppercase;letter-spacing:1px">Your payout</p>
+            <p style="margin:0;font-size:28px;font-weight:900;color:#34d399">UGX ${Math.round(payout).toLocaleString()}</p>
+            <p style="margin:4px 0 0;font-size:13px;color:#6ee7b7">+UGX ${Math.round(profit).toLocaleString()} profit on UGX ${Math.round(stake).toLocaleString()} stake</p>
+          </div>
+          ` : `
+          <div style="background:#1e1b4b20;border:1px solid #312e81;border-radius:12px;padding:16px 20px;margin:0 0 16px">
+            <p style="margin:0;font-size:14px;color:#94a3b8">Your stake of UGX ${Math.round(stake).toLocaleString()} on this market did not win this time.</p>
+          </div>
+          `}
+
+          ${settlementNote ? `
+          <div style="background:#111118;border:1px solid #1e1e2e;border-left:3px solid #7c3aed;border-radius:0 8px 8px 0;padding:12px 16px;margin:0 0 24px">
+            <p style="margin:0 0 4px;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px">Note from admin</p>
+            <p style="margin:0;font-size:14px;color:#94a3b8">${settlementNote}</p>
+          </div>
+          ` : ''}
+
+          ${btn(marketUrl, won ? '🎯 View your winnings' : '🔮 Browse more markets', won ? '#065f46' : '#7c3aed')}
+
+          <p style="margin:24px 0 0;font-size:12px;color:#334155;text-align:center">
+            <a href="${SITE}" style="color:#6d28d9">sabula256.com</a> — Uganda&rsquo;s community prediction market
+          </p>
+        </div>
+      </div>
+      `,
+    )
+  }
 }

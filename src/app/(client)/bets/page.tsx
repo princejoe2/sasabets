@@ -5,6 +5,22 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import WinCelebration from '@/components/WinCelebration'
 
+// ── My Markets types ──────────────────────────────────────────────────────────
+interface CreatedMarket {
+  id: string
+  title: string
+  status: string
+  total_pool: number
+  created_at: string
+  metadata: Record<string, unknown> | null
+}
+
+function fmtPool(n: number) {
+  if (n >= 1_000_000) return `UGX ${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000)     return `UGX ${Math.round(n / 1_000)}K`
+  return `UGX ${n.toLocaleString()}`
+}
+
 type BetStatus = 'active' | 'won' | 'lost' | 'cancelled' | 'exited'
 type Category = 'football' | 'politics' | 'economy' | 'entertainment' | 'tech' | 'infrastructure' | 'agriculture' | 'default'
 
@@ -97,11 +113,21 @@ export default function BetsPage() {
   const [userId, setUserId]       = useState<string | null>(null)
   const [loading, setLoading]     = useState(true)
   const [fetchError, setFetchError] = useState('')
-  const [tab, setTab]             = useState<'all' | 'active' | 'won' | 'lost'>('all')
+  const [tab, setTab]             = useState<'all' | 'active' | 'won' | 'lost' | 'mymarkets'>('all')
   const [exitingBet, setExitingBet] = useState<string | null>(null)
   const [exitLoading, setExitLoading] = useState(false)
   const [exitMsg, setExitMsg]     = useState<{ betId: string; text: string; ok: boolean } | null>(null)
   const [celebration, setCelebration] = useState<{ marketTitle: string; payout: number } | null>(null)
+
+  // My Markets state
+  const [myMarkets, setMyMarkets]           = useState<CreatedMarket[]>([])
+  const [myMarketsLoaded, setMyMarketsLoaded] = useState(false)
+  const [copiedId, setCopiedId]             = useState<string | null>(null)
+  const [visibilityLoading, setVisibilityLoading] = useState<string | null>(null)
+  const [extendingId, setExtendingId]       = useState<string | null>(null)
+  const [extendDate, setExtendDate]         = useState('')
+  const [extendLoading, setExtendLoading]   = useState(false)
+  const [extendMsg, setExtendMsg]           = useState<{ id: string; text: string; ok: boolean } | null>(null)
 
   const loadBets = useCallback(async (uid: string) => {
     const { data, error } = await supabase
@@ -111,6 +137,16 @@ export default function BetsPage() {
       .order('placed_at', { ascending: false })
     if (error) setFetchError(error.message)
     else setBets((data as unknown as Bet[]) ?? [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadMyMarkets = useCallback(async (uid: string) => {
+    const { data } = await supabase
+      .from('markets')
+      .select('id, title, status, total_pool, created_at, metadata')
+      .eq('created_by', uid)
+      .order('created_at', { ascending: false })
+    setMyMarkets((data as CreatedMarket[]) ?? [])
+    setMyMarketsLoaded(true)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -192,6 +228,66 @@ export default function BetsPage() {
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function switchTab(t: typeof tab) {
+    setTab(t)
+    if (t === 'mymarkets' && !myMarketsLoaded && userId) loadMyMarkets(userId)
+  }
+
+  async function toggleVisibility(market: CreatedMarket) {
+    const meta = (market.metadata ?? {}) as Record<string, unknown>
+    const isCurrentlyPrivate = meta.private === true
+    setVisibilityLoading(market.id)
+    const res = await fetch('/api/market/visibility', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ marketId: market.id, isPrivate: !isCurrentlyPrivate }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setMyMarkets(prev => prev.map(m => {
+        if (m.id !== market.id) return m
+        const prevMeta = (m.metadata ?? {}) as Record<string, unknown>
+        if (data.isPrivate) {
+          return { ...m, metadata: { ...prevMeta, private: true, access_token: data.accessToken } }
+        } else {
+          const { private: _p, access_token: _t, ...rest } = prevMeta
+          return { ...m, metadata: rest }
+        }
+      }))
+    }
+    setVisibilityLoading(null)
+  }
+
+  function copyMarketLink(market: CreatedMarket) {
+    const meta = (market.metadata ?? {}) as Record<string, unknown>
+    const token = meta.access_token as string | undefined
+    const url = token
+      ? `https://sabula256.com/markets/${market.id}?t=${token}`
+      : `https://sabula256.com/markets/${market.id}`
+    navigator.clipboard.writeText(url)
+    setCopiedId(market.id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  async function handleExtendDate(marketId: string) {
+    if (!extendDate) return
+    setExtendLoading(true)
+    const res = await fetch(`/api/market/${marketId}/extend-date`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newClosingDate: extendDate }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setMyMarkets(prev => prev.map(m => m.id === marketId ? { ...m } : m))
+      setExtendMsg({ id: marketId, text: 'Closing date updated!', ok: true })
+      setExtendingId(null); setExtendDate('')
+    } else {
+      setExtendMsg({ id: marketId, text: data.error ?? 'Failed', ok: false })
+    }
+    setExtendLoading(false)
+  }
 
   async function handleExit(bet: Bet) {
     setExitLoading(true)
@@ -286,13 +382,13 @@ export default function BetsPage() {
         </div>
 
         {/* Filter tabs */}
-        <div className="mb-6 flex w-fit gap-1 rounded-xl border border-[#1e1e2e] bg-[#13131a] p-1">
+        <div className="mb-6 flex flex-wrap gap-1 rounded-xl border border-[#1e1e2e] bg-[#13131a] p-1 w-fit">
           {(['all', 'active', 'won', 'lost'] as const).map(t => {
             const count = bets.filter(TAB_FILTERS[t]).length
             return (
               <button
                 key={t}
-                onClick={() => setTab(t)}
+                onClick={() => switchTab(t)}
                 className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
                   tab === t ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
@@ -308,6 +404,14 @@ export default function BetsPage() {
               </button>
             )
           })}
+          <button
+            onClick={() => switchTab('mymarkets')}
+            className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+              tab === 'mymarkets' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            My Markets
+          </button>
         </div>
 
         {/* Error */}
@@ -317,8 +421,176 @@ export default function BetsPage() {
           </div>
         )}
 
+        {/* ── My Markets panel ── */}
+        {tab === 'mymarkets' && (
+          <div className="space-y-3">
+            {!myMarketsLoaded ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
+              </div>
+            ) : myMarkets.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-[#2a2a3e] bg-[#0d0d14] p-16 text-center">
+                <p className="mb-2 text-4xl">💡</p>
+                <p className="font-medium text-slate-400">You haven&apos;t created any markets yet.</p>
+                <Link href="/create" className="mt-4 inline-block text-sm text-violet-400 hover:text-violet-300 transition-colors">
+                  Create your first market →
+                </Link>
+              </div>
+            ) : (
+              myMarkets.map(market => {
+                const meta    = (market.metadata ?? {}) as Record<string, unknown>
+                const isPriv  = meta.private === true
+                const token   = meta.access_token as string | undefined
+                const shareUrl = token
+                  ? `https://sabula256.com/markets/${market.id}?t=${token}`
+                  : `https://sabula256.com/markets/${market.id}`
+                const waText   = encodeURIComponent(
+                  isPriv
+                    ? `I created a private prediction market: "${market.title}" — join with my secret link: ${shareUrl}`
+                    : `Join my prediction market on Sabula 256: "${market.title}" — ${shareUrl}`
+                )
+                const isCopied  = copiedId === market.id
+                const isToggling = visibilityLoading === market.id
+
+                const statusColor =
+                  market.status === 'open'     ? 'text-emerald-400 bg-emerald-900/30 border-emerald-800/40' :
+                  market.status === 'settled'  ? 'text-slate-400 bg-[#1e1e2e] border-[#2a2a3e]' :
+                  'text-amber-400 bg-amber-900/20 border-amber-800/30'
+
+                return (
+                  <div key={market.id} className="rounded-xl border border-[#1e1e2e] bg-[#0d0d14] overflow-hidden">
+                    {/* Header row */}
+                    <div className="flex items-start justify-between gap-3 p-5 pb-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                          <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusColor}`}>
+                            {market.status}
+                          </span>
+                          <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
+                            isPriv
+                              ? 'border-amber-700/40 bg-amber-900/20 text-amber-400'
+                              : 'border-[#2a2a3e] text-slate-500'
+                          }`}>
+                            {isPriv ? '🔒 Private' : '🌍 Public'}
+                          </span>
+                          <span className="text-[10px] text-slate-600">{fmtPool(Number(market.total_pool))} pool</span>
+                        </div>
+                        <p className="font-bold text-slate-100 leading-snug">{market.title}</p>
+                      </div>
+                      <Link
+                        href={isPriv && token ? `/markets/${market.id}?t=${token}` : `/markets/${market.id}`}
+                        className="shrink-0 rounded-lg border border-[#2a2a3e] px-3 py-1.5 text-xs text-slate-400 hover:text-white hover:border-violet-600 transition-colors"
+                      >
+                        View →
+                      </Link>
+                    </div>
+
+                    {/* Link + actions */}
+                    <div className="border-t border-[#1a1a2a] px-5 py-3 space-y-2">
+                      {/* Link row */}
+                      <div className="flex items-center gap-2 rounded-lg border border-[#1e1e2e] bg-[#0a0a0f] px-3 py-2">
+                        <span className="flex-1 truncate font-mono text-[11px] text-slate-500">
+                          {isPriv && token
+                            ? `sabula256.com/markets/${market.id}?t=${token}`
+                            : `sabula256.com/markets/${market.id}`}
+                        </span>
+                        <button
+                          onClick={() => copyMarketLink(market)}
+                          className={`shrink-0 rounded-md px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                            isCopied
+                              ? 'bg-emerald-700/30 text-emerald-400'
+                              : 'bg-violet-900/30 text-violet-400 hover:bg-violet-800/40'
+                          }`}
+                        >
+                          {isCopied ? '✓ Copied' : 'Copy'}
+                        </button>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={`https://wa.me/?text=${waText}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 rounded-lg bg-[#25D366]/10 border border-[#25D366]/20 px-3 py-1.5 text-[11px] font-bold text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
+                        >
+                          <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                          Share
+                        </a>
+
+                        {market.status !== 'settled' && (
+                          <button
+                            onClick={() => toggleVisibility(market)}
+                            disabled={isToggling}
+                            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-bold transition-colors disabled:opacity-50 ${
+                              isPriv
+                                ? 'border-slate-700/40 text-slate-500 hover:border-emerald-700/40 hover:text-emerald-400'
+                                : 'border-amber-800/30 text-amber-500/70 hover:border-amber-700/60 hover:text-amber-400'
+                            }`}
+                          >
+                            {isToggling ? '…' : isPriv ? '🌍 Make public' : '🔒 Make private'}
+                          </button>
+                        )}
+                        {market.status === 'open' && (
+                          <button
+                            onClick={() => { setExtendingId(market.id); setExtendDate(''); setExtendMsg(null) }}
+                            className="flex items-center gap-1.5 rounded-lg border border-sky-800/30 px-3 py-1.5 text-[11px] font-bold text-sky-500/70 hover:border-sky-600 hover:text-sky-400 transition-colors"
+                          >
+                            ⏰ Extend date
+                          </button>
+                        )}
+                      </div>
+
+                      {isPriv && (
+                        <p className="text-[10px] text-amber-700/70 leading-relaxed">
+                          Only people with the link above can view and bet. Without it, the market is invisible.
+                        </p>
+                      )}
+
+                      {/* Extend date inline form */}
+                      {extendingId === market.id && (
+                        <div className="rounded-lg border border-sky-800/30 bg-sky-900/10 p-3 space-y-2">
+                          {extendMsg?.id === market.id && (
+                            <p className={`text-[11px] font-semibold ${extendMsg.ok ? 'text-emerald-400' : 'text-red-400'}`}>{extendMsg.text}</p>
+                          )}
+                          <p className="text-[11px] text-sky-400 font-semibold">Choose new closing date (must be in the future)</p>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="date"
+                              value={extendDate}
+                              min={new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)}
+                              onChange={e => setExtendDate(e.target.value)}
+                              className="flex-1 rounded-lg border border-[#2a2a3e] bg-[#0a0a0f] px-3 py-1.5 text-xs text-white outline-none focus:border-sky-600"
+                            />
+                            <button
+                              onClick={() => handleExtendDate(market.id)}
+                              disabled={!extendDate || extendLoading}
+                              className="rounded-lg bg-sky-700 px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-40 hover:bg-sky-600 transition-colors"
+                            >
+                              {extendLoading ? '…' : 'Save'}
+                            </button>
+                            <button
+                              onClick={() => setExtendingId(null)}
+                              className="rounded-lg border border-[#2a2a3e] px-3 py-1.5 text-[11px] text-slate-500 hover:text-white transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {extendMsg?.id === market.id && extendingId !== market.id && (
+                        <p className={`text-[11px] font-semibold ${extendMsg.ok ? 'text-emerald-400' : 'text-red-400'}`}>{extendMsg.text}</p>
+                      )}
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        )}
+
         {/* Bet list */}
-        {filtered.length === 0 ? (
+        {tab !== 'mymarkets' && (filtered.length === 0 ? (
           <div className="rounded-xl border border-dashed border-[#2a2a3e] bg-[#0d0d14] p-16 text-center">
             <p className="mb-2 text-4xl">🔮</p>
             <p className="font-medium text-slate-400">
@@ -502,7 +774,7 @@ export default function BetsPage() {
               )
             })}
           </div>
-        )}
+        ))}
       </div>
     </div>
   )

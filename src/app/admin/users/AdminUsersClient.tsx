@@ -9,6 +9,7 @@ interface User {
   suspended: boolean
   suspend_reason: string | null
   kyc_status: string | null
+  verified_creator: boolean
   created_at: string
   balance: number
   bets: number
@@ -186,6 +187,7 @@ export default function AdminUsersClient({ users: initial, totalBalance }: { use
                   {u.is_admin && <span className="rounded-full bg-red-900/40 px-1.5 py-0.5 text-[9px] font-black uppercase text-red-400">Admin</span>}
                   {u.suspended && <span className="rounded-full bg-orange-900/40 px-1.5 py-0.5 text-[9px] font-black uppercase text-orange-400">Suspended</span>}
                   {u.kyc_status === 'approved' && <span className="rounded-full bg-emerald-900/30 px-1.5 py-0.5 text-[9px] font-black uppercase text-emerald-500">KYC ✓</span>}
+                  {u.verified_creator && <span className="rounded-full bg-violet-900/40 px-1.5 py-0.5 text-[9px] font-black uppercase text-violet-400">✓ Verified</span>}
                 </div>
                 {u.full_name && <p className="text-xs text-slate-500">{u.full_name}</p>}
               </div>
@@ -273,6 +275,25 @@ export default function AdminUsersClient({ users: initial, totalBalance }: { use
                           ⏸ Suspend
                         </button>
                       </div>
+                    )}
+
+                    {/* Verified Creator */}
+                    {!u.is_admin && (
+                      <button
+                        onClick={async () => {
+                          const ok = await patch(u.id, { verified_creator: !u.verified_creator })
+                          if (ok) setUsers(prev => prev.map(x => x.id === u.id ? { ...x, verified_creator: !u.verified_creator } : x))
+                          setBusy(false)
+                        }}
+                        disabled={busy}
+                        className={`rounded-xl px-4 py-2 text-xs font-bold transition-colors disabled:opacity-50 ${
+                          u.verified_creator
+                            ? 'border border-violet-700/40 text-violet-400 hover:bg-violet-900/20'
+                            : 'border border-[#2a2a3e] text-slate-400 hover:border-violet-700 hover:text-violet-300'
+                        }`}
+                      >
+                        {u.verified_creator ? '✓ Verified Creator' : '✓ Grant Verified'}
+                      </button>
                     )}
 
                     {/* Delete */}

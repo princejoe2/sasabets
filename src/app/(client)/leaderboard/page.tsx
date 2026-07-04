@@ -4,8 +4,8 @@ import type { Metadata } from 'next'
 import { LeaderboardRefresher } from '@/components/LeaderboardRefresher'
 
 export const metadata: Metadata = {
-  title: 'Leaderboard – Top Predictors | Sabula 256',
-  description: 'See the top predictors on Sabula 256. Ranked by net profit and win rate across all prediction markets.',
+  title: 'Leaderboard – Top Predictors',
+  description: 'See Uganda\'s top predictors on Sabula 256. Ranked by net profit and win rate. Create your own market to climb the ranks.',
 }
 
 export const dynamic = 'force-dynamic'
@@ -13,6 +13,7 @@ export const dynamic = 'force-dynamic'
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type Period = 'all' | 'month' | 'week'
+type View = 'predictors' | 'creators'
 
 type Row = {
   id: string
@@ -24,6 +25,15 @@ type Row = {
   received: number
   net: number
   winRate: number
+}
+
+type CreatorRow = {
+  id: string
+  name: string
+  marketCount: number
+  totalPool: number
+  earnings: number
+  bettorCount: number
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -141,7 +151,7 @@ function PodiumSlot({ player, place, heightClass }: {
 export default async function LeaderboardPage({
   searchParams,
 }: {
-  searchParams: { period?: string }
+  searchParams: { period?: string; view?: string }
 }) {
   // Active period
   const period: Period = (['all', 'month', 'week'] as Period[]).includes(
@@ -149,6 +159,8 @@ export default async function LeaderboardPage({
   )
     ? (searchParams.period as Period)
     : 'all'
+
+  const view: View = searchParams.view === 'creators' ? 'creators' : 'predictors'
 
   // Current user (best-effort — no redirect on failure)
   let currentUserId: string | null = null
@@ -175,24 +187,97 @@ export default async function LeaderboardPage({
     phone: string | null
     is_admin: boolean
   }> = []
+  let creatorRows: CreatorRow[] = []
 
   try {
     const admin = createAdminClient()
     const startDate = periodStart(period)
 
-    let betsQuery = admin
-      .from('bets')
-      .select('user_id, amount, settled_payout, status')
-      .in('status', ['won', 'lost'])
-
-    if (startDate) betsQuery = betsQuery.gte('placed_at', startDate)
-
     const [betsRes, profilesRes] = await Promise.all([
-      betsQuery,
+      (() => {
+        let q = admin
+          .from('bets')
+          .select('user_id, amount, settled_payout, status')
+          .in('status', ['won', 'lost'])
+        if (startDate) q = q.gte('placed_at', startDate)
+        return q
+      })(),
       admin.from('profiles').select('id, full_name, phone, is_admin'),
     ])
     bets = betsRes.data ?? []
     profiles = profilesRes.data ?? []
+
+    // Creators leaderboard data
+    const adminIds = new Set(profiles.filter(p => p.is_admin).map(p => p.id))
+
+    let marketsQuery = admin
+      .from('markets')
+      .select('id, created_by, total_pool')
+      .not('created_by', 'is', null)
+      .eq('status', 'settled')
+    if (startDate) marketsQuery = marketsQuery.gte('settled_at', startDate)
+
+    const [marketsRes, earningsRes] = await Promise.all([
+      marketsQuery,
+      (() => {
+        let q = admin
+          .from('transactions')
+          .select('user_id, amount')
+          .eq('type', 'creator_share')
+          .eq('status', 'completed')
+        if (startDate) q = q.gte('created_at', startDate)
+        return q
+      })(),
+    ])
+
+    const creatorMarkets = (marketsRes.data ?? []).filter(m => !adminIds.has(m.created_by!))
+    const earningsMap: Record<string, number> = {}
+    for (const t of earningsRes.data ?? []) {
+      earningsMap[t.user_id] = (earningsMap[t.user_id] ?? 0) + Number(t.amount)
+    }
+
+    // Count unique bettors per creator's markets
+    const creatorMarketIds: Record<string, string[]> = {}
+    for (const m of creatorMarkets) {
+      if (!creatorMarketIds[m.created_by!]) creatorMarketIds[m.created_by!] = []
+      creatorMarketIds[m.created_by!].push(m.id)
+    }
+
+    let bettorsByCreator: Record<string, Set<string>> = {}
+    if (creatorMarkets.length > 0) {
+      const allMarketIds = creatorMarkets.map(m => m.id)
+      const { data: bettorBets } = await admin
+        .from('bets')
+        .select('market_id, user_id')
+        .in('market_id', allMarketIds)
+        .neq('status', 'cancelled')
+      for (const b of bettorBets ?? []) {
+        const creatorId = creatorMarkets.find(m => m.id === b.market_id)?.created_by
+        if (!creatorId) continue
+        if (!bettorsByCreator[creatorId]) bettorsByCreator[creatorId] = new Set()
+        bettorsByCreator[creatorId].add(b.user_id)
+      }
+    }
+
+    const creatorMap: Record<string, { marketCount: number; totalPool: number }> = {}
+    for (const m of creatorMarkets) {
+      if (!creatorMap[m.created_by!]) creatorMap[m.created_by!] = { marketCount: 0, totalPool: 0 }
+      creatorMap[m.created_by!].marketCount++
+      creatorMap[m.created_by!].totalPool += Number(m.total_pool)
+    }
+
+    creatorRows = Object.entries(creatorMap).map(([id, stats]) => {
+      const p = profiles.find(x => x.id === id)
+      return {
+        id,
+        name: displayName(p?.full_name ?? null, p?.phone ?? null),
+        marketCount: stats.marketCount,
+        totalPool: stats.totalPool,
+        earnings: earningsMap[id] ?? 0,
+        bettorCount: bettorsByCreator[id]?.size ?? 0,
+      }
+    }).sort((a, b) => b.totalPool - a.totalPool).slice(0, 50)
+
   } catch {
     // admin client unavailable
   }
@@ -320,12 +405,29 @@ export default async function LeaderboardPage({
 
       <div className="mx-auto max-w-4xl px-4 py-8">
 
+        {/* ── View switcher ── */}
+        <div className="mb-5 flex gap-2">
+          {(['predictors', 'creators'] as View[]).map(v => (
+            <Link
+              key={v}
+              href={`/leaderboard?view=${v}&period=${period}`}
+              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition-colors ${
+                view === v
+                  ? 'bg-violet-500/20 border border-violet-500/40 text-violet-300'
+                  : 'border border-[#1e1e2e] text-slate-500 hover:border-slate-600 hover:text-slate-300'
+              }`}
+            >
+              {v === 'predictors' ? '🎯 Predictors' : '🏗️ Creators'}
+            </Link>
+          ))}
+        </div>
+
         {/* ── Period Tabs ── */}
         <div className="mb-8 flex gap-2 flex-wrap">
           {(['all', 'month', 'week'] as Period[]).map(p => (
             <Link
               key={p}
-              href={`/leaderboard?period=${p}`}
+              href={`/leaderboard?view=${view}&period=${p}`}
               className={`rounded-xl px-5 py-2.5 text-sm font-bold transition-colors ${
                 period === p
                   ? 'bg-amber-500/20 border border-amber-500/40 text-amber-400'
@@ -337,8 +439,74 @@ export default async function LeaderboardPage({
           ))}
         </div>
 
-        {/* ── Empty state ── */}
-        {rows.length === 0 ? (
+        {/* ── Creators view ── */}
+        {view === 'creators' && (
+          <>
+            {creatorRows.length === 0 ? (
+              <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] py-20 text-center">
+                <p className="text-5xl">🏗️</p>
+                <p className="mt-4 text-lg font-bold text-slate-400">No creator data yet</p>
+                <p className="mt-2 text-sm text-slate-600">Create a market and attract bettors to appear here.</p>
+                <Link href="/create" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-violet-500 transition-colors">
+                  Create a market →
+                </Link>
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-2xl border border-[#1e1e2e] bg-[#0d0d14]">
+                <div className="grid grid-cols-[3rem_1fr_auto_auto_auto_auto] items-center gap-3 border-b border-[#1e1e2e] px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-slate-600">
+                  <span className="text-center">#</span>
+                  <span>Creator</span>
+                  <span className="text-right">Markets</span>
+                  <span className="hidden sm:block text-right">Bettors</span>
+                  <span className="text-right">Pool&nbsp;Attracted</span>
+                  <span className="text-right">Earnings</span>
+                </div>
+                {creatorRows.map((r, i) => {
+                  const isMe = r.id === currentUserId
+                  return (
+                    <div
+                      key={r.id}
+                      className={[
+                        'grid grid-cols-[3rem_1fr_auto_auto_auto_auto] items-center gap-3 px-5 py-3.5 transition-colors',
+                        i < creatorRows.length - 1 ? 'border-b border-[#131320]' : '',
+                        i % 2 === 1 ? 'bg-[#0f0f1a]' : 'bg-[#0d0d14]',
+                        isMe ? 'bg-violet-950/30 ring-1 ring-inset ring-violet-600/30' : 'hover:bg-[#13131e]',
+                      ].filter(Boolean).join(' ')}
+                    >
+                      <span className="text-center text-sm font-black text-slate-600 tabular-nums">{i + 1}</span>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[11px] font-black text-white ${isMe ? 'bg-gradient-to-br from-violet-500 to-purple-700 ring-2 ring-violet-400/60' : 'bg-gradient-to-br from-slate-600 to-slate-800'}`}>
+                          {getInitials(r.name)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className={`truncate text-sm font-bold ${isMe ? 'text-violet-300' : 'text-slate-200'}`}>
+                            {r.name}{isMe && <span className="ml-1.5 text-[10px] font-medium text-violet-500">you</span>}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-right text-sm font-bold text-slate-300 tabular-nums">{r.marketCount}</span>
+                      <span className="hidden sm:block text-right text-xs text-slate-500 tabular-nums">{r.bettorCount}</span>
+                      <span className="text-right text-sm font-bold text-amber-400 tabular-nums">
+                        {r.totalPool >= 1_000_000 ? `${(r.totalPool / 1_000_000).toFixed(1)}M` : r.totalPool >= 1_000 ? `${Math.round(r.totalPool / 1_000)}k` : r.totalPool.toLocaleString()}
+                      </span>
+                      <span className="text-right text-sm font-black tabular-nums text-emerald-400">
+                        {r.earnings > 0 ? `+${Math.round(r.earnings / 1_000)}k` : '—'}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+            <div className="mt-12 text-center">
+              <Link href="/create" className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-violet-500">
+                Create a market to earn →
+              </Link>
+            </div>
+          </>
+        )}
+
+        {/* ── Predictors view ── */}
+        {view === 'predictors' && (rows.length === 0 ? (
           <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] py-20 text-center">
             <p className="text-5xl">🎯</p>
             <p className="mt-4 text-lg font-bold text-slate-400">
@@ -495,21 +663,23 @@ export default async function LeaderboardPage({
               </div>
             )}
           </>
-        )}
+        ))}
 
         {/* ── CTA ── */}
-        <div className="mt-12 text-center">
-          <Link
-            href="/markets"
-            className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-violet-500"
-          >
-            Make your predictions →
-          </Link>
-        </div>
+        {view === 'predictors' && (
+          <div className="mt-12 text-center">
+            <Link
+              href="/markets"
+              className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-violet-500"
+            >
+              Make your predictions →
+            </Link>
+          </div>
+        )}
       </div>
 
-      {/* ── Fixed bottom bar on mobile (logged-in users only) ── */}
-      {myRow && myRank > 3 && (
+      {/* ── Fixed bottom bar on mobile (logged-in users only, predictors view) ── */}
+      {view === 'predictors' && myRow && myRank > 3 && (
         <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-[#1e1e2e] bg-[#0a0a0f]/95 px-4 py-3 backdrop-blur-md">
           <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-violet-500">
             Your Standing &middot; {label}

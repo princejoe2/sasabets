@@ -105,24 +105,28 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* ── Nav links (hidden on mobile — accessible via account menu) ── */}
+        {/* ── Nav links (hidden on mobile — accessible via bottom nav) ── */}
         <div className="hidden sm:flex items-center gap-0.5">
-          {([['Markets', '/markets'], ['Leaderboard', '/leaderboard']] as const).map(([label, href]) => {
-            const active = isActive(href)
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                  active
-                    ? 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
-                }`}
-              >
-                {label}
-              </Link>
-            )
-          })}
+          <Link
+            href="/create"
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-black transition-colors ${
+              isActive('/create')
+                ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
+                : 'text-violet-600 hover:bg-violet-50 hover:text-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20'
+            }`}
+          >
+            <span className="text-base leading-none">＋</span> Create
+          </Link>
+          <Link
+            href="/markets"
+            className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+              isActive('/markets')
+                ? 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
+            }`}
+          >
+            Markets
+          </Link>
         </div>
 
         {/* ── Right side ── */}
@@ -214,8 +218,10 @@ export default function Navbar() {
                     {[
                       { href: '/wallet',               icon: '💳', label: 'Wallet',           sub: wallet !== null ? `UGX ${wallet.toLocaleString()}` : undefined },
                       { href: '/bets',                 icon: '🎯', label: 'My Predictions',   sub: undefined as string | undefined },
+                      { href: '/dashboard',            icon: '🏗️', label: 'Creator Dashboard', sub: undefined as string | undefined },
+                      { href: '/invite',               icon: '🎁', label: 'Invite & Earn',    sub: undefined as string | undefined },
                       { href: '/updown',               icon: '📈', label: 'Up/Down',          sub: undefined as string | undefined },
-                      { href: '/proposals',            icon: '💡', label: 'Proposals',        sub: undefined as string | undefined },
+                      { href: '/leaderboard',          icon: '🏆', label: 'Leaderboard',      sub: undefined as string | undefined },
                       { href: '/profile',              icon: '👤', label: 'Profile',          sub: undefined as string | undefined },
                       { href: '/kyc',                  icon: '🪪', label: 'Verify Identity',  sub: undefined as string | undefined },
                       { href: '/responsible-gambling', icon: '🛡️', label: 'Responsible Play', sub: undefined as string | undefined },

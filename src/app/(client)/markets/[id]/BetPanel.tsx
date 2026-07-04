@@ -68,7 +68,10 @@ type Market = {
   status: string
   rake_pct: number
   winning_option_id: string | null
+  settlement_note: string | null
+  settlement_evidence_url: string | null
   metadata: Record<string, unknown> | null
+  created_by: string | null
 }
 
 type Category = 'football' | 'politics' | 'economy' | 'entertainment' | 'tech' | 'infrastructure' | 'agriculture' | 'default'
@@ -227,6 +230,8 @@ export default function BetPanel({
   isLoggedIn,
   userBet,
   predictorCount,
+  accessToken,
+  creatorInfo,
 }: {
   market: Market
   initialBalance: number | null
@@ -234,6 +239,8 @@ export default function BetPanel({
   isLoggedIn: boolean
   userBet: { option_id: string; amount: number } | null
   predictorCount: number
+  accessToken?: string | null
+  creatorInfo?: { name: string; verified: boolean } | null
 }) {
   const router = useRouter()
   const opts = market.options as Option[]
@@ -250,6 +257,26 @@ export default function BetPanel({
   const entryPrice  = isUpDown ? Number(meta.entry_price ?? 0) : 0
 
   const [livePrice, setLivePrice] = useState<number | null>(null)
+  const [flagging, setFlagging] = useState(false)
+  const [flagged, setFlagged] = useState(false)
+  const [flagReason, setFlagReason] = useState('')
+  const [flagMsg, setFlagMsg] = useState<{ text: string; ok: boolean } | null>(null)
+
+  async function submitFlag() {
+    if (!flagReason) return
+    const res = await fetch(`/api/market/${market.id}/flag`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: flagReason }),
+    })
+    if (res.ok) {
+      setFlagged(true); setFlagging(false)
+      setFlagMsg({ text: 'Flagged for admin review.', ok: true })
+    } else {
+      const d = await res.json()
+      setFlagMsg({ text: d.error ?? 'Failed to submit flag.', ok: false })
+    }
+  }
 
   useEffect(() => {
     if (!isUpDown || !assetId) return
@@ -372,7 +399,10 @@ export default function BetPanel({
   const userLost = userBet && isSettled && userBet.option_id !== market.winning_option_id
   const userBetOpt = userBet ? liveOpts.find(o => o.id === userBet.option_id) : null
 
-const shareText = encodeURIComponent(`"${market.title}" — Predict on Sabula 256 🔮 https://sabula256.com/markets/${market.id}`)
+const marketUrl  = accessToken
+    ? `https://sabula256.com/markets/${market.id}?t=${accessToken}`
+    : `https://sabula256.com/markets/${market.id}`
+  const shareText = encodeURIComponent(`"${market.title}" — Predict on Sabula 256 🔮 ${marketUrl}`)
   const waLink    = `https://wa.me/?text=${shareText}`
   const twLink    = `https://twitter.com/intent/tweet?text=${shareText}`
 
@@ -386,7 +416,7 @@ const shareText = encodeURIComponent(`"${market.title}" — Predict on Sabula 25
     const res = await fetch('/api/bet/place', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ marketId: market.id, optionId: selectedOpt, amount: amtNum }),
+      body: JSON.stringify({ marketId: market.id, optionId: selectedOpt, amount: amtNum, accessToken }),
     })
     const data = await res.json()
     if (!res.ok) {
@@ -468,7 +498,7 @@ const shareText = encodeURIComponent(`"${market.title}" — Predict on Sabula 25
                 <p className="text-2xl font-black" style={{ color: cat.color }}>
                   UGX {Number(liveTotal).toLocaleString()}
                 </p>
-                <p className="text-xs text-slate-600 mt-0.5">{(rake * 100).toFixed(0)}% platform fee</p>
+                <p className="text-xs text-slate-600 mt-0.5">community pool</p>
               </div>
               <div className="flex gap-2">
                 <a
@@ -804,15 +834,23 @@ const shareText = encodeURIComponent(`"${market.title}" — Predict on Sabula 25
                       className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm outline-none focus:border-violet-600 transition-colors"
                     />
                     <div className="mt-2 grid grid-cols-4 gap-1.5">
-                      {[1000, 5000, 10000, 50000].map(v => (
-                        <button
-                          key={v}
-                          onClick={() => setAmount(String(v))}
-                          className="rounded-lg border border-[#1e1e2e] py-1.5 text-xs text-slate-500 hover:border-violet-700/60 hover:text-white transition-colors"
-                        >
-                          {v >= 1000 ? `${v / 1000}k` : v}
-                        </button>
-                      ))}
+                      {[1000, 5000, 10000, 50000].map(v => {
+                        const isGoodFaith = Boolean(meta.user_created) && v === 5000
+                        return (
+                          <button
+                            key={v}
+                            onClick={() => setAmount(String(v))}
+                            className={`rounded-lg border py-1.5 text-xs transition-colors ${
+                              isGoodFaith
+                                ? 'border-violet-700/60 bg-violet-900/20 text-violet-400 font-bold hover:border-violet-500 hover:text-violet-300'
+                                : 'border-[#1e1e2e] text-slate-500 hover:border-violet-700/60 hover:text-white'
+                            }`}
+                          >
+                            {v >= 1000 ? `${v / 1000}k` : v}
+                            {isGoodFaith && <span className="ml-0.5 text-[8px]">✓</span>}
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
 
@@ -899,7 +937,14 @@ const shareText = encodeURIComponent(`"${market.title}" — Predict on Sabula 25
                     </Link>
                   )}
 
-                  <p className="text-center text-[11px] text-slate-600">Parimutuel pool · 8% platform rake</p>
+                  {Boolean(meta.user_created) ? (
+                    <p className="text-center text-[11px] text-slate-500 leading-relaxed">
+                      The creator staked UGX 5,000 to open this market.
+                      Back your side with UGX 5,000+ as your show of confidence.
+                    </p>
+                  ) : (
+                    <p className="text-center text-[11px] text-slate-600">Community prediction pool</p>
+                  )}
                 </div>
               </div>
             )}
@@ -952,12 +997,117 @@ const shareText = encodeURIComponent(`"${market.title}" — Predict on Sabula 25
                     ? 'Winnings have been distributed to correct predictors.'
                     : 'This market is no longer accepting predictions.'}
                 </p>
+                {isSettled && market.settlement_note && (
+                  <div className="rounded-xl border border-violet-800/30 bg-violet-900/10 px-4 py-3 text-left">
+                    <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-violet-500">Admin note</p>
+                    <p className="text-sm text-slate-300 leading-relaxed">{market.settlement_note}</p>
+                  </div>
+                )}
+                {isSettled && market.settlement_evidence_url && (() => {
+                  let items: { url: string; caption: string }[] = []
+                  if (market.settlement_evidence_url.startsWith('[')) {
+                    try { items = JSON.parse(market.settlement_evidence_url) } catch { /* ignore */ }
+                  }
+                  if (items.length > 0) {
+                    return (
+                      <div className="text-left">
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Settlement Evidence</p>
+                        <div className={`grid gap-2 ${items.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                          {items.map((item, i) => (
+                            <a
+                              key={i}
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group relative block overflow-hidden rounded-lg border border-[#1e1e2e] hover:border-violet-600/50 transition-colors"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={item.url}
+                                alt={item.caption || `Evidence ${i + 1}`}
+                                className="w-full object-cover aspect-video bg-[#0d0d14]"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors">
+                                <span className="opacity-0 group-hover:opacity-100 text-[10px] font-bold text-white transition-opacity">View full ↗</span>
+                              </div>
+                              {item.caption && (
+                                <div className="bg-[#0d0d14] px-2 py-1.5">
+                                  <p className="text-[10px] text-slate-400 leading-snug">{item.caption}</p>
+                                </div>
+                              )}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  }
+                  // Legacy plain URL
+                  return (
+                    <a
+                      href={market.settlement_evidence_url!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700/40 py-2 text-xs font-semibold text-slate-400 hover:border-violet-600/50 hover:text-violet-400 transition-colors"
+                    >
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      View source →
+                    </a>
+                  )
+                })()}
                 <Link
                   href="/markets"
                   className="block rounded-xl border border-[#2a2a3e] py-2.5 text-sm text-slate-400 hover:text-white transition-colors"
                 >
                   Browse open markets →
                 </Link>
+                {isSettled && isLoggedIn && !flagged && (
+                  <div>
+                    {flagMsg && (
+                      <p className={`mb-2 text-xs ${flagMsg.ok ? 'text-emerald-400' : 'text-red-400'}`}>{flagMsg.text}</p>
+                    )}
+                    {!flagging ? (
+                      <button
+                        onClick={() => setFlagging(true)}
+                        className="text-xs text-slate-600 hover:text-slate-400 transition-colors"
+                      >
+                        🚩 Dispute this settlement
+                      </button>
+                    ) : (
+                      <div className="text-left space-y-2">
+                        <p className="text-xs font-semibold text-slate-400">Why are you disputing?</p>
+                        {['Wrong winner declared', 'Outcome not yet determined', 'Evidence seems incorrect', 'Other'].map(r => (
+                          <button
+                            key={r}
+                            onClick={() => setFlagReason(r)}
+                            className={`block w-full rounded-lg border px-3 py-1.5 text-left text-xs transition-colors ${
+                              flagReason === r ? 'border-red-600 bg-red-900/20 text-red-300' : 'border-[#2a2a3e] text-slate-500 hover:border-slate-600'
+                            }`}
+                          >
+                            {r}
+                          </button>
+                        ))}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={submitFlag}
+                            disabled={!flagReason}
+                            className="flex-1 rounded-lg bg-red-700 py-1.5 text-xs font-bold text-white disabled:opacity-40 hover:bg-red-600 transition-colors"
+                          >
+                            Submit dispute
+                          </button>
+                          <button
+                            onClick={() => { setFlagging(false); setFlagReason('') }}
+                            className="rounded-lg border border-[#2a2a3e] px-3 py-1.5 text-xs text-slate-500 hover:text-white transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {flagged && (
+                  <p className="text-xs text-emerald-400">✓ Dispute submitted — admin will review.</p>
+                )}
               </div>
             )}
 
@@ -981,6 +1131,17 @@ const shareText = encodeURIComponent(`"${market.title}" — Predict on Sabula 25
                 <span>Participants</span>
                 <span className="text-slate-300">{liveOpts.reduce((s, o) => s + (Number(o.total_pool) > 0 ? 1 : 0), 0)} active options</span>
               </div>
+              {creatorInfo && (
+                <div className="flex justify-between items-center">
+                  <span>Created by</span>
+                  <span className="text-slate-300 flex items-center gap-1">
+                    {creatorInfo.name}
+                    {creatorInfo.verified && (
+                      <span title="Verified Creator" className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-violet-600 text-[8px] font-black text-white">✓</span>
+                    )}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span>Market ID</span>
                 <span className="text-slate-600 font-mono">{market.id.slice(0, 8)}…</span>

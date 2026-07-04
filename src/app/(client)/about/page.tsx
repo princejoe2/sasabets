@@ -2,11 +2,11 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'About Sabula 256 — Uganda\'s Prediction Market',
-  description: 'Predict politics, football & economy on Sabula 256 — Uganda\'s #1 prediction market. Win on MTN or Airtel Mobile Money. No house edge — 92% of every pool goes to winners.',
+  title: 'About Sabula 256 — Uganda\'s Community Prediction Market',
+  description: 'Create your own prediction market or join one. Predict politics, football & economy on Sabula 256. Win on MTN or Airtel Mobile Money.',
   openGraph: {
-    title: 'About Sabula 256 — Uganda\'s #1 Prediction Market',
-    description: 'Predict politics, football & economy on Sabula 256. Win on MTN or Airtel Mobile Money. No house edge — 92% of every pool goes to winners.',
+    title: 'About Sabula 256 — Uganda\'s Community Prediction Market',
+    description: 'Create your own prediction market or join one. Predict politics, football & economy. Win on MTN or Airtel Mobile Money.',
     url: 'https://sabula256.com/about',
   },
 }
@@ -18,7 +18,7 @@ const VALUES = [
     bg: 'rgba(167,139,250,0.1)',
     border: 'rgba(167,139,250,0.25)',
     title: 'No House Edge',
-    body: 'We take 8% of every pool as our fee. The remaining 92% goes entirely to winning predictors. We don\'t bet against you — we just run the market.',
+    body: 'Every shilling in the pool goes to winning predictors. We don\'t bet against you — we just run the market and keep the lights on.',
   },
   {
     icon: '⚡',
@@ -50,7 +50,7 @@ const HOW = [
   { step: '01', color: '#22d3ee', title: 'A market opens', body: 'Admin or community proposals create markets with a question and two possible outcomes (e.g. "Will Uganda Cranes win?"). A closing time is set.' },
   { step: '02', color: '#f59e0b', title: 'Users stake money', body: 'Predictors deposit via MTN/Airtel MoMo and stake on the outcome they believe will happen. Every shilling goes into a shared pool.' },
   { step: '03', color: '#a78bfa', title: 'Odds shift in real time', body: 'As more money flows in, the odds update instantly. Early bettors on the right side lock in better returns. Late money dilutes the pool.' },
-  { step: '04', color: '#34d399', title: 'Market settles', body: 'When the event resolves, admin confirms the outcome. The total pool (minus 8% platform fee) is split among all winning predictors proportional to their stake.' },
+  { step: '04', color: '#34d399', title: 'Market settles', body: 'When the event resolves, admin confirms the outcome. The pool is split among all winning predictors proportional to their stake.' },
 ]
 
 export default function AboutPage() {
@@ -137,10 +137,10 @@ export default function AboutPage() {
           </div>
           <div className="mt-8 rounded-2xl border border-amber-900/40 bg-amber-950/20 p-5 text-center">
             <p className="text-sm text-amber-300">
-              <strong>The formula:</strong> Your payout = (your stake ÷ winning pool) × (total pool × 0.92)
+              <strong>The formula:</strong> Your payout = (your stake ÷ winning pool) × total pool
             </p>
             <p className="mt-1 text-xs text-amber-600">
-              The 8% platform fee is deducted from the total pool before distribution. No other hidden fees.
+              Winners share the entire pool. No house advantage — we don't bet against you.
             </p>
           </div>
         </div>

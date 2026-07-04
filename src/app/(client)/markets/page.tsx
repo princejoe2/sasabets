@@ -3,13 +3,17 @@ import MarketsClient from '@/components/MarketsClient'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Prediction Markets – Uganda Politics, Football & More | Sabula 256',
-  description: 'Predict Uganda elections, FUFA football, World Cup 2026 and crypto prices on Sabula 256 — Uganda\'s #1 prediction market. Win real money via MTN or Airtel Mobile Money.',
-  keywords: ['Uganda prediction market', 'Uganda betting', 'MTN mobile money betting', 'Uganda elections prediction', 'FUFA betting Uganda', 'World Cup 2026 Uganda'],
+  title: 'Browse Markets – Uganda Politics, Football & More',
+  description: 'Browse live prediction markets on Uganda politics, FUFA football, economy and more — or create your own. Win on MTN or Airtel Mobile Money.',
+  keywords: [
+    'Uganda prediction market', 'Uganda football prediction', 'Uganda elections betting',
+    'MTN mobile money prediction', 'FUFA Uganda betting', 'create prediction market',
+    'community prediction market Uganda',
+  ],
   alternates: { canonical: 'https://sabula256.com/markets' },
   openGraph: {
-    title: 'Prediction Markets | Sabula 256',
-    description: 'Predict Uganda elections, FUFA football, World Cup 2026 and crypto prices. Win real money via MTN or Airtel Mobile Money.',
+    title: 'Browse Markets | Sabula 256',
+    description: 'Live prediction markets on Uganda politics, football, economy and more — or create your own. Win via Mobile Money.',
     url: 'https://sabula256.com/markets',
   },
 }
@@ -25,6 +29,7 @@ export default async function MarketsPage({
   const { data: markets } = await supabase
     .from('markets')
     .select('id, title, description, total_pool, options, closes_at, status, rake_pct, created_at, metadata')
+    .or('metadata->>private.is.null,metadata->>private.neq.true')
     .order('created_at', { ascending: false })
 
   const all = markets ?? []

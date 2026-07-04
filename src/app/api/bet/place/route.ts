@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { marketId, optionId, amount } = await req.json()
+  const { marketId, optionId, amount, accessToken } = await req.json()
   if (!marketId || !optionId) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   // Fetch market (single query used for all guards)
   const { data: market } = await admin
     .from('markets')
-    .select('id, title, status, closes_at, options, total_pool, rake_pct, surge_flag')
+    .select('id, title, status, closes_at, options, total_pool, rake_pct, surge_flag, created_by, metadata')
     .eq('id', marketId)
     .single()
 
@@ -66,7 +66,17 @@ export async function POST(req: NextRequest) {
 
   const totalPool = Number(market.total_pool)
 
-  // GUARD 2 — Wallet balance
+  const meta = (market.metadata ?? {}) as Record<string, unknown>
+
+  // GUARD 2 — Private market token
+  if (meta.private === true) {
+    const expectedToken = (meta.access_token as string | undefined) ?? ''
+    if (!accessToken || accessToken !== expectedToken) {
+      return guardError(403, 'private_market', 'You need the secret link to bet on this market')
+    }
+  }
+
+  // GUARD 3 — Wallet balance
   const { data: wallet } = await admin.from('wallets').select('balance').eq('user_id', user.id).single()
   if (!wallet || Number(wallet.balance) < amount) {
     return guardError(400, 'insufficient_balance', 'Your wallet balance is too low', {
@@ -75,7 +85,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // GUARD 3 — New account large bet
+  // GUARD 4 — New account large bet
   const accountAge = profile?.created_at
     ? (Date.now() - new Date(profile.created_at).getTime()) / 1000
     : Infinity
@@ -96,7 +106,7 @@ export async function POST(req: NextRequest) {
       { max_allowed: 50_000 })
   }
 
-  // GUARD 4 — Pool concentration limit (only when pool > 500k)
+  // GUARD 5 — Pool concentration limit (only when pool > 500k)
   if (totalPool > 500_000) {
     const optPool = Number(option.total_pool)
     const { data: existing } = await admin
@@ -125,7 +135,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // GUARD 5 — Single bet size limit (only when pool > 500k)
+  // GUARD 6 — Single bet size limit (only when pool > 500k)
   if (totalPool > 500_000) {
     const maxBet = Math.floor(totalPool * 0.15)
     if (amount > maxBet) {
@@ -140,7 +150,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // GUARD 6 — Surge cap
+  // GUARD 7 — Surge cap
   if (market.surge_flag) {
     const { data: surgeFlag } = await admin
       .from('account_flags')
@@ -159,7 +169,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // GUARD 7 — Velocity check (5 bets per hour per market)
+  // GUARD 8 — Velocity check (5 bets per hour per market)
   const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
   const { count: recentBets } = await admin
     .from('bets')

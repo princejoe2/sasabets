@@ -7,7 +7,7 @@ export default async function AdminUsersPage() {
   const admin = createAdminClient()
 
   const [{ data: profiles }, { data: wallets }, { data: betStats }] = await Promise.all([
-    admin.from('profiles').select('id, phone, full_name, is_admin, suspended, suspend_reason, kyc_status, created_at').order('created_at', { ascending: false }),
+    admin.from('profiles').select('id, phone, full_name, is_admin, suspended, suspend_reason, kyc_status, created_at, verified_creator').order('created_at', { ascending: false }),
     admin.from('wallets').select('user_id, balance'),
     admin.from('bets').select('user_id, amount, status'),
   ])
@@ -22,18 +22,19 @@ export default async function AdminUsersPage() {
   }, {})
 
   const users = (profiles ?? []).map(u => ({
-    id:             u.id,
-    phone:          u.phone,
-    full_name:      u.full_name,
-    is_admin:       u.is_admin,
-    suspended:      u.suspended ?? false,
-    suspend_reason: u.suspend_reason ?? null,
-    kyc_status:     u.kyc_status ?? null,
-    created_at:     u.created_at,
-    balance:        walletMap[u.id] ?? 0,
-    bets:           betsByUser[u.id]?.count ?? 0,
-    wagered:        betsByUser[u.id]?.total ?? 0,
-    won:            betsByUser[u.id]?.won ?? 0,
+    id:               u.id,
+    phone:            u.phone,
+    full_name:        u.full_name,
+    is_admin:         u.is_admin,
+    suspended:        u.suspended ?? false,
+    suspend_reason:   u.suspend_reason ?? null,
+    kyc_status:       u.kyc_status ?? null,
+    verified_creator: u.verified_creator ?? false,
+    created_at:       u.created_at,
+    balance:          walletMap[u.id] ?? 0,
+    bets:             betsByUser[u.id]?.count ?? 0,
+    wagered:          betsByUser[u.id]?.total ?? 0,
+    won:              betsByUser[u.id]?.won ?? 0,
   }))
 
   const totalBalance = users.reduce((s, u) => s + u.balance, 0)

@@ -160,7 +160,7 @@ export default function BetCalculator() {
           </div>
         </div>
         <p className="mt-3 text-[10px] text-slate-700">
-          8% platform fee applied · Actual payout depends on final pool size at close
+          Indicative only · Actual payout depends on final pool size at close
         </p>
       </div>
     </div>

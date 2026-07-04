@@ -15,6 +15,66 @@ const CATEGORIES = [
   { id: 'other',          icon: '✨', label: 'Other'          },
 ]
 
+type Template = {
+  id: string
+  icon: string
+  label: string
+  titlePlaceholder: string
+  optionA: string
+  optionB: string
+  category: string
+  daysFromNow: number | null
+}
+
+const TEMPLATES: Template[] = [
+  {
+    id: 'football',
+    icon: '⚽',
+    label: 'Football',
+    titlePlaceholder: 'e.g. Will Uganda Cranes beat Kenya Harambee Stars on 15 Aug?',
+    optionA: 'Uganda Cranes',
+    optionB: 'Kenya Stars',
+    category: 'football',
+    daysFromNow: 7,
+  },
+  {
+    id: 'election',
+    icon: '🏛️',
+    label: 'Election / Vote',
+    titlePlaceholder: 'e.g. Will Parliament pass the new tax bill by October?',
+    optionA: 'Yes',
+    optionB: 'No',
+    category: 'politics',
+    daysFromNow: 30,
+  },
+  {
+    id: 'price',
+    icon: '💰',
+    label: 'Price Bet',
+    titlePlaceholder: 'e.g. Will USD/UGX exchange rate exceed 3,800 by end of month?',
+    optionA: 'Goes up',
+    optionB: 'Goes down',
+    category: 'economy',
+    daysFromNow: 14,
+  },
+  {
+    id: 'custom',
+    icon: '✨',
+    label: 'Custom',
+    titlePlaceholder: 'e.g. Will Uganda Cranes beat Kenya Harambee Stars in August?',
+    optionA: 'Yes',
+    optionB: 'No',
+    category: 'other',
+    daysFromNow: null,
+  },
+]
+
+function isoDatePlusDays(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
+}
+
 export default function CreateMarketPage() {
   const supabase  = createClient()
   const router    = useRouter()
@@ -30,10 +90,14 @@ export default function CreateMarketPage() {
   const [closesAt,    setClosesAt]    = useState('')
   const [betSide,     setBetSide]     = useState<'a' | 'b' | null>(null)
 
+  const [isPrivate,   setIsPrivate]   = useState(false)
+  const [activeTemplate, setActiveTemplate] = useState<string>('custom')
+
   const [step,        setStep]        = useState<'form' | 'pick-side' | 'success'>('form')
   const [submitting,  setSubmitting]  = useState(false)
   const [error,       setError]       = useState('')
   const [marketId,    setMarketId]    = useState('')
+  const [accessToken, setAccessToken] = useState<string | null>(null)
   const [copied,      setCopied]      = useState(false)
 
   useEffect(() => {
@@ -44,6 +108,15 @@ export default function CreateMarketPage() {
         .then(({ data }) => setBalance(data ? Number(data.balance) : 0))
     })
   }, [])
+
+  function applyTemplate(t: Template) {
+    setActiveTemplate(t.id)
+    setOptionA(t.optionA)
+    setOptionB(t.optionB)
+    setCategory(t.category)
+    if (t.daysFromNow !== null) setClosesAt(isoDatePlusDays(t.daysFromNow))
+    else setClosesAt('')
+  }
 
   const LAUNCH = 5_000
   const hasEnough = (balance ?? 0) >= LAUNCH
@@ -60,11 +133,13 @@ export default function CreateMarketPage() {
         title, description, optionA, optionB, category,
         closesAt: closesAt || null,
         betSide:  side,
+        isPrivate,
       }),
     })
     const data = await res.json()
     if (res.ok) {
       setMarketId(data.marketId)
+      setAccessToken(data.accessToken ?? null)
       setStep('success')
     } else {
       setError(data.error ?? 'Failed to launch market')
@@ -73,15 +148,20 @@ export default function CreateMarketPage() {
     setSubmitting(false)
   }
 
+  const shareUrl = accessToken
+    ? `https://sabula256.com/markets/${marketId}?t=${accessToken}`
+    : `https://sabula256.com/markets/${marketId}`
+
   function copyLink() {
-    navigator.clipboard.writeText(`https://sabula256.com/markets/${marketId}`)
+    navigator.clipboard.writeText(shareUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const shareUrl  = `https://sabula256.com/markets/${marketId}`
   const shareText = encodeURIComponent(
-    `I just created a prediction market on Sabula 256!\n\n"${title}"\n\nPredict with your friends and win real UGX money!\n${shareUrl}`
+    accessToken
+      ? `I just created a private prediction market on Sabula 256!\n\n"${title}"\n\nOnly people with this link can join — predict with your crew and win real UGX money!\n${shareUrl}`
+      : `I just created a prediction market on Sabula 256!\n\n"${title}"\n\nPredict with your friends and win real UGX money!\n${shareUrl}`
   )
   const waLink = `https://wa.me/?text=${shareText}`
 
@@ -101,20 +181,40 @@ export default function CreateMarketPage() {
           <div className="text-7xl animate-bounce-in">🚀</div>
           <div>
             <h2 className="text-3xl font-black text-white">Your market is live!</h2>
-            <p className="mt-2 text-slate-400 text-sm leading-relaxed">
-              UGX 5,000 has been staked as your opening bet. Share the link to attract more bettors.
-            </p>
+            {accessToken ? (
+              <div className="mt-2 space-y-1">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-700/40 bg-amber-900/20 px-3 py-1 text-xs font-black text-amber-400">
+                  🔒 Private — invite only
+                </span>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Only people with your secret link can see and bet on this market.
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-slate-400 text-sm leading-relaxed">
+                UGX 5,000 has been staked as your opening bet. Share the link to attract more bettors.
+              </p>
+            )}
           </div>
 
           <div className="rounded-2xl border border-[#2a2a3e] bg-[#0d0d14] p-4 text-left space-y-3">
             <p className="text-sm font-semibold text-slate-200 leading-snug">{title}</p>
             <div className="flex items-center gap-2 rounded-xl bg-[#111118] border border-[#2a2a3e] px-3 py-2.5">
-              <span className="flex-1 truncate text-xs text-slate-400 font-mono">sabula256.com/markets/{marketId}</span>
+              <span className="flex-1 truncate text-xs text-slate-400 font-mono">
+                {accessToken
+                  ? `sabula256.com/markets/${marketId}?t=${accessToken}`
+                  : `sabula256.com/markets/${marketId}`}
+              </span>
               <button onClick={copyLink}
                 className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${copied ? 'bg-emerald-700/40 text-emerald-400' : 'bg-violet-800/40 text-violet-400 hover:bg-violet-700/50'}`}>
                 {copied ? 'Copied!' : 'Copy'}
               </button>
             </div>
+            {accessToken && (
+              <p className="text-[11px] text-amber-600/80 leading-relaxed">
+                Keep this link safe — anyone with it can join. Without it, the market is completely hidden.
+              </p>
+            )}
           </div>
 
           <div className="space-y-3">
@@ -124,12 +224,12 @@ export default function CreateMarketPage() {
               Share on WhatsApp
             </a>
 
-            <Link href={`/markets/${marketId}`}
+            <Link href={accessToken ? `/markets/${marketId}?t=${accessToken}` : `/markets/${marketId}`}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#2a2a3e] bg-[#0d0d14] py-3.5 text-sm font-bold text-slate-300 transition-colors hover:border-violet-600 hover:text-white">
               View my market →
             </Link>
 
-            <button onClick={() => { setTitle(''); setDescription(''); setOptionA('Yes'); setOptionB('No'); setCategory('other'); setClosesAt(''); setBetSide(null); setMarketId(''); setStep('form') }}
+            <button onClick={() => { setTitle(''); setDescription(''); setOptionA('Yes'); setOptionB('No'); setCategory('other'); setClosesAt(''); setBetSide(null); setMarketId(''); setAccessToken(null); setIsPrivate(false); setStep('form') }}
               className="w-full py-2 text-xs text-slate-600 hover:text-slate-400 transition-colors">
               Create another market
             </button>
@@ -226,6 +326,28 @@ export default function CreateMarketPage() {
           </div>
         )}
 
+        {/* Template quick-starters */}
+        <div>
+          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-600">Start from a template</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {TEMPLATES.map(t => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => applyTemplate(t)}
+                className={`flex flex-col items-center gap-1.5 rounded-xl border px-3 py-3 text-center transition-all ${
+                  activeTemplate === t.id
+                    ? 'border-violet-600 bg-violet-900/30 text-violet-300'
+                    : 'border-[#1e1e2e] bg-[#0d0d14] text-slate-500 hover:border-[#2a2a3e] hover:text-slate-300'
+                }`}
+              >
+                <span className="text-xl">{t.icon}</span>
+                <span className="text-xs font-bold">{t.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-6 space-y-5">
 
           {/* Title */}
@@ -235,7 +357,7 @@ export default function CreateMarketPage() {
             </label>
             <input
               value={title} onChange={e => setTitle(e.target.value)}
-              placeholder="e.g. Will Uganda Cranes beat Kenya Harambee Stars in August?"
+              placeholder={TEMPLATES.find(t => t.id === activeTemplate)?.titlePlaceholder ?? 'e.g. Will Uganda Cranes beat Kenya Harambee Stars in August?'}
               maxLength={200}
               className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors placeholder:text-slate-700"
             />
@@ -299,6 +421,34 @@ export default function CreateMarketPage() {
               className="rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-slate-400 outline-none focus:border-violet-600 transition-colors [color-scheme:dark]" />
             <p className="mt-1 text-xs text-slate-700">Leave blank for an open-ended market (admin settles).</p>
           </div>
+
+          {/* Private market toggle */}
+          <button
+            type="button"
+            onClick={() => setIsPrivate(v => !v)}
+            className={`w-full flex items-center justify-between rounded-xl border px-4 py-3.5 transition-all ${
+              isPrivate
+                ? 'border-amber-700/60 bg-amber-900/15'
+                : 'border-[#1e1e2e] bg-[#111118] hover:border-[#2a2a3e]'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-lg">{isPrivate ? '🔒' : '🌍'}</span>
+              <div className="text-left">
+                <p className={`text-sm font-black ${isPrivate ? 'text-amber-300' : 'text-slate-400'}`}>
+                  {isPrivate ? 'Private — invite only' : 'Public market'}
+                </p>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  {isPrivate
+                    ? 'Only people with your secret link can find and bet on this market'
+                    : 'Anyone on Sabula 256 can discover and bet on this market'}
+                </p>
+              </div>
+            </div>
+            <div className={`h-5 w-9 rounded-full transition-colors relative shrink-0 ${isPrivate ? 'bg-amber-500' : 'bg-[#2a2a3e]'}`}>
+              <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${isPrivate ? 'translate-x-4' : 'translate-x-0.5'}`} />
+            </div>
+          </button>
         </div>
 
         {/* Launch CTA */}
@@ -323,7 +473,7 @@ export default function CreateMarketPage() {
           </button>
 
           <p className="text-center text-[11px] text-slate-700">
-            UGX 5,000 is deducted from your wallet · 8% rake on winnings · Keep it respectful
+            UGX 5,000 is deducted from your wallet · Keep it respectful
           </p>
         </div>
       </div>

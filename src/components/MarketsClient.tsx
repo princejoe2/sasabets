@@ -74,10 +74,12 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
   const [showClosed, setShowClosed] = useState(false)
   const [showWatchlist, setShowWatchlist] = useState(false)
 
-  const [liveMarkets, setLiveMarkets] = useState(markets)
+  const filterPublic = (list: Mkt[]) => list.filter(m => (m.metadata as Record<string, unknown> | undefined)?.private !== true)
+
+  const [liveMarkets, setLiveMarkets] = useState(() => filterPublic(markets))
 
   // Keep liveMarkets in sync if the server re-sends props (e.g., navigation)
-  useEffect(() => { setLiveMarkets(markets) }, [markets])
+  useEffect(() => { setLiveMarkets(filterPublic(markets)) }, [markets])
 
   // Realtime subscription
   useEffect(() => {
@@ -117,7 +119,12 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
             .select('id, title, description, total_pool, options, closes_at, status, rake_pct, created_at, metadata')
             .eq('id', payload.new.id)
             .single()
-          if (data) setLiveMarkets(prev => [data as Mkt, ...prev])
+          if (data) {
+            const mkt = data as Mkt
+            // Never surface private markets in public listings
+            if ((mkt.metadata as Record<string, unknown> | undefined)?.private === true) return
+            setLiveMarkets(prev => [mkt, ...prev])
+          }
         }
       )
       .subscribe()
@@ -336,16 +343,19 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
       {/* ── Create market CTA ── */}
       <div className="mx-auto max-w-6xl px-4 pt-5">
         <Link href="/create"
-          className="group flex items-center justify-between rounded-2xl border border-violet-800/30 bg-gradient-to-r from-violet-900/20 to-[#0d0d14] px-5 py-4 transition-all hover:border-violet-600/50 hover:from-violet-900/30"
+          className="group relative flex items-center justify-between overflow-hidden rounded-2xl border border-violet-600/40 px-5 py-5 transition-all hover:border-violet-500/60"
+          style={{ background: 'linear-gradient(135deg, rgba(109,40,217,0.18) 0%, rgba(13,13,20,0.95) 60%)' }}
         >
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-600/20 text-xl">💡</span>
+          {/* Glow blob */}
+          <div className="pointer-events-none absolute -left-8 -top-8 h-32 w-32 rounded-full bg-violet-600/20 blur-2xl" />
+          <div className="flex items-center gap-4 relative">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-600/30 text-2xl border border-violet-500/30">💡</span>
             <div>
-              <p className="text-sm font-black text-white">Create your own market</p>
-              <p className="text-xs text-slate-500">Launch a question · Stake UGX 5K · Share the link</p>
+              <p className="text-base font-black text-white">Create your own prediction market</p>
+              <p className="text-xs text-slate-400 mt-0.5">Write a question · Back your side with UGX 5K · Share & win</p>
             </div>
           </div>
-          <span className="shrink-0 rounded-xl bg-violet-600 px-4 py-2 text-xs font-black text-white transition-colors group-hover:bg-violet-500">
+          <span className="relative shrink-0 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-black text-white transition-colors group-hover:bg-violet-500 ml-4">
             Create →
           </span>
         </Link>

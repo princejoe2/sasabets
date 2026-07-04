@@ -1,12 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { sendPush, type StoredSubscription } from '@/lib/push'
 
 const LAUNCH_STAKE = 5_000
+
+function generateAccessToken(): string {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  return Array.from({ length: 16 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+}
 
 const CATEGORY_MAP: Record<string, string> = {
   football: 'football', politics: 'politics', economy: 'economy',
   entertainment: 'entertainment', tech: 'tech', infrastructure: 'infrastructure',
   agriculture: 'agriculture', other: 'default',
+}
+
+const BLOCKED_PHRASES = [
+  'fuck', 'shit', 'nigger', 'nigga', 'kaffir', 'bitch', 'whore', 'cunt',
+  'kill yourself', 'suicide', 'rape', 'porn', 'sex tape', 'naked',
+  'child porn', 'pedophil', 'terrorist', 'bomb', 'genocide',
+]
+
+function containsBlocked(text: string): boolean {
+  const lower = text.toLowerCase()
+  return BLOCKED_PHRASES.some(p => lower.includes(p))
 }
 
 export async function POST(req: NextRequest) {
@@ -16,7 +33,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Sign in to create a market' }, { status: 401 })
 
-  const { title, description, optionA, optionB, category, closesAt, betSide } = await req.json()
+  const { title, description, optionA, optionB, category, closesAt, betSide, isPrivate } = await req.json()
 
   if (!title?.trim() || !optionA?.trim() || !optionB?.trim()) {
     return NextResponse.json({ error: 'Title and both sides are required' }, { status: 400 })
@@ -28,9 +45,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Choose which side you are backing to launch' }, { status: 400 })
   }
 
+  // Content filter
+  const allText = [title, optionA, optionB, description ?? ''].join(' ')
+  if (containsBlocked(allText)) {
+    return NextResponse.json({
+      error: 'Your market contains content that is not allowed. Please revise the title or options.',
+    }, { status: 400 })
+  }
+
   const { data: profile } = await admin
     .from('profiles')
-    .select('full_name, suspended, self_excluded_until')
+    .select('full_name, phone, suspended, self_excluded_until')
     .eq('id', user.id)
     .single()
 
@@ -41,15 +66,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'You have self-excluded from betting.' }, { status: 403 })
   }
 
-  // Rate limit: max 5 user-created markets per day
+  // Rate limit: max 5 user-created markets per day — by user_id AND phone
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-  const { count: todayCount } = await admin
+  const { count: todayByUser } = await admin
     .from('markets')
     .select('id', { count: 'exact', head: true })
     .eq('created_by', user.id)
     .gte('created_at', dayAgo)
-  if ((todayCount ?? 0) >= 5) {
+  if ((todayByUser ?? 0) >= 5) {
     return NextResponse.json({ error: 'You can create up to 5 markets per day' }, { status: 429 })
+  }
+  // Phone-level rate limit: prevents bypass via multiple accounts on same number
+  if (profile?.phone) {
+    const { data: phoneUsers } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('phone', profile.phone)
+    if (phoneUsers && phoneUsers.length > 1) {
+      const phoneUserIds = phoneUsers.map(p => p.id)
+      const { count: todayByPhone } = await admin
+        .from('markets')
+        .select('id', { count: 'exact', head: true })
+        .in('created_by', phoneUserIds)
+        .gte('created_at', dayAgo)
+      if ((todayByPhone ?? 0) >= 5) {
+        return NextResponse.json({ error: 'You can create up to 5 markets per day' }, { status: 429 })
+      }
+    }
   }
 
   // Check wallet balance
@@ -61,7 +104,8 @@ export async function POST(req: NextRequest) {
     }, { status: 400 })
   }
 
-  const cat = CATEGORY_MAP[category?.toLowerCase() ?? ''] ?? 'default'
+  const cat         = CATEGORY_MAP[category?.toLowerCase() ?? ''] ?? 'default'
+  const accessToken = isPrivate ? generateAccessToken() : null
   const options = [
     { id: 'a', label: optionA.trim(), total_pool: 0 },
     { id: 'b', label: optionB.trim(), total_pool: 0 },
@@ -77,9 +121,11 @@ export async function POST(req: NextRequest) {
     total_pool:  0,
     created_by:  user.id,
     metadata: {
-      category:     cat,
-      user_created: true,
-      creator_name: profile?.full_name ?? 'Community',
+      category:          cat,
+      user_created:      true,
+      creator_name:      profile?.full_name ?? 'Community',
+      creator_max_stake: LAUNCH_STAKE,
+      ...(isPrivate && accessToken ? { private: true, access_token: accessToken } : {}),
     },
   }).select('id').single()
 
@@ -128,5 +174,59 @@ export async function POST(req: NextRequest) {
     metadata:      { marketId: market.id, optionId: chosenOpt.id, market_launch: true },
   })
 
-  return NextResponse.json({ marketId: market.id, newBalance })
+  // Notify admin — insert market_event so the community market shows in the events feed
+  await admin.from('market_events').insert({
+    market_id:  market.id,
+    event_type: 'user_market_created',
+    payload:    {
+      creator_id:   user.id,
+      creator_name: profile?.full_name ?? 'Community',
+      title:        title.trim(),
+      category:     cat,
+      needs_review: true,
+    },
+  }).then(() => {}) // non-fatal — fire and forget
+
+  // Push notification to all subscribers — only for public markets
+  if (!isPrivate) {
+    notifyNewMarket(market.id, title.trim(), user.id).catch(
+      err => console.error('[push] New market notify error:', err)
+    )
+  }
+
+  return NextResponse.json({ marketId: market.id, newBalance, accessToken })
+}
+
+async function notifyNewMarket(marketId: string, title: string, creatorId: string) {
+  const admin = createAdminClient()
+
+  const { data: subs } = await admin
+    .from('push_subscriptions')
+    .select('user_id, endpoint, p256dh, auth')
+    // Don't push to the creator themselves — they already know
+    .neq('user_id', creatorId)
+
+  if (!subs?.length) return
+
+  const payload = {
+    title: '🔮 New market on Sabula 256',
+    body:  title.length > 80 ? title.slice(0, 77) + '…' : title,
+    url:   `https://sabula256.com/markets/${marketId}`,
+  }
+
+  const results = await Promise.allSettled(
+    subs.map(s => sendPush(s as StoredSubscription, payload))
+  )
+
+  // Clean up expired subscriptions (status 410 = Gone)
+  const gone: string[] = []
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') {
+      const err = r.reason as { statusCode?: number }
+      if (err?.statusCode === 410) gone.push(subs[i].endpoint)
+    }
+  })
+  if (gone.length) {
+    await admin.from('push_subscriptions').delete().in('endpoint', gone)
+  }
 }

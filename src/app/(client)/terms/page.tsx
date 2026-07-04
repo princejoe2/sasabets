@@ -49,7 +49,7 @@ export default function TermsPage() {
               <div><dt className="inline font-bold text-slate-300">&ldquo;Market&rdquo;</dt><dd className="inline"> — a prediction event published on the Platform with one or more possible outcomes and a defined closing time.</dd></div>
               <div><dt className="inline font-bold text-slate-300">&ldquo;Stake&rdquo;</dt><dd className="inline"> — funds placed by a User on a specific outcome of a Market.</dd></div>
               <div><dt className="inline font-bold text-slate-300">&ldquo;Pool&rdquo;</dt><dd className="inline"> — the total amount staked on a Market by all Users.</dd></div>
-              <div><dt className="inline font-bold text-slate-300">&ldquo;Platform Fee&rdquo;</dt><dd className="inline"> — the {RAKE}% deducted from the Pool before distribution to winning predictors.</dd></div>
+              <div><dt className="inline font-bold text-slate-300">&ldquo;Platform Fee&rdquo;</dt><dd className="inline"> — the service fee deducted from qualifying Pools before distribution to winning predictors, as specified in Section 9.</dd></div>
               <div><dt className="inline font-bold text-slate-300">&ldquo;Wallet&rdquo;</dt><dd className="inline"> — the in-platform UGX balance held on your account.</dd></div>
               <div><dt className="inline font-bold text-slate-300">&ldquo;Mobile Money&rdquo;</dt><dd className="inline"> — MTN Mobile Money or Airtel Money services used for deposits and withdrawals.</dd></div>
               <div><dt className="inline font-bold text-slate-300">&ldquo;MarzPay&rdquo;</dt><dd className="inline"> — our third-party payment processor that facilitates Mobile Money collections and disbursements on our behalf.</dd></div>
@@ -124,7 +124,7 @@ export default function TermsPage() {
             <H2 n="6">How Markets &amp; Predictions Work</H2>
             <ol className="mt-4 list-decimal space-y-3 pl-5 text-sm leading-relaxed text-slate-400">
               <li><strong className="text-slate-300">Parimutuel model.</strong> {COMPANY} operates a parimutuel (pool-based) prediction system. All stakes on a Market are pooled together. There is no fixed odds house betting. Your payout depends on the total pool size and how many other Users picked the winning outcome.</li>
-              <li><strong className="text-slate-300">Platform fee.</strong> A {RAKE}% fee is deducted from the total Pool before distribution. The remaining {100 - RAKE}% is distributed proportionally among all Users who picked the correct outcome, based on the amount they staked.</li>
+              <li><strong className="text-slate-300">Platform fee.</strong> A platform fee may be deducted from the total Pool before distribution, as described in Section 9. The remainder is distributed proportionally among all Users who picked the correct outcome, based on the amount they staked.</li>
               <li><strong className="text-slate-300">Estimated payout.</strong> Any payout estimate displayed before a Market closes is indicative only. The final payout is calculated at settlement based on the final Pool size.</li>
               <li><strong className="text-slate-300">Closing time.</strong> Predictions must be placed before the Market&apos;s stated closing time. Stakes placed after a Market closes will be rejected and refunded to your Wallet.</li>
               <li><strong className="text-slate-300">Settlement.</strong> Markets are settled by {COMPANY} administrators after the real-world outcome is confirmed from official, publicly verifiable sources. Settlement may take up to 72 hours after the event concludes.</li>
@@ -182,7 +182,7 @@ export default function TermsPage() {
           <section>
             <H2 n="9">Platform Fee &amp; Taxes</H2>
             <ol className="mt-4 list-decimal space-y-3 pl-5 text-sm leading-relaxed text-slate-400">
-              <li>The Platform Fee of {RAKE}% is charged on the total Pool of each settled Market and is deducted before payouts are calculated. This is non-refundable.</li>
+              <li>A Platform Fee may be charged on the total Pool of certain settled Markets and is deducted before payouts are calculated. The Platform Fee, where applicable, is non-refundable. {COMPANY} reserves the right to adjust the Platform Fee from time to time; any change will be communicated via a notice on the Platform.</li>
               <li>You are solely responsible for any taxes applicable to your winnings under the laws of Uganda or your country of residence. {COMPANY} does not provide tax advice.</li>
               <li>Where required by Ugandan law, {COMPANY} may withhold tax from winnings and remit to the Uganda Revenue Authority.</li>
             </ol>

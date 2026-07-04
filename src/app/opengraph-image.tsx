@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
-export const alt = 'Sabula 256 – Uganda Prediction Markets'
+export const alt = 'Sabula 256 – Create & Predict. Win Real Money.'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -49,21 +49,21 @@ export default function Image() {
 
         {/* Tagline */}
         <div style={{
-          fontSize: 28, color: '#94a3b8', fontWeight: 500,
-          textAlign: 'center', maxWidth: 700,
+          fontSize: 32, color: '#e2e8f0', fontWeight: 700,
+          textAlign: 'center', maxWidth: 760, lineHeight: 1.3,
         }}>
-          East Africa&apos;s Prediction Market
+          Create a market. Invite friends. Win real money.
         </div>
 
         {/* Pills */}
         <div style={{ display: 'flex', gap: 16, marginTop: 40 }}>
-          {['🏛️ Uganda Politics', '⚽ World Cup 2026', '📈 Crypto'].map(t => (
+          {['✍️ Create Your Market', '📲 Share the Link', '💰 Win via Mobile Money'].map(t => (
             <div key={t} style={{
               display: 'flex', alignItems: 'center',
               padding: '10px 24px', borderRadius: 50,
               background: 'rgba(124,58,237,0.2)',
               border: '1px solid rgba(124,58,237,0.4)',
-              color: '#c4b5fd', fontSize: 20, fontWeight: 600,
+              color: '#c4b5fd', fontSize: 18, fontWeight: 600,
             }}>
               {t}
             </div>

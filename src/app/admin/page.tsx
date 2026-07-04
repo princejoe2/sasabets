@@ -6,43 +6,56 @@ export const dynamic = 'force-dynamic'
 export default async function AdminDashboard() {
   const admin = createAdminClient()
 
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+
   const [
     { count: userCount },
     { data: markets },
     { count: activeBetCount },
     { data: transactions },
     { data: wallets },
+    { data: rakeTxns },
+    { count: dauBets },
   ] = await Promise.all([
     admin.from('profiles').select('*', { count: 'exact', head: true }),
-    admin.from('markets').select('id, status, total_pool').limit(200),
+    admin.from('markets').select('id, status, total_pool').limit(500),
     admin.from('bets').select('*', { count: 'exact', head: true }).eq('status', 'active'),
     admin.from('transactions').select('id, type, amount, status, created_at').order('created_at', { ascending: false }).limit(50),
-    admin.from('wallets').select('balance').limit(1000),
+    admin.from('wallets').select('balance').limit(2000),
+    admin.from('transactions').select('amount').eq('type', 'rake').eq('status', 'completed'),
+    admin.from('bets').select('*', { count: 'exact', head: true }).gte('placed_at', todayStart.toISOString()),
   ])
 
-  const openMarkets   = markets?.filter(m => m.status === 'open').length ?? 0
-  const totalPool     = markets?.reduce((s, m) => s + Number(m.total_pool), 0) ?? 0
-  const activeBets    = activeBetCount ?? 0
-  const totalBetVol   = 0
-  const totalBalances = wallets?.reduce((s, w) => s + Number(w.balance), 0) ?? 0
+  const openMarkets    = markets?.filter(m => m.status === 'open').length ?? 0
+  const settledMarkets = markets?.filter(m => m.status === 'settled').length ?? 0
+  const totalPool      = markets?.reduce((s, m) => s + Number(m.total_pool), 0) ?? 0
+  const activeBets     = activeBetCount ?? 0
+  const totalBalances  = wallets?.reduce((s, w) => s + Number(w.balance), 0) ?? 0
+  const rakeCollected  = (rakeTxns ?? []).reduce((s, t) => s + Number(t.amount), 0)
 
   const deposits  = transactions?.filter(t => t.type === 'deposit'  && t.status === 'completed') ?? []
   const withdraws = transactions?.filter(t => t.type === 'withdrawal' && t.status === 'pending') ?? []
   const totalDeposited = deposits.reduce((s, t) => s + Number(t.amount), 0)
 
-  const rakeCollected = totalBetVol * 0.08
-
   const recentTxns = transactions?.slice(0, 8) ?? []
 
+  function fmtUGX(n: number) {
+    if (n >= 1_000_000) return `UGX ${(n / 1_000_000).toFixed(2)}M`
+    if (n >= 1_000) return `UGX ${(n / 1_000).toFixed(1)}K`
+    return `UGX ${n.toLocaleString()}`
+  }
+
   const STATS = [
-    { label: 'Total Users',       value: userCount ?? 0,                color: '#60a5fa', prefix: '' },
-    { label: 'Open Markets',      value: openMarkets,                   color: '#34d399', prefix: '' },
-    { label: 'Active Predictions',value: activeBets,                    color: '#fbbf24', prefix: '' },
-    { label: 'Total Pool',        value: `UGX ${(totalPool/1000).toFixed(1)}K`,  color: '#a78bfa', prefix: '' },
-    { label: 'User Balances',     value: `UGX ${(totalBalances/1000).toFixed(1)}K`, color: '#f472b6', prefix: '' },
-    { label: 'Total Deposited',   value: `UGX ${(totalDeposited/1000).toFixed(1)}K`, color: '#22d3ee', prefix: '' },
-    { label: 'Rake Collected',    value: `UGX ${(rakeCollected/1000).toFixed(1)}K`, color: '#fb923c', prefix: '' },
-    { label: 'Pending Withdrawals', value: withdraws.length,            color: '#f87171', prefix: '' },
+    { label: 'Total Users',          value: (userCount ?? 0).toLocaleString(), color: '#60a5fa' },
+    { label: 'Bets Today (DAU)',      value: (dauBets ?? 0).toLocaleString(),   color: '#34d399' },
+    { label: 'Open Markets',          value: openMarkets.toLocaleString(),       color: '#22d3ee' },
+    { label: 'Settled Markets',       value: settledMarkets.toLocaleString(),    color: '#a78bfa' },
+    { label: 'Active Predictions',    value: activeBets.toLocaleString(),        color: '#fbbf24' },
+    { label: 'Total Pool (All Time)', value: fmtUGX(totalPool),                  color: '#a78bfa' },
+    { label: 'User Balances',         value: fmtUGX(totalBalances),              color: '#f472b6' },
+    { label: 'Total Deposited',       value: fmtUGX(totalDeposited),             color: '#22d3ee' },
+    { label: 'Rake Collected',        value: fmtUGX(rakeCollected),              color: '#fb923c' },
+    { label: 'Pending Withdrawals',   value: withdraws.length.toLocaleString(),  color: '#f87171' },
   ]
 
   return (
@@ -53,7 +66,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Stats grid */}
-      <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-5">
         {STATS.map(s => (
           <div
             key={s.label}

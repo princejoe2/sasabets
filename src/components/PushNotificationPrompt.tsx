@@ -2,6 +2,17 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ''
+
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const raw     = atob(base64)
+  const output  = new Uint8Array(raw.length)
+  for (let i = 0; i < raw.length; i++) output[i] = raw.charCodeAt(i)
+  return output
+}
+
 export default function PushNotificationPrompt() {
   const supabase = createClient()
   const [permission, setPermission] = useState<NotificationPermission | null>(null)
@@ -10,39 +21,45 @@ export default function PushNotificationPrompt() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
-    // Check if browser supports notifications
     if (!('Notification' in window) || !('serviceWorker' in navigator)) return
     setPermission(Notification.permission)
     if (localStorage.getItem('push-dismissed')) setDismissed(true)
+    if (localStorage.getItem('push-subscribed')) setSubscribed(true)
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setIsLoggedIn(!!user)
-    })
+    supabase.auth.getUser().then(({ data: { user } }) => setIsLoggedIn(!!user))
   }, [])
 
-  // Don't show if: no support, already granted, denied, dismissed, or not logged in
   if (!permission || permission === 'granted' || permission === 'denied' || dismissed || subscribed || !isLoggedIn) return null
 
   async function requestPermission() {
     try {
       const result = await Notification.requestPermission()
       setPermission(result)
-      if (result === 'granted') {
-        setSubscribed(true)
-        // Wait for service worker to be ready (no-op if sw not registered)
-        await navigator.serviceWorker.ready
-        // Store that user opted in — silently ignore if push_enabled column doesn't exist
-        try {
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user) {
-            await supabase.from('profiles').update({ push_enabled: true }).eq('id', user.id)
-          }
-        } catch {
-          // Column may not exist yet — skip DB update
-        }
-      }
+      if (result !== 'granted') return
+
+      const sw   = await navigator.serviceWorker.ready
+      const sub  = await sw.pushManager.subscribe({
+        userVisibleOnly:      true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as unknown as ArrayBuffer,
+      })
+
+      const json  = sub.toJSON()
+      const keys  = json.keys as { p256dh: string; auth: string }
+
+      await fetch('/api/push/subscribe', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          endpoint: json.endpoint,
+          p256dh:   keys.p256dh,
+          auth:     keys.auth,
+        }),
+      })
+
+      localStorage.setItem('push-subscribed', '1')
+      setSubscribed(true)
     } catch (err) {
-      console.error('Push permission error:', err)
+      console.error('Push subscription error:', err)
     }
   }
 
@@ -60,7 +77,7 @@ export default function PushNotificationPrompt() {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-slate-900 dark:text-white">Get market alerts</p>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-            Get notified when markets close or you win
+            Get notified when new markets open, yours settle, or you win
           </p>
           <div className="mt-3 flex gap-2">
             <button

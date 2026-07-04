@@ -1,6 +1,17 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { settleMarket } from '@/lib/settle-market'
 import UpDownClient from './UpDownClient'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Up/Down Markets – Crypto & Forex Predictions',
+  description: 'Predict whether Bitcoin, Ethereum or the UGX exchange rate goes Up or Down. Fast-close prediction markets on Sabula 256. Win via MTN or Airtel Mobile Money.',
+  openGraph: {
+    title: 'Up/Down Markets | Sabula 256',
+    description: 'Predict crypto and forex direction. Fast-close prediction markets paying out via Mobile Money.',
+    url: 'https://sabula256.com/updown',
+  },
+}
 
 export const revalidate = 30
 
