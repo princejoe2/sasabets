@@ -6,7 +6,7 @@ const UG_PHONE_RE = /^(\+256|256|0)(7\d{8}|39\d{7})$/
 
 // Called after email OTP verification to persist phone + name to the profile.
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

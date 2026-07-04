@@ -8,10 +8,10 @@ type Opt = { id: string; label: string; total_pool: number }
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const admin = createAdminClient()
-  const marketId = params.id
+  const marketId = (await params).id
 
   // Resolve option labels from the market JSONB
   const { data: market } = await admin

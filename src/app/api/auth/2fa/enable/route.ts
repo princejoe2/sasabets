@@ -4,7 +4,7 @@ import { authenticator } from 'otplib'
 import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin    = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()

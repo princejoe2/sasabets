@@ -10,9 +10,9 @@ export const metadata = { title: 'Sabula 256 Control Panel' }
 const TOTP_EXEMPT = ['/admin/setup-2fa', '/admin/verify-2fa']
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin = createAdminClient()
-  const pathname = headers().get('x-pathname') ?? ''
+  const pathname = (await headers()).get('x-pathname') ?? ''
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth')
@@ -34,7 +34,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect('/admin/setup-2fa')
   }
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const totpCookie = cookieStore.get(COOKIE_NAME)?.value
   if (!verifyTotpCookie(totpCookie, user.id)) {
     redirect('/admin/verify-2fa')

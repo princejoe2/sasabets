@@ -5,7 +5,7 @@ const EXIT_FEE_RATE = 0.25   // 25% fee; user receives 75%
 const PLATFORM_SPLIT = 0.50  // 50% of fee to platform, 50% stays in pool
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

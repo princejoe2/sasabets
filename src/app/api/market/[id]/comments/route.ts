@@ -21,10 +21,10 @@ function formatAuthor(fullName: string | null, phone: string | null): string {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const admin = createAdminClient()
-  const marketId = params.id
+  const marketId = (await params).id
   const before = req.nextUrl.searchParams.get('before')
 
   let query = admin
@@ -60,9 +60,9 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -92,7 +92,7 @@ export async function POST(
 
   const { data: comment, error } = await admin
     .from('market_comments')
-    .insert({ market_id: params.id, user_id: user.id, content: content.trim() })
+    .insert({ market_id: (await params).id, user_id: user.id, content: content.trim() })
     .select('id, content, created_at, user_id')
     .single()
 

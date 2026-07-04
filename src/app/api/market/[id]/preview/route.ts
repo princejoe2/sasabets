@@ -4,7 +4,7 @@ import { getPoolDepth } from '@/lib/pool-depth'
 
 type Opt = { id: string; label: string; total_pool: number }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { optionId, amount } = await req.json()
   if (!optionId || typeof amount !== 'number' || amount <= 0) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const { data: market } = await admin
     .from('markets')
     .select('id, options, total_pool, status, closes_at, rake_pct')
-    .eq('id', params.id)
+    .eq('id', (await params).id)
     .single()
 
   if (!market) return NextResponse.json({ error: 'Market not found' }, { status: 404 })

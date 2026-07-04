@@ -3,9 +3,7 @@ import './globals.css'
 import CursorEffects from '@/components/CursorEffects'
 import ThemeProvider from '@/components/ThemeProvider'
 import PushNotificationPrompt from '@/components/PushNotificationPrompt'
-import dynamic from 'next/dynamic'
-
-const MobileInstallGate = dynamic(() => import('@/components/MobileInstallGate'), { ssr: false })
+import { MobileInstallGate } from '@/components/LazyClient'
 
 const BASE = 'https://sabula256.com'
 

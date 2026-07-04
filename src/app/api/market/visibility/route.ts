@@ -3,7 +3,7 @@ import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { generateAccessToken, hashAccessToken } from '@/lib/market-token'
 
 export async function PATCH(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin    = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()

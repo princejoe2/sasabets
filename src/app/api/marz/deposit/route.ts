@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleDeposit(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin    = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -134,7 +134,7 @@ async function handleDeposit(req: NextRequest) {
 
 // GET — poll deposit status
 export async function GET(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin    = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()

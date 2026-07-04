@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createClient()
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -23,12 +23,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     .from('markets').select('id')
     .ilike('title', title.trim())
     .in('status', ['open', 'upcoming'])
-    .neq('id', params.id)
+    .neq('id', (await params).id)
     .limit(1).maybeSingle()
   if (dup) return NextResponse.json({ error: 'Another market with this title already exists.' }, { status: 409 })
 
   // Fetch current market to preserve option pools and existing metadata
-  const { data: current } = await admin.from('markets').select('options, metadata').eq('id', params.id).single()
+  const { data: current } = await admin.from('markets').select('options, metadata').eq('id', (await params).id).single()
   if (!current) return NextResponse.json({ error: 'Market not found' }, { status: 404 })
 
   const currentOpts = current.options as Array<{ id: string; label: string; total_pool: number }>
@@ -59,14 +59,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     verification_config: verificationConfig ?? {},
     metadata:            newMeta,
     ...(rake !== undefined ? { rake_pct: rake } : {}),
-  }).eq('id', params.id)
+  }).eq('id', (await params).id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   try {
     await admin.from('audit_log').insert({
       entity_type: 'market', action: 'updated',
-      entity_id: params.id, actor_id: user.id, actor_type: 'admin',
+      entity_id: (await params).id, actor_id: user.id, actor_type: 'admin',
       metadata: { title: title.trim() },
     })
   } catch { /* non-critical */ }
@@ -74,8 +74,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json({ ok: true })
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createClient()
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -84,7 +84,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   // Verify market exists
-  const { data: market } = await admin.from('markets').select('id, title, total_pool').eq('id', params.id).single()
+  const { data: market } = await admin.from('markets').select('id, title, total_pool').eq('id', (await params).id).single()
   if (!market) return NextResponse.json({ error: 'Market not found' }, { status: 404 })
 
   // Refuse to delete markets with funds in the pool — refund first
@@ -92,13 +92,13 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: 'Cannot delete a market with active pool funds. Settle or cancel it first.' }, { status: 409 })
   }
 
-  const { error } = await admin.from('markets').delete().eq('id', params.id)
+  const { error } = await admin.from('markets').delete().eq('id', (await params).id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   try {
     await admin.from('audit_log').insert({
       entity_type: 'market', action: 'deleted',
-      entity_id: params.id, actor_id: user.id, actor_type: 'admin',
+      entity_id: (await params).id, actor_id: user.id, actor_type: 'admin',
       metadata: { title: market.title },
     })
   } catch { /* non-critical */ }

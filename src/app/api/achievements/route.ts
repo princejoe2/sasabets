@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 const fallbackCount = { count: 0, data: null, error: null }
 
 export async function GET() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ achievements: [], stats: null }, { status: 401 })
 

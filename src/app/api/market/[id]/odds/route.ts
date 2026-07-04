@@ -4,9 +4,9 @@ import { getPoolDepth } from '@/lib/pool-depth'
 
 type Opt = { id: string; label: string; total_pool: number }
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = createAdminClient()
-  const { id } = params
+  const { id } = await params
 
   const [{ data: market }, { count: bettorCount }] = await Promise.all([
     admin.from('markets').select('id, options, total_pool, status, probability_at_close, last_bet_at, closes_at').eq('id', id).single(),

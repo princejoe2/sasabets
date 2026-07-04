@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleWithdraw(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()

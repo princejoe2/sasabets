@@ -9,7 +9,7 @@ function guardError(status: number, code: string, message: string, extra?: Recor
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin    = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()
