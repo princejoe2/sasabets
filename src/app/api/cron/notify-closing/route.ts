@@ -4,6 +4,10 @@ import { sendEmail, btn } from '@/lib/email'
 
 const SITE = 'https://sabula256.com'
 
+function esc(s: string): string {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -103,7 +107,7 @@ export async function GET(req: NextRequest) {
 
           <div style="padding:32px 28px">
             <p style="color:#94a3b8;margin:0 0 8px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px">Market</p>
-            <h2 style="margin:0 0 20px;font-size:22px;font-weight:900;color:#f1f5f9;line-height:1.3">${market.title}</h2>
+            <h2 style="margin:0 0 20px;font-size:22px;font-weight:900;color:#f1f5f9;line-height:1.3">${esc(market.title)}</h2>
 
             <div style="background:#111118;border:1px solid #1e1e2e;border-radius:12px;padding:16px 20px;margin:0 0 24px">
               <p style="margin:0;font-size:13px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:1px">Closes at</p>

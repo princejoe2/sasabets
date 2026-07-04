@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomBytes } from 'crypto'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 
 function generateAccessToken(): string {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
-  return Array.from({ length: 16 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+  return randomBytes(12).toString('base64url').slice(0, 16)
 }
 
 export async function PATCH(req: NextRequest) {

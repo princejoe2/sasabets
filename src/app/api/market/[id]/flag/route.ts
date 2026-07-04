@@ -6,8 +6,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Sign in to flag a market' }, { status: 401 })
 
+  const VALID_REASONS = ['Wrong winner declared', 'Outcome not yet determined', 'Evidence seems incorrect', 'Other']
   const { reason } = await req.json()
-  if (!reason) return NextResponse.json({ error: 'Reason required' }, { status: 400 })
+  if (!reason || !VALID_REASONS.includes(reason)) {
+    return NextResponse.json({ error: 'Invalid reason' }, { status: 400 })
+  }
 
   const admin = createAdminClient()
   const { error } = await admin.from('market_flags').insert({

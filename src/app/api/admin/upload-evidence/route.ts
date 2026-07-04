@@ -27,10 +27,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Image must be under 10 MB' }, { status: 400 })
   }
 
+  const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+  const rawExt = file.name.split('.').pop()?.toLowerCase() ?? ''
+  const ext = ALLOWED_EXTS.includes(rawExt) ? rawExt : 'jpg'
+
   // Ensure bucket exists (no-op if already created)
   await admin.storage.createBucket('settlement-evidence', { public: true }).catch(() => {})
 
-  const ext  = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
   const path = `${marketId}/${Date.now()}.${ext}`
 
   const { error } = await admin.storage

@@ -4,6 +4,10 @@ import { sendEmail, btn } from '@/lib/email'
 
 const SITE = 'https://sabula256.com'
 
+function esc(s: string): string {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -118,7 +122,7 @@ export async function GET(req: NextRequest) {
                 <p style="color:#94a3b8;margin:0 0 16px">A market you bet on was abandoned without a result, so your stake has been automatically returned to your wallet.</p>
                 <div style="background:#111118;border:1px solid #1e1e2e;border-radius:12px;padding:16px 20px;margin:0 0 24px">
                   <p style="margin:0 0 4px;font-size:12px;color:#64748b;text-transform:uppercase">Market</p>
-                  <p style="margin:0;font-size:16px;font-weight:700;color:#f1f5f9">${market.title}</p>
+                  <p style="margin:0;font-size:16px;font-weight:700;color:#f1f5f9">${esc(market.title)}</p>
                 </div>
                 <div style="background:#064e3b20;border:1px solid #065f46;border-radius:12px;padding:16px 20px;margin:0 0 24px">
                   <p style="margin:0 0 4px;font-size:12px;color:#6ee7b7;text-transform:uppercase">Refunded</p>

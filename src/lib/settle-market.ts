@@ -4,6 +4,10 @@ import { sendEmail, btn } from './email'
 const SITE = 'https://sabula256.com'
 const CREATOR_SHARE_PCT = 0.02
 
+function esc(s: string): string {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 export async function settleMarket(
   admin: SupabaseClient,
   marketId: string,
@@ -206,7 +210,7 @@ async function sendSettlementEmails(
 
     await sendEmail(
       email,
-      won ? `🏆 You won UGX ${Math.round(payout).toLocaleString()} on Sabula 256!` : `Market settled: "${marketTitle}"`,
+      won ? `🏆 You won UGX ${Math.round(payout).toLocaleString()} on Sabula 256!` : `Market settled: "${marketTitle.replace(/"/g, '')}"`,
       `
       <div style="background:#0a0a0f;color:#e2e8f0;font-family:system-ui,sans-serif;max-width:580px;margin:0 auto;border-radius:16px;overflow:hidden;border:1px solid #1e1e2e">
         <div style="background:linear-gradient(135deg,${won ? '#064e3b,#065f46' : '#1e1b4b,#312e81'});padding:32px;text-align:center">
@@ -217,11 +221,11 @@ async function sendSettlementEmails(
 
         <div style="padding:32px 28px">
           <p style="color:#94a3b8;margin:0 0 8px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px">Market</p>
-          <h2 style="margin:0 0 20px;font-size:20px;font-weight:900;color:#f1f5f9;line-height:1.3">${marketTitle}</h2>
+          <h2 style="margin:0 0 20px;font-size:20px;font-weight:900;color:#f1f5f9;line-height:1.3">${esc(marketTitle)}</h2>
 
           <div style="background:#111118;border:1px solid #1e1e2e;border-radius:12px;padding:16px 20px;margin:0 0 16px">
             <p style="margin:0 0 4px;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:1px">Winning outcome</p>
-            <p style="margin:0;font-size:18px;font-weight:900;color:#fbbf24">🏆 ${winningLabel}</p>
+            <p style="margin:0;font-size:18px;font-weight:900;color:#fbbf24">🏆 ${esc(winningLabel)}</p>
           </div>
 
           ${won ? `
@@ -239,7 +243,7 @@ async function sendSettlementEmails(
           ${settlementNote ? `
           <div style="background:#111118;border:1px solid #1e1e2e;border-left:3px solid #7c3aed;border-radius:0 8px 8px 0;padding:12px 16px;margin:0 0 24px">
             <p style="margin:0 0 4px;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px">Note from admin</p>
-            <p style="margin:0;font-size:14px;color:#94a3b8">${settlementNote}</p>
+            <p style="margin:0;font-size:14px;color:#94a3b8">${esc(settlementNote)}</p>
           </div>
           ` : ''}
 

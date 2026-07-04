@@ -23,21 +23,23 @@ export async function POST(req: NextRequest) {
   const { data: targetProfile } = await admin.from('profiles').select('id').eq('phone', phone).single()
   if (!targetProfile) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-  const { data: wallet } = await admin.from('wallets').select('balance').eq('user_id', targetProfile.id).single()
-  if (!wallet) return NextResponse.json({ error: 'Wallet not found' }, { status: 404 })
+  // Atomic adjustment via RPC — eliminates read-modify-write race between concurrent admin actions
+  const { data: newBalance } = await admin.rpc('adjust_wallet_balance', {
+    p_user_id: targetProfile.id,
+    p_delta: adjAmount,
+  })
+  if (newBalance === null || newBalance === undefined) {
+    return NextResponse.json({ error: 'Balance would go negative' }, { status: 400 })
+  }
 
-  const newBalance = Number(wallet.balance) + adjAmount
-  if (newBalance < 0) return NextResponse.json({ error: 'Balance would go negative' }, { status: 400 })
-
-  await admin.from('wallets').update({ balance: newBalance, updated_at: new Date().toISOString() }).eq('user_id', targetProfile.id)
   await admin.from('transactions').insert({
     user_id: targetProfile.id,
     type: adjAmount > 0 ? 'deposit' : 'withdrawal',
     amount: adjAmount,
-    balance_after: newBalance,
+    balance_after: Number(newBalance),
     status: 'completed',
     metadata: { admin_adjustment: true, note: note ?? 'Manual admin adjustment', admin_id: user.id },
   })
 
-  return NextResponse.json({ success: true, newBalance })
+  return NextResponse.json({ success: true, newBalance: Number(newBalance) })
 }

@@ -208,16 +208,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Too many bets placed. Please wait a few minutes.' }, { status: 429 })
   }
 
-  // Atomic wallet deduction
-  const newBalance = Number(wallet.balance) - amount
-  const { data: updated } = await admin
-    .from('wallets')
-    .update({ balance: newBalance, updated_at: new Date().toISOString() })
-    .eq('user_id', user.id)
-    .gte('balance', amount)
-    .select('id')
-
-  if (!updated || updated.length === 0) {
+  // Atomic wallet deduction via RPC — eliminates read-modify-write race on concurrent bets
+  const { data: newBalance, error: debitErr } = await admin.rpc('adjust_wallet_balance', {
+    p_user_id: user.id,
+    p_delta: -amount,
+  })
+  if (debitErr || newBalance === null || newBalance === undefined) {
     return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 })
   }
 
@@ -243,7 +239,7 @@ export async function POST(req: NextRequest) {
   })
 
   if (betErr) {
-    await admin.from('wallets').update({ balance: wallet.balance, updated_at: new Date().toISOString() }).eq('user_id', user.id)
+    await admin.rpc('adjust_wallet_balance', { p_user_id: user.id, p_delta: amount })
     return NextResponse.json({ error: 'Bet insert failed' }, { status: 500 })
   }
 

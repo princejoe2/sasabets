@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomBytes } from 'crypto'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { sendPush, type StoredSubscription } from '@/lib/push'
 
 const LAUNCH_STAKE = 5_000
 
 function generateAccessToken(): string {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
-  return Array.from({ length: 16 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+  return randomBytes(12).toString('base64url').slice(0, 16)
 }
 
 const CATEGORY_MAP: Record<string, string> = {
@@ -140,15 +140,12 @@ export async function POST(req: NextRequest) {
     i === chosenIdx ? { ...o, total_pool: LAUNCH_STAKE } : o
   )
 
-  const newBalance = Number(wallet.balance) - LAUNCH_STAKE
-  const { data: deducted } = await admin
-    .from('wallets')
-    .update({ balance: newBalance, updated_at: new Date().toISOString() })
-    .eq('user_id', user.id)
-    .gte('balance', LAUNCH_STAKE)
-    .select('id')
-
-  if (!deducted || deducted.length === 0) {
+  // Atomic deduction via RPC — eliminates read-modify-write race
+  const { data: newBalance } = await admin.rpc('adjust_wallet_balance', {
+    p_user_id: user.id,
+    p_delta: -LAUNCH_STAKE,
+  })
+  if (newBalance === null || newBalance === undefined) {
     await admin.from('markets').delete().eq('id', market.id)
     return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 })
   }
@@ -169,7 +166,7 @@ export async function POST(req: NextRequest) {
     user_id:       user.id,
     type:          'bet',
     amount:        -LAUNCH_STAKE,
-    balance_after: newBalance,
+    balance_after: Number(newBalance),
     status:        'completed',
     metadata:      { marketId: market.id, optionId: chosenOpt.id, market_launch: true },
   })
@@ -194,7 +191,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  return NextResponse.json({ marketId: market.id, newBalance, accessToken })
+  return NextResponse.json({ marketId: market.id, newBalance: Number(newBalance), accessToken })
 }
 
 async function notifyNewMarket(marketId: string, title: string, creatorId: string) {
