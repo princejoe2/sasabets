@@ -75,7 +75,7 @@ async function autoSettle() {
 }
 
 export default async function UpDownPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const [{ data: markets }, prices] = await Promise.all([
     autoSettle().then(() =>

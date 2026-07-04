@@ -1,18 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import dynamic from 'next/dynamic'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import WhatsAppPopup from '@/components/WhatsAppPopup'
 import PhoneGate from '@/components/PhoneGate'
 import BottomNav from '@/components/BottomNav'
-
-// Client-only: these components read sessionStorage/auth and must not SSR
-const ClosingSoonBanner = dynamic(() => import('@/components/ClosingSoonBanner'), { ssr: false })
-const StreakTracker = dynamic(() => import('@/components/StreakTracker'), { ssr: false })
+// Client-only widgets (ssr: false) — dynamic imports live in a Client Component
+import { ClosingSoonBanner, StreakTracker } from '@/components/LazyClient'
 
 export default async function ClientLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (user) {

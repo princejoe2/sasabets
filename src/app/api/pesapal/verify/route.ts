@@ -3,7 +3,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { getPesapalToken, getTransactionStatus } from '@/lib/pesapal'
 
 export async function POST() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()

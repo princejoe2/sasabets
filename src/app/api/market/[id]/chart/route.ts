@@ -11,10 +11,10 @@ function downsample<T>(arr: T[], target: number): T[] {
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const admin = createAdminClient()
-  const marketId = params.id
+  const marketId = (await params).id
 
   const { data: market } = await admin
     .from('markets')

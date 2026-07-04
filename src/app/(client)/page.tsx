@@ -65,7 +65,7 @@ const jsonLd = [
 ]
 
 export default async function HomePage() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const [{ data: markets }, { count: userCount }, { data: { user } }] = await Promise.all([
     supabase

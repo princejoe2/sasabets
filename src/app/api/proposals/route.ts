@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 export async function GET() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('proposals')
     .select('id, title, description, category, option_a, option_b, status, market_id, vote_count, created_at')
@@ -25,7 +25,7 @@ function containsBlocked(text: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin    = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()

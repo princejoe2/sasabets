@@ -4,7 +4,7 @@ import { authenticator } from 'otplib'
 import QRCode from 'qrcode'
 
 export async function GET() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin    = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()

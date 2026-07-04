@@ -5,12 +5,13 @@ import type { Metadata } from 'next'
 import BetPanel from './BetPanel'
 import MarketComments from '@/components/MarketComments'
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const supabase = createClient()
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
   const { data: m } = await supabase
     .from('markets')
     .select('title, description, options, total_pool, metadata')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
   if (!m) return {}
   const opts = m.options as Array<{ label: string; total_pool: number }>
@@ -31,8 +32,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       description: 'This market is invite-only. You need the creator\'s secret link to access it.',
     }
   }
-  const canonical = `https://sabula256.com/markets/${params.id}`
-  const ogImageUrl = `/markets/${params.id}/opengraph-image`
+  const canonical = `https://sabula256.com/markets/${id}`
+  const ogImageUrl = `/markets/${id}/opengraph-image`
   return {
     title: m.title,
     description: desc,
@@ -66,15 +67,17 @@ export default async function MarketPage({
   params,
   searchParams,
 }: {
-  params: { id: string }
-  searchParams: { pick?: string; t?: string }
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ pick?: string; t?: string }>
 }) {
-  const supabase = createClient()
+  const { id } = await params
+  const sp = await searchParams
+  const supabase = await createClient()
 
   const { data: market } = await supabase
     .from('markets')
     .select('id, title, description, total_pool, options, closes_at, status, rake_pct, winning_option_id, settlement_note, settlement_evidence_url, metadata, created_by')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
 
   if (!market) notFound()
@@ -82,7 +85,7 @@ export default async function MarketPage({
   // Private market gate — check access token
   const meta = (market.metadata ?? {}) as Record<string, unknown>
   if (meta.private === true) {
-    const urlToken = searchParams.t ?? ''
+    const urlToken = sp.t ?? ''
     if (!verifyAccessToken(meta, urlToken)) {
       return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0f] px-4 text-center">
@@ -107,7 +110,7 @@ export default async function MarketPage({
   const { data: bettorRows } = await supabase
     .from('bets')
     .select('user_id')
-    .eq('market_id', params.id)
+    .eq('market_id', id)
     .neq('status', 'cancelled')
   const predictorCount = new Set((bettorRows ?? []).map((b: { user_id: string }) => b.user_id)).size
 
@@ -129,7 +132,7 @@ export default async function MarketPage({
   if (user) {
     const [{ data: wallet }, { data: bets }] = await Promise.all([
       supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
-      supabase.from('bets').select('option_id, amount').eq('user_id', user.id).eq('market_id', params.id).limit(1),
+      supabase.from('bets').select('option_id, amount').eq('user_id', user.id).eq('market_id', id).limit(1),
     ])
     balance = wallet?.balance ?? null
     userBet = bets?.[0] ?? null
@@ -159,14 +162,14 @@ export default async function MarketPage({
       <BetPanel
         market={market as Market}
         initialBalance={balance}
-        initialPick={searchParams.pick ?? null}
+        initialPick={sp.pick ?? null}
         isLoggedIn={!!user}
         userBet={userBet}
         predictorCount={predictorCount}
-        accessToken={searchParams.t ?? null}
+        accessToken={sp.t ?? null}
         creatorInfo={creatorInfo}
       />
-      <MarketComments marketId={params.id} isLoggedIn={!!user} />
+      <MarketComments marketId={id} isLoggedIn={!!user} />
     </>
   )
 }

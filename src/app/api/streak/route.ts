@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 
 export async function POST() {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const admin    = createAdminClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ ok: false })

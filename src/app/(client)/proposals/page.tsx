@@ -4,7 +4,7 @@ import ProposalsPageClient from './ProposalsPageClient'
 export const revalidate = 60
 
 export default async function ProposalsPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   const { data: proposals } = await supabase

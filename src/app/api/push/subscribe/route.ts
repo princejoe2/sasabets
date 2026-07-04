@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin    = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin    = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()

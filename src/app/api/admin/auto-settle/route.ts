@@ -4,7 +4,7 @@ import { resolveVerification } from '@/lib/auto-verify'
 import { settleMarket } from '@/lib/settle-market'
 
 export async function POST() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin    = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()

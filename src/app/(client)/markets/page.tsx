@@ -23,9 +23,10 @@ export const revalidate = 30
 export default async function MarketsPage({
   searchParams,
 }: {
-  searchParams?: { cat?: string }
+  searchParams?: Promise<{ cat?: string }>
 }) {
-  const supabase = createClient()
+  const resolvedSearchParams = await searchParams
+  const supabase = await createClient()
   const { data: markets } = await supabase
     .from('markets')
     .select('id, title, description, total_pool, options, closes_at, status, rake_pct, created_at, metadata')
@@ -44,7 +45,7 @@ export default async function MarketsPage({
     }
   }
 
-  const initialCat = (searchParams?.cat ?? 'all') as string
+  const initialCat = (resolvedSearchParams?.cat ?? 'all') as string
 
   return (
     <div className="min-h-screen bg-slate-50 page-enter">

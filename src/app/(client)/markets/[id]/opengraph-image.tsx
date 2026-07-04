@@ -16,7 +16,8 @@ function fmt(n: number) {
   return `UGX ${n.toLocaleString()}`
 }
 
-export default async function Image({ params }: { params: { id: string } }) {
+export default async function Image({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   let title  = 'Sabula 256 Prediction Market'
   let opts: Opt[] = []
   let pool   = 0
@@ -24,7 +25,7 @@ export default async function Image({ params }: { params: { id: string } }) {
 
   try {
     const res = await fetch(
-      `${SB_URL}/rest/v1/markets?id=eq.${params.id}&select=title,options,total_pool,status&limit=1`,
+      `${SB_URL}/rest/v1/markets?id=eq.${id}&select=title,options,total_pool,status&limit=1`,
       { headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` }, next: { revalidate: 60 } }
     )
     const [m] = await res.json() as [{ title: string; options: Opt[]; total_pool: number; status: string } | undefined]

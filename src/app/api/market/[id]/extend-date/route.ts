@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createClient()
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -18,7 +18,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { data: market } = await admin
     .from('markets')
     .select('created_by, status, closes_at')
-    .eq('id', params.id)
+    .eq('id', (await params).id)
     .single()
 
   if (!market) return NextResponse.json({ error: 'Market not found' }, { status: 404 })
@@ -33,7 +33,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { error } = await admin
     .from('markets')
     .update({ closes_at: newDate.toISOString() })
-    .eq('id', params.id)
+    .eq('id', (await params).id)
 
   if (error) return NextResponse.json({ error: 'Update failed' }, { status: 500 })
   return NextResponse.json({ ok: true, closes_at: newDate.toISOString() })

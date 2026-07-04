@@ -8,7 +8,7 @@ import { maybeFireReferralBonus } from '@/lib/referral'
 const STUCK_AFTER_MS = 15 * 60 * 1000  // 15 minutes
 
 async function isAdminUser() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const admin    = createAdminClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null

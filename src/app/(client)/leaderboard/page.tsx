@@ -151,21 +151,22 @@ function PodiumSlot({ player, place, heightClass }: {
 export default async function LeaderboardPage({
   searchParams,
 }: {
-  searchParams: { period?: string; view?: string }
+  searchParams: Promise<{ period?: string; view?: string }>
 }) {
+  const { period: periodParam, view: viewParam } = await searchParams
   // Active period
   const period: Period = (['all', 'month', 'week'] as Period[]).includes(
-    searchParams.period as Period,
+    periodParam as Period,
   )
-    ? (searchParams.period as Period)
+    ? (periodParam as Period)
     : 'all'
 
-  const view: View = searchParams.view === 'creators' ? 'creators' : 'predictors'
+  const view: View = viewParam === 'creators' ? 'creators' : 'predictors'
 
   // Current user (best-effort — no redirect on failure)
   let currentUserId: string | null = null
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
