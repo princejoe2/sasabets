@@ -374,11 +374,12 @@ export default function BetPanel({
   }, [amount, selectedOpt, fetchPreview])
 
   function oddsFor(opt: Option, pool = liveTotal) {
-    if (pool <= 0 || opt.total_pool <= 0) return '—'
-    return ((pool * (1 - rake)) / Number(opt.total_pool)).toFixed(2) + 'x'
+    const optPool = opt.total_pool ?? 0
+    if (pool <= 0 || optPool <= 0) return '—'
+    return ((pool * (1 - rake)) / optPool).toFixed(2) + 'x'
   }
   function pctFor(opt: Option, pool = liveTotal) {
-    return pool > 0 ? (Number(opt.total_pool) / pool) * 100 : 100 / liveOpts.length
+    return pool > 0 ? ((opt.total_pool ?? 0) / pool) * 100 : 100 / liveOpts.length
   }
 
   const chosenOpt = liveOpts.find(o => o.id === selectedOpt)

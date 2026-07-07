@@ -115,7 +115,7 @@ export default function SettleMarketForm({ market, onDone }: { market: Market; o
                 : 'border-[#1e1e2e] text-slate-300 hover:border-emerald-800'
             }`}
           >
-            {opt.label} — UGX {Number(opt.total_pool).toLocaleString()}
+            {opt.label} — UGX {Number(opt.total_pool ?? 0).toLocaleString()}
           </button>
         ))}
       </div>
