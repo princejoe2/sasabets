@@ -6,7 +6,7 @@ type Tab = 'deposits' | 'withdrawals' | 'settled' | 'bets'
 
 interface Deposit {
   id: string; amount: number; status: string; created_at: string
-  reference: string | null; pesapal_tracking_id: string | null
+  reference: string | null
   metadata: Record<string, unknown> | null
   profiles: { phone: string; full_name: string | null } | null
 }
@@ -141,7 +141,7 @@ export default function AdminActivityClient({ deposits, withdrawals, settledMark
                 </div>
                 <p className="text-sm font-black text-right text-emerald-400">+{fmt(d.amount)}</p>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${STATUS_COLOR[d.status] ?? 'bg-slate-800 text-slate-400'}`}>{d.status}</span>
-                <span className="text-[10px] font-mono text-slate-600 max-w-[80px] truncate">{d.pesapal_tracking_id?.slice(0, 8) ?? d.reference?.slice(0, 8) ?? '—'}</span>
+                <span className="text-[10px] font-mono text-slate-600 max-w-[80px] truncate">{d.reference?.slice(0, 8) ?? '—'}</span>
                 <span className="text-xs text-slate-600 whitespace-nowrap">{fmtDate(d.created_at)}</span>
               </div>
             ))}

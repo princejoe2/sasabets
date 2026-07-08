@@ -104,7 +104,15 @@ export default function DashboardPage() {
         {/* Earnings history */}
         {earnings.length > 0 && (
           <div>
-            <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-slate-500">Recent Earnings</h2>
+            <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500">Recent Earnings</h2>
+              <Link
+                href="/wallet"
+                className="rounded-lg border border-emerald-800/40 bg-emerald-900/20 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-900/40 transition-colors"
+              >
+                Withdraw earnings →
+              </Link>
+            </div>
             <div className="overflow-hidden rounded-2xl border border-[#1e1e2e] bg-[#0d0d14]">
               {earnings.slice(0, 5).map((e, i) => {
                 const meta = (e.metadata ?? {}) as Record<string, unknown>

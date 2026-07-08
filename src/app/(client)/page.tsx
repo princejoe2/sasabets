@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import MarketsClient from '@/components/MarketsClient'
+import SabulaLogoHero, { SabulaWatermark } from '@/components/SabulaLogo'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -82,24 +83,33 @@ export default async function HomePage() {
   const totalPool = all.reduce((s, m) => s + Number(m.total_pool), 0)
 
   return (
-    <div className="min-h-screen bg-slate-50 page-enter">
+    <div className="min-h-screen bg-[#f0fdf4] dark:bg-[#040c06] page-enter">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       {/* ── Hero ── */}
-      <div className={`border-b border-slate-200 dark:border-slate-700 ${user ? 'hidden sm:block' : ''}`} style={{ background: 'linear-gradient(135deg, #f5f3ff 0%, #faf8ff 40%, #f0fdf4 100%)' }}>
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
-          {/* Eyebrow */}
+      <div className={`relative overflow-hidden border-b border-emerald-100/60 dark:border-[rgba(0,255,136,0.1)] ${user ? 'hidden sm:block' : ''}`}
+        style={{
+          background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 40%, #f0fdf4 100%)',
+        }}
+      >
+        {/* Dark mode: green radial glow */}
+        <div className="pointer-events-none absolute inset-0 hidden dark:block"
+          style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(245,197,24,0.07) 0%, transparent 70%)', zIndex: 0 }}
+        />
+        <SabulaWatermark />
+        <div className="relative mx-auto max-w-6xl px-4 py-10 sm:py-14 z-10">
+          {/* Stats pills */}
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-black text-violet-700">
-              🔮 {openCount} markets live now
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-700 dark:border-[rgba(0,255,136,0.25)] dark:bg-[rgba(0,255,136,0.08)] dark:text-[#00ff88]">
+              ⚡ {openCount} markets live
             </span>
             {(userCount ?? 0) > 0 && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500">
-                {userCount} predictors
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 dark:border-[rgba(0,255,136,0.12)] dark:bg-[rgba(255,255,255,0.04)] dark:text-[rgba(255,255,255,0.5)]">
+                {userCount?.toLocaleString()} predictors
               </span>
             )}
             {totalPool > 0 && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 dark:border-[rgba(245,197,24,0.25)] dark:bg-[rgba(245,197,24,0.07)] dark:text-[#f5c518]">
                 {fmtPool(totalPool)} pooled
               </span>
             )}
@@ -108,34 +118,37 @@ export default async function HomePage() {
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8 lg:gap-16">
             {/* Left: headline */}
             <div className="flex-1">
-              <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+              <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-slate-900 dark:text-white"
+                style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
                 Ask a question.<br />
-                <span className="text-violet-600">Start a market.</span><br />
+                <span className="text-emerald-600 dark:text-[#00ff88]" style={{ textShadow: 'none' }}>
+                  Start a market.
+                </span><br />
                 Win real money.
               </h1>
-              <p className="mt-4 text-base sm:text-lg text-slate-500 max-w-lg leading-relaxed">
+              <p className="mt-4 text-base sm:text-lg text-slate-500 dark:text-[rgba(255,255,255,0.5)] max-w-lg leading-relaxed">
                 Create your own prediction market in seconds — or jump into one of {openCount} live markets. Predict Uganda politics, football, economy and more. Pay out via MTN or Airtel Mobile Money.
               </p>
               <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <Link
                   href="/create"
-                  className="btn-glow rounded-xl bg-violet-600 px-6 py-3 text-base font-black text-white transition-colors hover:bg-violet-500 text-center"
+                  className="btn-glow rounded-xl bg-emerald-600 px-6 py-3 text-base font-black text-white transition-colors hover:bg-emerald-500 text-center dark:bg-[#00ff88] dark:text-[#040c06] dark:hover:bg-[#00e07a]"
                 >
                   Create a market →
                 </Link>
                 <Link
-                  href="/auth"
-                  className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-base font-semibold text-slate-600 transition-colors hover:border-violet-300 hover:text-violet-700 text-center"
+                  href="/markets"
+                  className="rounded-xl border border-emerald-200 bg-white px-6 py-3 text-base font-semibold text-slate-600 transition-colors hover:border-emerald-400 hover:text-emerald-700 text-center dark:border-[rgba(0,255,136,0.2)] dark:bg-[rgba(0,255,136,0.04)] dark:text-[rgba(255,255,255,0.7)] dark:hover:border-[rgba(0,255,136,0.4)] dark:hover:text-white"
                 >
                   Browse markets
                 </Link>
               </div>
             </div>
 
-            {/* Right: how-it-works mini steps */}
+            {/* Right: how-it-works */}
             <div className="w-full lg:w-auto lg:shrink-0 lg:max-w-xs">
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">How it works</p>
+              <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4 dark:border-[rgba(0,255,136,0.15)] dark:bg-[rgba(255,255,255,0.03)]">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-[rgba(0,255,136,0.5)]">How it works</p>
                 {[
                   { n: '01', icon: '✍️', text: 'Write your question & two sides' },
                   { n: '02', icon: '🚀', text: 'Stake UGX 5,000 to launch instantly' },
@@ -143,13 +156,13 @@ export default async function HomePage() {
                   { n: '04', icon: '💰', text: 'Winning side splits the full pool' },
                 ].map(({ n, icon, text }) => (
                   <div key={n} className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-50 text-sm">{icon}</span>
-                    <span className="text-sm text-slate-600 leading-snug">{text}</span>
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm dark:bg-[rgba(0,255,136,0.1)]">{icon}</span>
+                    <span className="text-sm text-slate-600 dark:text-[rgba(255,255,255,0.55)] leading-snug">{text}</span>
                   </div>
                 ))}
                 <Link
                   href="/create"
-                  className="mt-1 block w-full rounded-xl bg-violet-600 py-2.5 text-center text-sm font-black text-white hover:bg-violet-500 transition-colors"
+                  className="mt-1 block w-full rounded-xl bg-emerald-600 py-2.5 text-center text-sm font-black text-white hover:bg-emerald-500 transition-colors dark:bg-[#00ff88] dark:text-[#040c06] dark:hover:bg-[#00e07a]"
                 >
                   Create now →
                 </Link>
@@ -159,7 +172,14 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* ── Markets immediately ── */}
+      {/* ── Logo hero (shown on mobile for logged-in users) ── */}
+      {user && (
+        <div className="sm:hidden">
+          <SabulaLogoHero />
+        </div>
+      )}
+
+      {/* ── Markets ── */}
       <MarketsClient markets={all.map(normalise)} openCount={openCount} initialCat="all" />
 
     </div>

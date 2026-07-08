@@ -44,8 +44,10 @@ export default function AuthPage() {
   const [isAdmin,     setIsAdmin]     = useState(false)
   const [otpCode,     setOtpCode]     = useState('')
 
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
+  const [loading,       setLoading]       = useState(false)
+  const [error,         setError]         = useState('')
+  const [failedAttempts, setFailedAttempts] = useState(0)
+  const [lockedUntil,   setLockedUntil]   = useState(0)
 
   function switchMode(m: Mode) {
     setMode(m); setStep('form')
@@ -189,6 +191,15 @@ export default function AuthPage() {
   async function handleLogin() {
     setError('')
     if (!email || !password) { setError('Email and password are required'); return }
+
+    // Enforce client-side lockout after repeated failures
+    const now = Date.now()
+    if (lockedUntil > now) {
+      const secs = Math.ceil((lockedUntil - now) / 1000)
+      setError(`Too many failed attempts. Try again in ${secs} second${secs !== 1 ? 's' : ''}.`)
+      return
+    }
+
     setLoading(true)
 
     const { data, error: loginErr } = await supabase.auth.signInWithPassword({
@@ -197,7 +208,12 @@ export default function AuthPage() {
     })
 
     if (loginErr) {
-      setError(loginErr.message)
+      const next = failedAttempts + 1
+      setFailedAttempts(next)
+      // Progressive lockout: 30s after 3 fails, 120s after 6, 300s after 9
+      const lockSecs = next >= 9 ? 300 : next >= 6 ? 120 : next >= 3 ? 30 : 0
+      if (lockSecs > 0) setLockedUntil(Date.now() + lockSecs * 1000)
+      setError('Email or password is incorrect.')
       setLoading(false)
       return
     }
@@ -227,12 +243,22 @@ export default function AuthPage() {
       return
     }
 
+    setFailedAttempts(0)
+    setLockedUntil(0)
     router.push('/markets')
   }
 
   async function handleTotpVerify() {
     setError('')
     if (totp.length !== 6) { setError('Enter the 6-digit code from your authenticator app'); return }
+
+    const now = Date.now()
+    if (lockedUntil > now) {
+      const secs = Math.ceil((lockedUntil - now) / 1000)
+      setError(`Too many attempts. Try again in ${secs} second${secs !== 1 ? 's' : ''}.`)
+      return
+    }
+
     setLoading(true)
 
     const endpoint = isAdmin ? '/api/admin/2fa/verify' : '/api/auth/2fa/verify'
@@ -244,7 +270,11 @@ export default function AuthPage() {
     const data = await res.json()
 
     if (!res.ok) {
-      setError(data.error ?? 'Invalid code — try again')
+      const next = failedAttempts + 1
+      setFailedAttempts(next)
+      if (next >= 5) setLockedUntil(Date.now() + 300 * 1000)
+      else if (next >= 3) setLockedUntil(Date.now() + 60 * 1000)
+      setError('Invalid code — try again')
       setLoading(false)
       return
     }

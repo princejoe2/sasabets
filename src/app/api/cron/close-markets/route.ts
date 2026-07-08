@@ -21,10 +21,11 @@ export async function GET(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Only close regular markets here — updown markets are handled by settle-updown cron
-  const regular = (expired ?? []).filter(
-    m => (m.metadata as Record<string, unknown> | null)?.type !== 'updown'
-  )
+  // Only close regular markets here — updown and price_level markets are handled by settle-updown cron
+  const regular = (expired ?? []).filter(m => {
+    const t = (m.metadata as Record<string, unknown> | null)?.type
+    return t !== 'updown' && t !== 'price_level'
+  })
 
   if (regular.length === 0) return NextResponse.json({ closed: 0 })
 

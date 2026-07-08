@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'About Sabula 256 — Uganda\'s Community Prediction Market',
   description: 'Create your own prediction market or join one. Predict politics, football & economy on Sabula 256. Win on MTN or Airtel Mobile Money.',
+  alternates: { canonical: 'https://sabula256.com/about' },
   openGraph: {
     title: 'About Sabula 256 — Uganda\'s Community Prediction Market',
     description: 'Create your own prediction market or join one. Predict politics, football & economy. Win on MTN or Airtel Mobile Money.',
@@ -53,7 +55,9 @@ const HOW = [
   { step: '04', color: '#34d399', title: 'Market settles', body: 'When the event resolves, admin confirms the outcome. The pool is split among all winning predictors proportional to their stake.' },
 ]
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
 
@@ -84,9 +88,15 @@ export default function AboutPage() {
             <Link href="/markets" className="rounded-xl bg-violet-600 px-7 py-3 text-sm font-bold text-white transition-colors hover:bg-violet-500">
               Browse Markets →
             </Link>
-            <Link href="/auth" className="rounded-xl border border-[#2a2a3e] bg-[#111118] px-7 py-3 text-sm font-semibold text-slate-300 transition-colors hover:border-violet-700/50 hover:text-white">
-              Create Account
-            </Link>
+            {user ? (
+              <Link href="/create" className="rounded-xl border border-[#2a2a3e] bg-[#111118] px-7 py-3 text-sm font-semibold text-slate-300 transition-colors hover:border-violet-700/50 hover:text-white">
+                Create a Market
+              </Link>
+            ) : (
+              <Link href="/auth" className="rounded-xl border border-[#2a2a3e] bg-[#111118] px-7 py-3 text-sm font-semibold text-slate-300 transition-colors hover:border-violet-700/50 hover:text-white">
+                Create Account
+              </Link>
+            )}
           </div>
         </div>
       </div>

@@ -16,9 +16,7 @@ function isMobile(): boolean {
 }
 
 function isStandalone(): boolean {
-  // iOS
   if ((navigator as { standalone?: boolean }).standalone === true) return true
-  // Android / Chrome
   if (window.matchMedia('(display-mode: standalone)').matches) return true
   return false
 }
@@ -31,7 +29,6 @@ export default function MobileInstallGate() {
   const deferredPrompt = useRef<{ prompt: () => void; userChoice: Promise<{ outcome: string }> } | null>(null)
 
   useEffect(() => {
-    // Never gate the admin panel
     if (pathname.startsWith('/admin')) return
     if (!isMobile() || isStandalone()) return
 
@@ -39,7 +36,6 @@ export default function MobileInstallGate() {
     setPlatform(p)
     setShow(true)
 
-    // Capture Android install prompt
     function onBeforeInstall(e: Event) {
       e.preventDefault()
       deferredPrompt.current = e as unknown as typeof deferredPrompt.current
@@ -49,19 +45,17 @@ export default function MobileInstallGate() {
   }, [pathname])
 
   async function handleAndroidInstall() {
-    if (deferredPrompt.current) {
-      deferredPrompt.current.prompt()
-      const { outcome } = await deferredPrompt.current.userChoice
-      if (outcome === 'accepted') setShow(false)
-      deferredPrompt.current = null
-    }
+    if (!deferredPrompt.current) return
+    deferredPrompt.current.prompt()
+    const { outcome } = await deferredPrompt.current.userChoice
+    deferredPrompt.current = null
+    if (outcome === 'accepted') setShow(false)
   }
 
   if (!show) return null
 
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col" style={{ background: '#08080e' }}>
-      {/* Top accent */}
       <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#7c3aed,#a855f7,#7c3aed)' }} />
 
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center">
@@ -69,6 +63,7 @@ export default function MobileInstallGate() {
         <div className="mb-6 relative">
           <div className="w-24 h-24 rounded-3xl overflow-hidden shadow-2xl"
             style={{ border: '2px solid rgba(124,58,237,0.4)', boxShadow: '0 0 40px rgba(124,58,237,0.3)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icon-192.png" alt="Sabula 256" className="w-full h-full object-cover" />
           </div>
           <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-xl bg-emerald-500 flex items-center justify-center text-xs font-black text-white shadow-lg">✓</div>
@@ -76,10 +71,10 @@ export default function MobileInstallGate() {
 
         <h1 className="text-2xl font-black text-white mb-2">Install Sabula 256</h1>
         <p className="text-slate-400 text-sm leading-relaxed mb-8 max-w-xs">
-          Get the full app experience — faster, offline-ready, and built for your phone. Only takes 5 seconds.
+          You must install the app to use Sabula 256. Only takes 5 seconds — no app store needed.
         </p>
 
-        {/* ── iOS instructions ── */}
+        {/* ── iOS ── */}
         {platform === 'ios' && (
           <div className="w-full max-w-xs space-y-4">
             {step === null && (
@@ -87,9 +82,9 @@ export default function MobileInstallGate() {
                 <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d18] p-4 text-left space-y-3">
                   <StepRow n={1} text="Tap the Share button at the bottom of Safari" icon="⬆️" />
                   <div className="h-px bg-[#1e1e2e]" />
-                  <StepRow n={2} text='Scroll down and tap "Add to Home Screen"' icon="➕" />
+                  <StepRow n={2} text='"Add to Home Screen"' icon="➕" />
                   <div className="h-px bg-[#1e1e2e]" />
-                  <StepRow n={3} text='Tap "Add" — the app opens instantly' icon="✅" />
+                  <StepRow n={3} text='Tap "Add" — then open the app from your home screen' icon="✅" />
                 </div>
                 <button
                   onClick={() => setStep('ios_1')}
@@ -100,12 +95,13 @@ export default function MobileInstallGate() {
                 </button>
               </>
             )}
+
             {step === 'ios_1' && (
               <div className="space-y-4">
                 <div className="rounded-2xl border border-violet-800/30 bg-[#0d0d14] p-5">
                   <div className="text-4xl mb-3">⬆️</div>
                   <p className="text-white font-bold mb-1">Tap the Share button</p>
-                  <p className="text-slate-500 text-xs">In Safari, look for the box with an arrow pointing up at the bottom of the screen.</p>
+                  <p className="text-slate-500 text-xs">Look for the box with an arrow at the bottom of Safari.</p>
                 </div>
                 <button
                   onClick={() => setStep('ios_2')}
@@ -116,26 +112,23 @@ export default function MobileInstallGate() {
                 </button>
               </div>
             )}
+
             {step === 'ios_2' && (
               <div className="space-y-4">
                 <div className="rounded-2xl border border-violet-800/30 bg-[#0d0d14] p-5">
-                  <div className="text-4xl mb-3">➕</div>
-                  <p className="text-white font-bold mb-1">Tap "Add to Home Screen"</p>
-                  <p className="text-slate-500 text-xs">Scroll the share sheet until you see "Add to Home Screen", tap it, then tap "Add".</p>
+                  <div className="text-4xl mb-3">🏠</div>
+                  <p className="text-white font-bold mb-1">Tap "Add to Home Screen" then "Add"</p>
+                  <p className="text-slate-500 text-xs">After adding, close Safari and open Sabula 256 from your home screen to continue.</p>
                 </div>
-                <button
-                  onClick={() => setShow(false)}
-                  className="w-full rounded-2xl py-3.5 text-sm font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg,#059669,#10b981)' }}
-                >
-                  I've installed it — open app ✓
-                </button>
+                <div className="rounded-xl border border-[#1e1e2e] bg-[#0d0d18] px-4 py-3 text-xs text-slate-500">
+                  The app will open automatically once you launch it from your home screen.
+                </div>
               </div>
             )}
           </div>
         )}
 
-        {/* ── Android instructions ── */}
+        {/* ── Android ── */}
         {platform === 'android' && (
           <div className="w-full max-w-xs space-y-3">
             {deferredPrompt.current ? (
@@ -147,39 +140,31 @@ export default function MobileInstallGate() {
                 Install App →
               </button>
             ) : (
-              <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d18] p-4 text-left space-y-3">
-                <StepRow n={1} text='In Chrome, tap the 3-dot menu (⋮) at the top right' icon="⋮" />
-                <div className="h-px bg-[#1e1e2e]" />
-                <StepRow n={2} text='"Add to Home Screen" or "Install App"' icon="➕" />
-                <div className="h-px bg-[#1e1e2e]" />
-                <StepRow n={3} text='Tap "Install" — done!' icon="✅" />
-              </div>
+              <>
+                <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d18] p-4 text-left space-y-3">
+                  <StepRow n={1} text='Tap the 3-dot menu (⋮) in Chrome' icon="⋮" />
+                  <div className="h-px bg-[#1e1e2e]" />
+                  <StepRow n={2} text='"Add to Home Screen" or "Install App"' icon="➕" />
+                  <div className="h-px bg-[#1e1e2e]" />
+                  <StepRow n={3} text='Tap "Install" then open Sabula 256 from home screen' icon="✅" />
+                </div>
+                <div className="rounded-xl border border-[#1e1e2e] bg-[#0d0d18] px-4 py-3 text-xs text-slate-500 text-center">
+                  The app will unlock once you open it from your home screen.
+                </div>
+              </>
             )}
-            <button
-              onClick={() => setShow(false)}
-              className="w-full rounded-2xl py-3 text-sm font-bold text-slate-500 border border-[#1e1e2e] transition-colors hover:border-[#2a2a3e]"
-            >
-              I&apos;ve installed it ✓
-            </button>
           </div>
         )}
 
-        {/* Fallback for other mobile */}
+        {/* ── Other ── */}
         {platform === 'other' && (
           <div className="w-full max-w-xs space-y-3">
             <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d18] p-4 text-sm text-slate-400">
-              Open this page in Chrome or Safari, then use your browser&apos;s menu to &ldquo;Add to Home Screen&rdquo; or &ldquo;Install App&rdquo;.
+              Open this page in Chrome (Android) or Safari (iPhone), then use your browser menu to &ldquo;Add to Home Screen&rdquo; or &ldquo;Install App&rdquo;. Then open Sabula 256 from your home screen.
             </div>
-            <button
-              onClick={() => setShow(false)}
-              className="w-full rounded-2xl py-3 text-sm font-bold text-slate-500 border border-[#1e1e2e]"
-            >
-              I&apos;ve installed it ✓
-            </button>
           </div>
         )}
 
-        {/* Footer trust markers */}
         <div className="mt-10 flex items-center gap-4 text-[11px] text-slate-700">
           <span>🔒 No app store needed</span>
           <span>·</span>

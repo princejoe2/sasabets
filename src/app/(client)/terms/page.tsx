@@ -1,6 +1,7 @@
 export const metadata = {
   title: 'Terms & Conditions — Sabula 256',
   description: 'Sabula 256 Terms and Conditions governing use of the platform.',
+  alternates: { canonical: 'https://sabula256.com/terms' },
 }
 
 const EFFECTIVE = '21 June 2026'

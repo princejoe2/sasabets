@@ -170,6 +170,11 @@ export async function settleMarket(
     marketId, marketTitle: claimed.title, winningOptionId,
   }).catch(err => console.error('[settle-market] Settlement push error:', err))
 
+  // Notify followers who didn't bet — non-blocking
+  notifyFollowers(admin, { marketId, marketTitle: claimed.title, winningOptionId }).catch(
+    err => console.error('[settle-market] Follower push error:', err),
+  )
+
   return { success: true }
 }
 
@@ -232,6 +237,66 @@ async function sendSettlementPush(
   )
 
   // Clean up expired subscriptions (410 Gone)
+  const gone: string[] = []
+  results.forEach((r, i) => {
+    if (r.status === 'rejected' && (r.reason as { statusCode?: number })?.statusCode === 410) {
+      gone.push(subs[i].endpoint)
+    }
+  })
+  if (gone.length) {
+    await admin.from('push_subscriptions').delete().in('endpoint', gone)
+  }
+}
+
+async function notifyFollowers(
+  admin: SupabaseClient,
+  opts: { marketId: string; marketTitle: string; winningOptionId: string },
+) {
+  const { marketId, marketTitle, winningOptionId } = opts
+
+  // Get followers who have push subscriptions but didn't place a bet
+  const { data: follows } = await admin
+    .from('market_follows')
+    .select('user_id')
+    .eq('market_id', marketId)
+
+  if (!follows?.length) return
+
+  const followerIds = follows.map(f => f.user_id)
+
+  // Exclude bettors — they already get the bettor notification
+  const { data: bets } = await admin
+    .from('bets')
+    .select('user_id')
+    .eq('market_id', marketId)
+    .in('user_id', followerIds)
+
+  const bettorIds = new Set((bets ?? []).map(b => b.user_id))
+  const nonBettorFollowerIds = followerIds.filter(id => !bettorIds.has(id))
+  if (!nonBettorFollowerIds.length) return
+
+  const { data: subs } = await admin
+    .from('push_subscriptions')
+    .select('user_id, endpoint, p256dh, auth')
+    .in('user_id', nonBettorFollowerIds)
+
+  if (!subs?.length) return
+
+  // Find winning option label
+  const { data: market } = await admin.from('markets').select('options').eq('id', marketId).single()
+  const opts2 = (market?.options ?? []) as Array<{ id: string; label: string }>
+  const winLabel = opts2.find(o => o.id === winningOptionId)?.label ?? 'the result'
+  const shortTitle = marketTitle.length > 60 ? marketTitle.slice(0, 57) + '…' : marketTitle
+  const marketUrl = `${SITE}/markets/${marketId}`
+
+  const results = await Promise.allSettled(
+    subs.map(s => sendPush(s as StoredSubscription, {
+      title: '🔔 Market settled',
+      body: `"${shortTitle}" settled: ${winLabel}`,
+      url: marketUrl,
+    })),
+  )
+
   const gone: string[] = []
   results.forEach((r, i) => {
     if (r.status === 'rejected' && (r.reason as { statusCode?: number })?.statusCode === 410) {

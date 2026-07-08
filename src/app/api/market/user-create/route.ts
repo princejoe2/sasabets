@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { sendPush, type StoredSubscription } from '@/lib/push'
 import { generateAccessToken, hashAccessToken } from '@/lib/market-token'
+import { pingIndexNow } from '@/lib/indexnow'
+import { sendAdminApprovalRequest } from '@/lib/whatsapp'
 
 const LAUNCH_STAKE = 5_000
 
@@ -136,7 +138,7 @@ export async function POST(req: NextRequest) {
     title:       title.trim(),
     description: description?.trim() || null,
     options,
-    status:      'open',
+    status:      'pending_approval',
     closes_at:   closesAtIso,
     rake_pct:    0.08,
     total_pool:  0,
@@ -206,14 +208,34 @@ export async function POST(req: NextRequest) {
     },
   }).then(() => {}) // non-fatal — fire and forget
 
-  // Push notification to all subscribers — only for public markets
-  if (!isPrivate) {
-    notifyNewMarket(market.id, title.trim(), user.id).catch(
-      err => console.error('[push] New market notify error:', err)
-    )
-  }
+  // Notify admin via WhatsApp — must be awaited before returning or Vercel
+  // kills the function before the outbound fetch to UltraMsg completes.
+  await notifyAdminForApproval(market.id, title.trim(), options, profile?.full_name ?? 'Community').catch(
+    err => console.error('[whatsapp] admin approval error:', err)
+  )
 
-  return NextResponse.json({ marketId: market.id, newBalance: Number(newBalance), accessToken })
+  // Push + IndexNow only fire AFTER admin approves (status becomes 'open').
+  // Don't notify users or search engines yet — market is not live.
+
+  return NextResponse.json({ marketId: market.id, newBalance: Number(newBalance), accessToken, pendingApproval: true })
+}
+
+async function notifyAdminForApproval(
+  marketId: string,
+  title: string,
+  options: Array<{ label: string }>,
+  creatorName: string,
+) {
+  const admin = createAdminClient()
+  const { data: adminProfile } = await admin
+    .from('profiles')
+    .select('phone')
+    .eq('is_admin', true)
+    .not('phone', 'is', null)
+    .limit(1)
+    .single()
+  if (!adminProfile?.phone) return
+  await sendAdminApprovalRequest(adminProfile.phone, { id: marketId, title, options, creatorName })
 }
 
 async function notifyNewMarket(marketId: string, title: string, creatorId: string) {

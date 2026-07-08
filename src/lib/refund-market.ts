@@ -9,7 +9,7 @@ export async function cancelAndRefundMarket(
   marketId: string,
   opts: { reason: string; fromStatuses?: string[] },
 ): Promise<{ ok: boolean; refundedBets: number; refundedTotal: number; error?: string }> {
-  const fromStatuses = opts.fromStatuses ?? ['open', 'closed', 'suspended']
+  const fromStatuses = opts.fromStatuses ?? ['pending_approval', 'open', 'closed', 'suspended']
 
   const { data: market } = await admin
     .from('markets')

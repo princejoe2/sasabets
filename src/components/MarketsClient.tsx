@@ -23,6 +23,7 @@ type Mkt = {
   total_pool: number; options: Array<{ id: string; label: string; total_pool: number }>
   closes_at: string | null; created_at: string; status: string; rake_pct: number
   metadata?: Record<string, unknown>
+  is_featured?: boolean
 }
 
 type Category = 'all' | 'updown' | 'football' | 'politics' | 'economy' | 'entertainment' | 'tech' | 'infrastructure' | 'agriculture' | 'default'
@@ -31,7 +32,7 @@ type Sort = 'random' | 'pool' | 'closing' | 'newest'
 const VALID_CATS: Category[] = ['football','politics','economy','entertainment','tech','infrastructure','agriculture','updown','default']
 
 function detectCat(title: string, desc = '', metadata?: Record<string, unknown>): Exclude<Category, 'all'> {
-  if (metadata?.type === 'updown') return 'updown'
+  if (metadata?.type === 'updown' || metadata?.type === 'price_level') return 'updown'
   const stored = metadata?.category as string | undefined
   if (stored && VALID_CATS.includes(stored as Category)) return stored as Exclude<Category, 'all'>
   const t = (title + ' ' + desc).toLowerCase()
@@ -46,16 +47,16 @@ function detectCat(title: string, desc = '', metadata?: Record<string, unknown>)
 }
 
 const CATS: { id: Category; icon: string; label: string; color: string; bg: string; border: string }[] = [
-  { id: 'all',            icon: '🔮', label: 'All',            color: '#7c3aed', bg: 'rgba(124,58,237,0.08)',  border: 'rgba(124,58,237,0.3)'  },
-  { id: 'updown',         icon: '📈', label: 'Up/Down',        color: '#16a34a', bg: 'rgba(22,163,74,0.08)',   border: 'rgba(22,163,74,0.3)'   },
-  { id: 'football',       icon: '⚽', label: 'Football',       color: '#65a30d', bg: 'rgba(101,163,13,0.08)',  border: 'rgba(101,163,13,0.3)'  },
-  { id: 'politics',       icon: '🏛️', label: 'Politics',       color: '#2563eb', bg: 'rgba(37,99,235,0.08)',   border: 'rgba(37,99,235,0.3)'   },
-  { id: 'economy',        icon: '💰', label: 'Economy',        color: '#d97706', bg: 'rgba(217,119,6,0.08)',   border: 'rgba(217,119,6,0.3)'   },
-  { id: 'entertainment',  icon: '🎵', label: 'Entertainment',  color: '#db2777', bg: 'rgba(219,39,119,0.08)',  border: 'rgba(219,39,119,0.3)'  },
-  { id: 'tech',           icon: '📱', label: 'Technology',     color: '#0891b2', bg: 'rgba(8,145,178,0.08)',   border: 'rgba(8,145,178,0.3)'   },
-  { id: 'infrastructure', icon: '🏗️', label: 'Infrastructure', color: '#ea580c', bg: 'rgba(234,88,12,0.08)',   border: 'rgba(234,88,12,0.3)'   },
-  { id: 'agriculture',    icon: '🌿', label: 'Agriculture',    color: '#059669', bg: 'rgba(5,150,105,0.08)',   border: 'rgba(5,150,105,0.3)'   },
-  { id: 'default',        icon: '✨', label: 'Other',          color: '#7c3aed', bg: 'rgba(124,58,237,0.06)',  border: 'rgba(124,58,237,0.25)' },
+  { id: 'all',            icon: '⚡', label: 'All',            color: '#00ff88', bg: 'rgba(0,255,136,0.08)',   border: 'rgba(0,255,136,0.3)'   },
+  { id: 'updown',         icon: '📈', label: 'Up/Down',        color: '#4ade80', bg: 'rgba(74,222,128,0.08)',  border: 'rgba(74,222,128,0.3)'  },
+  { id: 'football',       icon: '⚽', label: 'Football',       color: '#a3e635', bg: 'rgba(163,230,53,0.08)',  border: 'rgba(163,230,53,0.3)'  },
+  { id: 'politics',       icon: '🏛️', label: 'Politics',       color: '#60a5fa', bg: 'rgba(96,165,250,0.08)',  border: 'rgba(96,165,250,0.3)'  },
+  { id: 'economy',        icon: '💰', label: 'Economy',        color: '#f5c518', bg: 'rgba(245,197,24,0.08)',  border: 'rgba(245,197,24,0.3)'  },
+  { id: 'entertainment',  icon: '🎵', label: 'Entertainment',  color: '#f472b6', bg: 'rgba(244,114,182,0.08)', border: 'rgba(244,114,182,0.3)' },
+  { id: 'tech',           icon: '📱', label: 'Technology',     color: '#22d3ee', bg: 'rgba(34,211,238,0.08)',  border: 'rgba(34,211,238,0.3)'  },
+  { id: 'infrastructure', icon: '🏗️', label: 'Infrastructure', color: '#fb923c', bg: 'rgba(251,146,60,0.08)',  border: 'rgba(251,146,60,0.3)'  },
+  { id: 'agriculture',    icon: '🌿', label: 'Agriculture',    color: '#34d399', bg: 'rgba(52,211,153,0.08)',  border: 'rgba(52,211,153,0.3)'  },
+  { id: 'default',        icon: '✨', label: 'Other',          color: '#00ccff', bg: 'rgba(0,204,255,0.06)',   border: 'rgba(0,204,255,0.25)'  },
 ]
 
 const SORTS: { id: Sort; label: string }[] = [
@@ -91,7 +92,7 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
         (payload) => {
           setLiveMarkets(prev => prev.map(m =>
             m.id === payload.new.id
-              ? { ...m, total_pool: payload.new.total_pool, status: payload.new.status, closes_at: payload.new.closes_at }
+              ? { ...m, total_pool: payload.new.total_pool, status: payload.new.status, closes_at: payload.new.closes_at, is_featured: payload.new.is_featured }
               : m
           ))
         }
@@ -180,9 +181,10 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
     }
 
     if (cat === 'updown') {
-      list = list.filter(m => m.metadata?.type === 'updown')
+      list = list.filter(m => m.metadata?.type === 'updown' || m.metadata?.type === 'price_level')
     } else if (cat !== 'all') {
-      list = list.filter(m => m.metadata?.type !== 'updown' && detectCat(m.title, m.description ?? '', m.metadata) === cat)
+      const isAsset = (m: Mkt) => m.metadata?.type === 'updown' || m.metadata?.type === 'price_level'
+      list = list.filter(m => !isAsset(m) && detectCat(m.title, m.description ?? '', m.metadata) === cat)
     }
 
     if (sort === 'random') {
@@ -204,13 +206,18 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
     return list
   }, [liveMarkets, open, search, cat, sort, showClosed, showWatchlist, watched, dailySeed])
 
+  const featured = useMemo(() =>
+    liveMarkets.filter(m => m.status === 'open' && m.is_featured),
+    [liveMarkets]
+  )
+
   const activeCat  = CATS.find(c => c.id === cat)!
   const hasFilters = !!(search.trim() || cat !== 'all')
 
   return (
     <div className="page-enter">
       {/* ── Sticky filter bar ── */}
-      <div className="sticky top-[61px] z-10 border-b border-slate-200 bg-white/95 backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95">
+      <div className="sticky top-[61px] z-10 border-b border-emerald-100/50 bg-white/95 backdrop-blur-xl dark:border-[rgba(0,255,136,0.1)] dark:bg-[rgba(4,12,6,0.92)]">
 
         <div className="px-4 py-3">
           <div className="mx-auto max-w-6xl space-y-3">
@@ -229,7 +236,7 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Search markets…"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-7 pr-7 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-violet-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-700"
+                  className="w-full rounded-lg border border-emerald-100 bg-emerald-50/40 py-1.5 pl-7 pr-7 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white dark:border-[rgba(0,255,136,0.15)] dark:bg-[rgba(0,255,136,0.04)] dark:text-[#e8f5e9] dark:placeholder:text-[rgba(255,255,255,0.3)] dark:focus:bg-[rgba(0,255,136,0.06)]"
                 />
                 {search && (
                   <button
@@ -241,15 +248,15 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
 
               {/* Sort — full width on mobile, shrink on desktop */}
               <div className="flex w-full sm:w-auto sm:shrink-0 gap-2">
-                <div className="flex flex-1 sm:flex-none gap-0.5 rounded-xl border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-800">
+                <div className="flex flex-1 sm:flex-none gap-0.5 rounded-xl border border-emerald-100 bg-emerald-50/30 p-0.5 dark:border-[rgba(0,255,136,0.12)] dark:bg-[rgba(0,255,136,0.04)]">
                   {SORTS.map(s => (
                     <button
                       key={s.id}
                       onClick={() => setSort(s.id)}
                       className={`flex-1 sm:flex-none rounded-lg px-2.5 py-2.5 sm:py-1.5 text-[11px] font-bold transition-all min-h-[44px] sm:min-h-0 ${
                         sort === s.id
-                          ? 'bg-violet-600 text-white shadow-sm'
-                          : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300'
+                          ? 'bg-emerald-600 text-white shadow-sm dark:bg-[#00ff88] dark:text-[#040c06]'
+                          : 'text-slate-400 hover:text-slate-700 dark:text-[rgba(255,255,255,0.35)] dark:hover:text-[rgba(0,255,136,0.8)]'
                       }`}
                     >
                       {s.label}
@@ -343,23 +350,43 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
       {/* ── Create market CTA ── */}
       <div className="mx-auto max-w-6xl px-4 pt-5">
         <Link href="/create"
-          className="group relative flex items-center justify-between overflow-hidden rounded-2xl border border-violet-600/40 px-5 py-5 transition-all hover:border-violet-500/60"
-          style={{ background: 'linear-gradient(135deg, rgba(109,40,217,0.18) 0%, rgba(13,13,20,0.95) 60%)' }}
+          className="group relative flex items-center justify-between overflow-hidden rounded-2xl border border-emerald-200 px-5 py-5 transition-all hover:border-emerald-400 dark:border-[rgba(0,255,136,0.2)] dark:hover:border-[rgba(0,255,136,0.4)]"
+          style={{ background: 'linear-gradient(135deg, rgba(0,255,136,0.06) 0%, transparent 60%)' }}
         >
-          {/* Glow blob */}
-          <div className="pointer-events-none absolute -left-8 -top-8 h-32 w-32 rounded-full bg-violet-600/20 blur-2xl" />
+          <div className="pointer-events-none absolute -left-8 -top-8 h-32 w-32 rounded-full bg-emerald-400/10 blur-2xl dark:bg-[rgba(0,255,136,0.12)]" />
           <div className="flex items-center gap-4 relative">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-600/30 text-2xl border border-violet-500/30">💡</span>
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-2xl border border-emerald-200 dark:bg-[rgba(0,255,136,0.1)] dark:border-[rgba(0,255,136,0.2)]">💡</span>
             <div>
-              <p className="text-base font-black text-white">Create your own prediction market</p>
-              <p className="text-xs text-slate-400 mt-0.5">Write a question · Back your side with UGX 5K · Share & win</p>
+              <p className="text-base font-black text-slate-900 dark:text-white">Create your own prediction market</p>
+              <p className="text-xs text-slate-500 dark:text-[rgba(255,255,255,0.45)] mt-0.5">Write a question · Back your side with UGX 5K · Share & win</p>
             </div>
           </div>
-          <span className="relative shrink-0 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-black text-white transition-colors group-hover:bg-violet-500 ml-4">
+          <span className="relative shrink-0 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-black text-white transition-colors group-hover:bg-emerald-500 ml-4 dark:bg-[#00ff88] dark:text-[#040c06] dark:group-hover:bg-[#00e07a]">
             Create →
           </span>
         </Link>
       </div>
+
+      {/* ── Featured markets ── */}
+      {featured.length > 0 && (
+        <div className="mx-auto max-w-6xl px-4 pt-6">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-lg">🔥</span>
+            <h2 className="text-sm font-black uppercase tracking-widest text-amber-600">Featured Now</h2>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {featured.map(m => (
+              <div key={m.id} className="relative rounded-2xl ring-2 ring-amber-400/60 ring-offset-2 ring-offset-slate-50">
+                <div className="absolute -top-2.5 right-3 z-10 rounded-full border border-amber-300 bg-amber-400 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-950">
+                  Featured
+                </div>
+                <MarketCard market={{ ...m, description: m.description ?? undefined }} />
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 border-t border-slate-200" />
+        </div>
+      )}
 
       {/* ── Market grid ── */}
       <div className="mx-auto max-w-6xl px-4 py-8 pb-24 sm:pb-8">
@@ -371,13 +398,13 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
                 {search && <> · &ldquo;{search}&rdquo;</>}
                 {cat !== 'all' && <> · {activeCat.icon} {activeCat.label}</>}
                 <span className="ml-2 text-slate-300">
-                  · sorted by <span className="text-violet-500">{SORTS.find(s => s.id === sort)?.label}</span>
+                  · sorted by <span className="text-emerald-600 dark:text-[#00ff88]">{SORTS.find(s => s.id === sort)?.label}</span>
                 </span>
               </p>
               {hasFilters && (
                 <button
                   onClick={() => { setSearch(''); setCat('all') }}
-                  className="text-[11px] text-violet-600 underline underline-offset-2 transition-colors hover:text-violet-400"
+                  className="text-[11px] text-emerald-600 underline underline-offset-2 transition-colors hover:text-emerald-400 dark:text-[#00ff88] dark:hover:text-[#00cc66]"
                 >
                   clear filters
                 </button>
@@ -386,9 +413,9 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map(m => (
                 <div key={m.id} className="relative">
-                  {m.metadata?.type === 'updown' && (
+                  {(m.metadata?.type === 'updown' || m.metadata?.type === 'price_level') && (
                     <div className="absolute -top-2 left-4 z-10 flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-700">
-                      📈 Up/Down
+                      📈 {m.metadata?.type === 'price_level' ? 'Price Target' : 'Up/Down'}
                     </div>
                   )}
                   <MarketCard
@@ -399,13 +426,13 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-24 text-center dark:border-slate-700 dark:bg-slate-800/50">
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-emerald-100 bg-white py-24 text-center dark:border-[rgba(0,255,136,0.12)] dark:bg-[rgba(0,255,136,0.02)]">
             {showWatchlist ? (
               <>
                 <p className="text-5xl">⭐</p>
                 <p className="mt-4 text-base font-semibold text-slate-500">Your watchlist is empty.</p>
                 <p className="mt-1 text-sm text-slate-400">Click the bookmark icon on any market to save it here.</p>
-                <button onClick={() => setShowWatchlist(false)} className="mt-3 text-sm text-violet-600">Browse markets →</button>
+                <button onClick={() => setShowWatchlist(false)} className="mt-3 text-sm text-emerald-600 dark:text-[#00ff88]">Browse markets →</button>
               </>
             ) : (
               <>
@@ -416,7 +443,7 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
                 {hasFilters && (
                   <button
                     onClick={() => { setSearch(''); setCat('all') }}
-                    className="mt-3 text-sm text-violet-600 transition-colors hover:text-violet-400"
+                    className="mt-3 text-sm text-emerald-600 transition-colors hover:text-emerald-400 dark:text-[#00ff88] dark:hover:text-[#00cc66]"
                   >
                     Clear filters →
                   </button>

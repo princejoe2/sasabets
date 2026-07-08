@@ -1,15 +1,25 @@
 /* @import must precede all other rules (incl. @tailwind, which expands into
    base styles) — Turbopack enforces this strictly, unlike webpack. */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design tokens ── */
+:root {
+  --sabula-green:  #00ff88;
+  --sabula-gold:   #f5c518;
+  --sabula-red:    #ff3366;
+  --sabula-cyan:   #00ccff;
+  --accent:        #007a40;
+}
+.dark { --accent: #00ff88; }
+
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
-  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #f0fdf4;
+  color: #0f1a10;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
 }
@@ -107,87 +117,157 @@ body {
 }
 .btn-glow:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 24px rgba(139, 92, 246, 0.5), 0 0 48px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 0 24px rgba(0,255,136,0.4), 0 0 48px rgba(0,255,136,0.15);
 }
 .btn-glow:active {
   transform: translateY(0);
 }
 
 .btn-glow-emerald:hover {
-  box-shadow: 0 0 24px rgba(52, 211, 153, 0.4), 0 0 48px rgba(52, 211, 153, 0.15);
+  box-shadow: 0 0 24px rgba(0,255,136,0.4), 0 0 48px rgba(0,255,136,0.15);
 }
 
 /* ── Hide scrollbar but keep scroll ── */
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── Dark mode global overrides ── */
-/* These apply when .dark is on <html>, covering every page without editing each file */
-
+/* ── Dark mode global body ── */
 .dark body {
-  background-color: #0a0f1e;
-  color: #e2e8f0;
+  background-color: #040c06;
+  color: #e8f5e9;
 }
 
+/* ── Green grid background overlay (dark mode only) ── */
+.dark body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,255,136,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,136,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Custom scrollbar (dark mode) ── */
+.dark ::-webkit-scrollbar { width: 6px; }
+.dark ::-webkit-scrollbar-track { background: #040c06; }
+.dark ::-webkit-scrollbar-thumb { background: rgba(0,255,136,0.2); border-radius: 3px; }
+.dark ::-webkit-scrollbar-thumb:hover { background: rgba(0,255,136,0.4); }
+
+/* ── Dark mode overrides ── */
+
 /* Backgrounds */
-.dark .bg-white           { background-color: #1e293b !important; }
-.dark .bg-slate-50        { background-color: #0f172a !important; }
-.dark .bg-slate-100       { background-color: #1e293b !important; }
-.dark .bg-slate-200       { background-color: #334155 !important; }
+.dark .bg-white           { background-color: rgba(4,12,6,0.95) !important; }
+.dark .bg-slate-50        { background-color: #050e07 !important; }
+.dark .bg-slate-100       { background-color: #0a1a0d !important; }
+.dark .bg-slate-200       { background-color: #122016 !important; }
 
 /* Semi-transparent whites */
-.dark .bg-white\/95       { background-color: rgba(15,23,42,0.95) !important; }
-.dark .bg-white\/80       { background-color: rgba(15,23,42,0.80) !important; }
-.dark .bg-white\/60       { background-color: rgba(15,23,42,0.60) !important; }
+.dark .bg-white\/95       { background-color: rgba(4,12,6,0.95) !important; }
+.dark .bg-white\/80       { background-color: rgba(4,12,6,0.80) !important; }
+.dark .bg-white\/60       { background-color: rgba(4,12,6,0.60) !important; }
 
 /* Text */
-.dark .text-slate-900     { color: #f1f5f9 !important; }
-.dark .text-slate-800     { color: #e2e8f0 !important; }
-.dark .text-slate-700     { color: #cbd5e1 !important; }
-.dark .text-slate-600     { color: #94a3b8 !important; }
-.dark .text-slate-500     { color: #64748b !important; }
-.dark .text-slate-400     { color: #475569 !important; }
-.dark .text-slate-300     { color: #334155 !important; }
+.dark .text-slate-900     { color: #e8f5e9 !important; }
+.dark .text-slate-800     { color: #c8e6c9 !important; }
+.dark .text-slate-700     { color: #a5d6a7 !important; }
+.dark .text-slate-600     { color: rgba(255,255,255,0.55) !important; }
+.dark .text-slate-500     { color: rgba(255,255,255,0.4) !important; }
+.dark .text-slate-400     { color: rgba(255,255,255,0.28) !important; }
+.dark .text-slate-300     { color: rgba(255,255,255,0.18) !important; }
 
 /* Borders */
-.dark .border-slate-200   { border-color: #334155 !important; }
-.dark .border-slate-100   { border-color: #1e293b !important; }
-.dark .border-slate-300   { border-color: #475569 !important; }
+.dark .border-slate-200   { border-color: rgba(0,255,136,0.12) !important; }
+.dark .border-slate-100   { border-color: rgba(0,255,136,0.07) !important; }
+.dark .border-slate-300   { border-color: rgba(0,255,136,0.18) !important; }
 
 /* Hover states */
-.dark .hover\:bg-slate-50:hover   { background-color: #1e293b !important; }
-.dark .hover\:bg-slate-100:hover  { background-color: #293548 !important; }
-.dark .hover\:text-slate-900:hover { color: #f1f5f9 !important; }
+.dark .hover\:bg-slate-50:hover   { background-color: rgba(0,255,136,0.04) !important; }
+.dark .hover\:bg-slate-100:hover  { background-color: rgba(0,255,136,0.07) !important; }
+.dark .hover\:text-slate-900:hover { color: #00ff88 !important; }
 
 /* Focus */
-.dark .focus\:bg-white:focus { background-color: #1e293b !important; }
+.dark .focus\:bg-white:focus { background-color: #0a1a0d !important; }
 
 /* Input fields */
 .dark input, .dark textarea, .dark select {
-  background-color: #1e293b;
-  color: #f1f5f9;
-  border-color: #334155;
+  background-color: rgba(0,255,136,0.04);
+  color: #e8f5e9;
+  border-color: rgba(0,255,136,0.18);
 }
 .dark input::placeholder, .dark textarea::placeholder {
-  color: #475569;
+  color: rgba(255,255,255,0.3);
 }
 
-/* MarketCard image fade — switches gradient colour per theme */
+/* MarketCard image fade */
 .card-img-fade {
-  background: linear-gradient(to bottom, transparent 35%, rgba(255,255,255,0.95) 100%);
+  background: linear-gradient(to bottom, transparent 35%, rgba(240,253,244,0.95) 100%);
 }
 .dark .card-img-fade {
-  background: linear-gradient(to bottom, transparent 35%, rgba(30,41,59,0.97) 100%) !important;
-}
-
-/* MarketCard dark backgrounds */
-.dark .card-shine {
-  background-color: #1e293b !important;
+  background: linear-gradient(to bottom, transparent 35%, rgba(4,12,6,0.97) 100%) !important;
 }
 
 /* Hero section dark override */
 .dark [style*="linear-gradient(135deg, #f5f3ff"] {
-  background: linear-gradient(135deg, #1a1035 0%, #0f172a 50%, #0d1f14 100%) !important;
+  background: linear-gradient(135deg, #040c06 0%, #061210 50%, #040c06 100%) !important;
+}
+
+/* ── Design card / button classes ── */
+.mcard {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(0,255,136,0.15);
+  border-radius: 16px;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.mcard:hover {
+  border-color: rgba(0,255,136,0.35);
+  box-shadow: 0 0 24px rgba(0,255,136,0.06), 0 8px 24px rgba(0,0,0,0.4);
+  transform: translateY(-2px);
+}
+
+.yes-btn {
+  background: rgba(0,255,136,0.12);
+  border: 1.5px solid rgba(0,255,136,0.4);
+  color: #00ff88;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 800;
+  font-size: 12px;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.yes-btn:hover { background: rgba(0,255,136,0.22); border-color: rgba(0,255,136,0.7); transform: translateY(-1px); }
+
+.no-btn {
+  background: rgba(255,51,102,0.1);
+  border: 1.5px solid rgba(255,51,102,0.35);
+  color: #ff3366;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 800;
+  font-size: 12px;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.no-btn:hover { background: rgba(255,51,102,0.2); border-color: rgba(255,51,102,0.65); transform: translateY(-1px); }
+
+.cat-tab {
+  background: rgba(0,255,136,0.06);
+  border: 1px solid rgba(0,255,136,0.2);
+  color: rgba(0,255,136,0.7);
+  border-radius: 100px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.cat-tab:hover, .cat-tab.active {
+  background: rgba(0,255,136,0.15);
+  border-color: rgba(0,255,136,0.5);
+  color: #00ff88;
 }
 
 /* ── Scrollbar hide utility ── */
@@ -201,6 +281,57 @@ body {
 }
 .page-enter {
   animation: fadeUp 0.25s ease both;
+}
+
+/* ── Design system keyframes ── */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(0,255,136,0.3); }
+  50%       { box-shadow: 0 0 24px rgba(0,255,136,0.7), 0 0 48px rgba(0,255,136,0.3); }
+}
+
+@keyframes neonPulse {
+  0%, 100% { text-shadow: 0 0 8px rgba(0,255,136,0.7), 0 0 20px rgba(0,255,136,0.4); opacity: 0.95; }
+  50%       { text-shadow: 0 0 16px #00ff88, 0 0 40px rgba(0,255,136,0.6), 0 0 80px rgba(0,255,136,0.3); opacity: 1; }
+}
+
+@keyframes scanLine {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  10%  { opacity: 0.4; }
+  90%  { opacity: 0.4; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+@keyframes orbitCW  { from { transform: rotate(0deg);   } to { transform: rotate(360deg);  } }
+@keyframes orbitCCW { from { transform: rotate(360deg); } to { transform: rotate(0deg);    } }
+
+@keyframes ringPulse {
+  0%, 100% { transform: scale(1);   opacity: 0.4; }
+  50%       { transform: scale(1.1); opacity: 0.8; }
+}
+
+@keyframes barFlash {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+@keyframes cardPop {
+  0%   { transform: scale(0.94) translateY(4px); opacity: 0; }
+  100% { transform: scale(1) translateY(0);      opacity: 1; }
+}
+
+@keyframes sabula-pulse {
+  0%, 100% { text-shadow: 0 0 16px rgba(245,197,24,0.9), 0 0 48px rgba(245,197,24,0.5), 0 0 100px rgba(245,197,24,0.2); }
+  50%       { text-shadow: 0 0 28px #f5c518, 0 0 80px rgba(245,197,24,0.7), 0 0 160px rgba(245,197,24,0.3); }
+}
+
+@keyframes sabula-neon {
+  0%, 100% { text-shadow: 0 0 14px #00ff88, 0 0 40px rgba(0,255,136,0.7), 0 0 80px rgba(0,255,136,0.3); }
+  50%       { text-shadow: 0 0 24px #00ff88, 0 0 70px rgba(0,255,136,0.9), 0 0 140px rgba(0,255,136,0.4); }
+}
+
+@keyframes sabula-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
 }
 
 /* ── Win celebration bounce ── */

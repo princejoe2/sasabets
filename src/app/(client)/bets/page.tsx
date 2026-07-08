@@ -344,7 +344,7 @@ export default function BetsPage() {
     setExitLoading(false)
   }
 
-  const filtered = bets.filter(TAB_FILTERS[tab])
+  const filtered = bets.filter(TAB_FILTERS[tab] ?? (() => false))
   const totalStaked = bets.reduce((s, b) => s + Number(b.amount), 0)
   const totalWon = bets.filter(b => b.status === 'won').reduce((s, b) => s + Number(b.potential_payout), 0)
   const activeCount = bets.filter(b => b.status === 'active').length
@@ -482,9 +482,13 @@ export default function BetsPage() {
                 const isToggling = visibilityLoading === market.id
 
                 const statusColor =
-                  market.status === 'open'     ? 'text-emerald-400 bg-emerald-900/30 border-emerald-800/40' :
-                  market.status === 'settled'  ? 'text-slate-400 bg-[#1e1e2e] border-[#2a2a3e]' :
+                  market.status === 'open'               ? 'text-emerald-400 bg-emerald-900/30 border-emerald-800/40' :
+                  market.status === 'settled'            ? 'text-slate-400 bg-[#1e1e2e] border-[#2a2a3e]' :
+                  market.status === 'pending_approval'   ? 'text-amber-300 bg-amber-900/30 border-amber-700/50' :
                   'text-amber-400 bg-amber-900/20 border-amber-800/30'
+
+                const statusLabel =
+                  market.status === 'pending_approval' ? '🕐 Under Review' : market.status
 
                 return (
                   <div key={market.id} className="rounded-xl border border-[#1e1e2e] bg-[#0d0d14] overflow-hidden">
@@ -493,7 +497,7 @@ export default function BetsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="mb-1.5 flex flex-wrap items-center gap-2">
                           <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusColor}`}>
-                            {market.status}
+                            {statusLabel}
                           </span>
                           <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
                             isPriv

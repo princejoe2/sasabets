@@ -23,7 +23,7 @@ interface Market {
 type Category = 'football' | 'politics' | 'economy' | 'entertainment' | 'tech' | 'infrastructure' | 'agriculture' | 'updown' | 'default'
 
 function detectCategory(title: string, desc = '', metadata?: Record<string, unknown>): Category {
-  if (metadata?.type === 'updown') return 'updown'
+  if (metadata?.type === 'updown' || metadata?.type === 'price_level') return 'updown'
   const stored = metadata?.category as string | undefined
   if (stored && stored in CAT) return stored as Category
   const t = (title + ' ' + desc).toLowerCase()
@@ -153,9 +153,9 @@ export default function MarketCard({ market }: { market: Market }) {
     urgency === 'final'   ? '0 0 20px rgba(239,68,68,0.14)' :
     urgency === 'hour'    ? '0 0 14px rgba(249,115,22,0.1)' : ''
 
-  // Side A = violet, Side B = amber (matches BetPanel)
-  const COLOR_A = '#a78bfa'
-  const COLOR_B = '#fbbf24'
+  // Side A = green (YES), Side B = red (NO) — design system colors
+  const COLOR_A = '#00ff88'
+  const COLOR_B = '#ff3366'
 
   function onMouseMove(e: React.MouseEvent<HTMLDivElement>) {
     const el   = e.currentTarget
@@ -192,7 +192,7 @@ export default function MarketCard({ market }: { market: Market }) {
       {!!market.metadata?.user_created && (
         <div
           className="flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-wider"
-          style={{ background: 'rgba(124,58,237,0.10)', borderBottom: '1px solid rgba(124,58,237,0.18)', color: '#a78bfa' }}
+          style={{ background: 'rgba(0,255,136,0.07)', borderBottom: '1px solid rgba(0,255,136,0.15)', color: '#00ff88' }}
         >
           <span>🌍</span>
           Community · {String(market.metadata.creator_name ?? 'Member')}
@@ -241,15 +241,15 @@ export default function MarketCard({ market }: { market: Market }) {
                 <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400 truncate max-w-[76px] text-center">{optA}</span>
                 <span
                   className="rounded-full px-2.5 py-0.5 text-xs font-black"
-                  style={{ background: `${COLOR_A}15`, color: COLOR_A }}
+                  style={{ background: 'rgba(0,255,136,0.12)', color: COLOR_A }}
                 >
                   {opts[0] ? (oddsFor(opts[0]) ?? '—') + 'x' : '—'}
                 </span>
               </div>
 
               <div
-                className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black text-slate-600"
-                style={{ background: '#1e1e2e' }}
+                className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black text-slate-500"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
               >
                 vs
               </div>
@@ -259,7 +259,7 @@ export default function MarketCard({ market }: { market: Market }) {
                 <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400 truncate max-w-[76px] text-center">{optB}</span>
                 <span
                   className="rounded-full px-2.5 py-0.5 text-xs font-black"
-                  style={{ background: `${COLOR_B}12`, color: COLOR_B }}
+                  style={{ background: 'rgba(255,51,102,0.1)', color: COLOR_B }}
                 >
                   {opts[1] ? (oddsFor(opts[1]) ?? '—') + 'x' : '—'}
                 </span>
@@ -335,12 +335,12 @@ export default function MarketCard({ market }: { market: Market }) {
               <span style={{ color: COLOR_A }}>{pctFor(opts[0]).toFixed(0)}%</span>
               {opts.length >= 2 && <span style={{ color: COLOR_B }}>{pctFor(opts[1]).toFixed(0)}%</span>}
             </div>
-            <div className="flex h-1.5 overflow-hidden rounded-full" style={{ background: '#1a1a2e' }}>
+            <div className="flex h-1.5 overflow-hidden rounded-full" style={{ background: 'rgba(255,51,102,0.18)' }}>
               <div
                 className="h-full transition-all duration-500"
-                style={{ width: `${pctFor(opts[0])}%`, background: 'linear-gradient(90deg,#6d28d9,#a78bfa)' }}
+                style={{ width: `${pctFor(opts[0])}%`, background: 'linear-gradient(90deg,#00cc66,#00ff88)' }}
               />
-              <div className="h-full flex-1" style={{ background: 'linear-gradient(90deg,#b45309,#fbbf24)' }} />
+              <div className="h-full flex-1" style={{ background: 'linear-gradient(90deg,rgba(255,51,102,0.4),rgba(255,51,102,0.6))' }} />
             </div>
           </div>
         )}
@@ -351,8 +351,8 @@ export default function MarketCard({ market }: { market: Market }) {
             {opts.slice(0, 2).map((opt, idx) => {
               const isA    = idx === 0
               const color  = isA ? COLOR_A : COLOR_B
-              const bg     = isA ? 'rgba(167,139,250,0.08)' : 'rgba(251,191,36,0.07)'
-              const border = isA ? 'rgba(167,139,250,0.28)' : 'rgba(251,191,36,0.22)'
+              const bg     = isA ? 'rgba(0,255,136,0.08)' : 'rgba(255,51,102,0.08)'
+              const border = isA ? 'rgba(0,255,136,0.3)'  : 'rgba(255,51,102,0.28)'
               const odds   = oddsFor(opt)
               return (
                 <button
@@ -364,8 +364,8 @@ export default function MarketCard({ market }: { market: Market }) {
                   onMouseEnter={e => {
                     if (!effectivelyOpen) return
                     const el = e.currentTarget
-                    el.style.background = isA ? 'rgba(167,139,250,0.16)' : 'rgba(251,191,36,0.14)'
-                    el.style.borderColor = isA ? 'rgba(167,139,250,0.5)' : 'rgba(251,191,36,0.45)'
+                    el.style.background = isA ? 'rgba(0,255,136,0.16)' : 'rgba(255,51,102,0.16)'
+                    el.style.borderColor = isA ? 'rgba(0,255,136,0.55)' : 'rgba(255,51,102,0.5)'
                     el.style.transform = 'translateY(-1px)'
                   }}
                   onMouseLeave={e => {

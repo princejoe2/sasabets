@@ -1,6 +1,7 @@
 export const metadata = {
   title: 'Privacy Policy — Sabula 256',
   description: 'Sabula 256 Privacy Policy — how we collect, use, and protect your personal data.',
+  alternates: { canonical: 'https://sabula256.com/privacy' },
 }
 
 const EFFECTIVE = '21 June 2026'

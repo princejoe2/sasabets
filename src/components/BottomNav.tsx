@@ -73,7 +73,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-slate-200 bg-white/95 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95"
+      className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-emerald-100/60 bg-white/96 backdrop-blur-xl dark:border-[rgba(0,255,136,0.12)] dark:bg-[rgba(4,12,6,0.95)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="flex items-stretch">
@@ -82,10 +82,10 @@ export default function BottomNav() {
           return (
             <Link key={href} href={href}
               className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 transition-colors ${
-                active ? 'text-violet-600 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'
+                active ? 'text-emerald-600 dark:text-[#00ff88]' : 'text-slate-400 dark:text-[rgba(255,255,255,0.35)]'
               }`}
             >
-              {active && <span className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-violet-500" />}
+              {active && <span className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-emerald-500 dark:bg-[#00ff88]" />}
               <Icon active={active} />
               <span className="text-[10px] font-semibold">{label}</span>
             </Link>
@@ -98,14 +98,14 @@ export default function BottomNav() {
         >
           <div className={`flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all ${
             createActive
-              ? 'bg-violet-500 shadow-violet-500/40'
-              : 'bg-violet-600 shadow-violet-600/30 hover:bg-violet-500'
+              ? 'bg-emerald-500 shadow-emerald-500/40 dark:bg-[#00ff88] dark:shadow-[0_0_16px_rgba(0,255,136,0.5)]'
+              : 'bg-emerald-600 shadow-emerald-600/30 hover:bg-emerald-500 dark:bg-[#00e07a] dark:hover:bg-[#00ff88] dark:shadow-[0_0_12px_rgba(0,255,136,0.3)]'
           }`}>
-            <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <svg className="h-6 w-6 text-white dark:text-[#040c06]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
             </svg>
           </div>
-          <span className={`mt-1 text-[10px] font-black ${createActive ? 'text-violet-600 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'}`}>Create</span>
+          <span className={`mt-1 text-[10px] font-black ${createActive ? 'text-emerald-600 dark:text-[#00ff88]' : 'text-slate-400 dark:text-[rgba(255,255,255,0.35)]'}`}>Create</span>
         </Link>
 
         {rightTabs.map(({ href, Icon, label }) => {
@@ -114,10 +114,10 @@ export default function BottomNav() {
           return (
             <Link key={href} href={href}
               className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 transition-colors ${
-                active ? 'text-violet-600 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'
+                active ? 'text-emerald-600 dark:text-[#00ff88]' : 'text-slate-400 dark:text-[rgba(255,255,255,0.35)]'
               }`}
             >
-              {active && <span className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-violet-500" />}
+              {active && <span className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-emerald-500 dark:bg-[#00ff88]" />}
               <div className="relative">
                 <Icon active={active} />
                 {isWallet && notifCount > 0 && (

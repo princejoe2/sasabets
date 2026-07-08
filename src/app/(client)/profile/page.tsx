@@ -24,9 +24,12 @@ export default function ProfilePage() {
   const [memberSince, setMemberSince] = useState('')
   const [has2fa,      setHas2fa]      = useState(false)
   const [streakDays,  setStreakDays]  = useState<number | null>(null)
-  const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported' | null>(null)
-  const [pushLoading,    setPushLoading]    = useState(false)
-  const [userId,        setUserId]        = useState('')
+  const [pushPermission,   setPushPermission]   = useState<NotificationPermission | 'unsupported' | null>(null)
+  const [pushLoading,      setPushLoading]      = useState(false)
+  const [userId,           setUserId]           = useState('')
+  const [waOptedIn,        setWaOptedIn]        = useState(false)
+  const [waLoading,        setWaLoading]        = useState(false)
+  const [waMsg,            setWaMsg]            = useState<string | null>(null)
 
   // 2FA management state
   const [show2faSetup,  setShow2faSetup]  = useState(false)
@@ -56,7 +59,7 @@ export default function ProfilePage() {
       }))
 
       const [{ data: profile }, { data: wallet }, { data: bets }, { data: txns }] = await Promise.all([
-        supabase.from('profiles').select('phone, full_name, totp_enabled, streak_days').eq('id', user.id).single(),
+        supabase.from('profiles').select('phone, full_name, totp_enabled, streak_days, whatsapp_opted_in').eq('id', user.id).single(),
         supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
         supabase.from('bets').select('amount, potential_payout, status').eq('user_id', user.id),
         supabase.from('transactions').select('amount').eq('user_id', user.id).eq('type', 'payout').eq('status', 'completed'),
@@ -64,8 +67,9 @@ export default function ProfilePage() {
 
       if (profile?.full_name) setName(profile.full_name)
       else if (user.user_metadata?.full_name) setName(user.user_metadata.full_name as string)
-      if (profile?.phone)       setPhone(profile.phone)
-      if (profile?.totp_enabled) setHas2fa(true)
+      if (profile?.phone)            setPhone(profile.phone)
+      if (profile?.totp_enabled)     setHas2fa(true)
+      if (profile?.whatsapp_opted_in) setWaOptedIn(true)
       if (wallet) setBalance(Number(wallet.balance))
       if (profile?.streak_days != null) setStreakDays(Number(profile.streak_days))
 
@@ -152,6 +156,22 @@ export default function ProfilePage() {
       console.error('Push permission error:', err)
     }
     setPushLoading(false)
+  }
+
+  async function toggleWhatsappOptIn() {
+    setWaLoading(true); setWaMsg(null)
+    const next = !waOptedIn
+    const { error } = await supabase
+      .from('profiles')
+      .update({ whatsapp_opted_in: next })
+      .eq('id', userId)
+    if (error) {
+      setWaMsg('Failed to update preference.')
+    } else {
+      setWaOptedIn(next)
+      setWaMsg(next ? 'You will receive WhatsApp alerts for featured markets.' : 'WhatsApp alerts disabled.')
+    }
+    setWaLoading(false)
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -496,6 +516,40 @@ export default function ProfilePage() {
             )}
           </div>
         )}
+
+        {/* ── WhatsApp alerts ── */}
+        <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-6">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">📲</span>
+              <div>
+                <h2 className="font-bold text-slate-200">WhatsApp Market Alerts</h2>
+                <p className="mt-0.5 text-sm text-slate-500">
+                  Get notified on WhatsApp when a hot market is featured
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={toggleWhatsappOptIn}
+              disabled={waLoading || !userId}
+              className={`shrink-0 rounded-xl px-4 py-2 text-sm font-bold transition-colors disabled:opacity-50 ${
+                waOptedIn
+                  ? 'border border-emerald-800/40 bg-emerald-900/30 text-emerald-400 hover:bg-emerald-900/50'
+                  : 'bg-violet-600 text-white hover:bg-violet-500'
+              }`}
+            >
+              {waLoading ? '…' : waOptedIn ? '✓ Subscribed' : 'Subscribe'}
+            </button>
+          </div>
+          {waMsg && (
+            <p className="mt-3 text-xs text-slate-500">{waMsg}</p>
+          )}
+          {waOptedIn && (
+            <p className="mt-3 text-xs text-slate-600">
+              Messages are sent to your registered phone number ({phone ? `+${phone}` : 'on file'}).
+            </p>
+          )}
+        </div>
 
         {/* ── Referral Program ── */}
         <ReferralCard />

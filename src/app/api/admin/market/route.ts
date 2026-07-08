@@ -1,5 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { sendPush, type StoredSubscription } from '@/lib/push'
+import { sendMarketBroadcast } from '@/lib/whatsapp'
+import { pingIndexNow } from '@/lib/indexnow'
+
+async function broadcastNewAdminMarket(marketId: string, title: string) {
+  const marketUrl = `https://sabula256.com/markets/${marketId}`
+  const db = createAdminClient()
+
+  // Push notifications to all subscribers
+  const { data: subs } = await db.from('push_subscriptions').select('endpoint, p256dh, auth')
+  if (subs?.length) {
+    await Promise.allSettled(
+      subs.map(s => sendPush(s as StoredSubscription, {
+        title: '🎯 New Market on Sabula 256',
+        body: title,
+        url: marketUrl,
+      }))
+    )
+  }
+
+  // WhatsApp broadcast to all users with a phone number
+  const { data: profiles } = await db.from('profiles').select('phone').not('phone', 'is', null)
+  if (profiles?.length) {
+    const phones = profiles.map((p: { phone: string | null }) => p.phone).filter((ph): ph is string => Boolean(ph))
+    await sendMarketBroadcast(phones, title, marketUrl).catch(
+      (err: unknown) => console.error('[admin/market] WhatsApp broadcast error:', err)
+    )
+  }
+}
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -61,5 +90,14 @@ export async function POST(req: NextRequest) {
     console.error('[admin/market] insert failed:', error.message)
     return NextResponse.json({ error: 'Failed to create market' }, { status: 500 })
   }
+
+  // Broadcast new market to all users (push + WhatsApp) — non-blocking
+  broadcastNewAdminMarket(data.id, title.trim()).catch(
+    err => console.error('[admin/market] broadcast error:', err)
+  )
+
+  // Ping IndexNow so search engines index the new market immediately
+  pingIndexNow(`https://sabula256.com/markets/${data.id}`).catch(() => {})
+
   return NextResponse.json(data)
 }

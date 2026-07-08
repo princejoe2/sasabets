@@ -15,6 +15,7 @@ interface Market {
   metadata?: Record<string, unknown>;
   description?: string | null;
   surge_flag?: boolean;
+  is_featured?: boolean;
 }
 
 interface Prefill { title: string; optA: string; optB: string; conditionId?: string }
@@ -32,10 +33,37 @@ interface AutoSettleResult {
 
 export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
   const router = useRouter()
-  const [clearingSurge, setClearingSurge] = useState<string | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
-  const [deleting,      setDeleting]      = useState<string | null>(null)
-  const [deleteError,   setDeleteError]   = useState<string | null>(null)
+  const [clearingSurge,  setClearingSurge]  = useState<string | null>(null)
+  const [confirmDelete,  setConfirmDelete]  = useState<string | null>(null)
+  const [deleting,       setDeleting]       = useState<string | null>(null)
+  const [deleteError,    setDeleteError]    = useState<string | null>(null)
+  const [featureConfirm, setFeatureConfirm] = useState<string | null>(null)   // market.id pending feature action
+  const [featuring,      setFeaturing]      = useState<string | null>(null)
+  const [featureMsg,     setFeatureMsg]     = useState<{ id: string; text: string; ok: boolean } | null>(null)
+
+  async function featureMarket(marketId: string, featured: boolean, broadcast: boolean) {
+    setFeaturing(marketId)
+    setFeatureConfirm(null)
+    const res  = await fetch(`/api/admin/market/${marketId}/feature`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ featured, broadcast }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      setFeatureMsg({ id: marketId, text: data.error ?? 'Failed', ok: false })
+    } else {
+      const bc = data.broadcast
+      const bcText = bc
+        ? bc.error
+          ? ` (broadcast error: ${bc.error})`
+          : ` · Broadcast: ${bc.sent}/${bc.recipientCount} sent`
+        : ''
+      setFeatureMsg({ id: marketId, text: featured ? `Featured${bcText}` : 'Unpinned', ok: true })
+      router.refresh()
+    }
+    setFeaturing(null)
+  }
 
   async function clearSurge(marketId: string) {
     setClearingSurge(marketId)
@@ -343,6 +371,66 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
                   >
                     {clearingSurge === m.id ? '…' : 'Clear ⚡'}
                   </button>
+                )}
+
+                {/* Feature / Unpin / Broadcast */}
+                {featureMsg?.id === m.id && (
+                  <p className={`text-[10px] font-bold ${featureMsg.ok ? 'text-amber-400' : 'text-red-400'}`}>
+                    {featureMsg.text}
+                  </p>
+                )}
+                {m.is_featured ? (
+                  <>
+                    <button
+                      onClick={() => featureMarket(m.id, false, false)}
+                      disabled={featuring === m.id}
+                      className="rounded-lg border border-amber-800/50 px-3 py-1.5 text-xs font-bold text-amber-400 hover:bg-amber-900/20 disabled:opacity-40 transition-colors"
+                    >
+                      {featuring === m.id ? '…' : 'Unpin 📌'}
+                    </button>
+                    <button
+                      onClick={() => featureMarket(m.id, true, true)}
+                      disabled={featuring === m.id}
+                      className="rounded-lg border border-green-800/50 px-3 py-1.5 text-xs font-bold text-green-400 hover:bg-green-900/20 disabled:opacity-40 transition-colors"
+                    >
+                      {featuring === m.id ? '…' : '📲 Broadcast'}
+                    </button>
+                  </>
+                ) : m.status === 'open' && (
+                  featureConfirm === m.id ? (
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[10px] text-amber-400 font-bold">Feature?</p>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => featureMarket(m.id, true, false)}
+                          disabled={featuring === m.id}
+                          className="rounded-lg bg-amber-700 px-2 py-1 text-[10px] font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                        >
+                          📌 Only
+                        </button>
+                        <button
+                          onClick={() => featureMarket(m.id, true, true)}
+                          disabled={featuring === m.id}
+                          className="rounded-lg bg-green-700 px-2 py-1 text-[10px] font-bold text-white hover:bg-green-600 disabled:opacity-50 transition-colors"
+                        >
+                          +📲
+                        </button>
+                        <button
+                          onClick={() => setFeatureConfirm(null)}
+                          className="rounded-lg border border-[#2a2a3e] px-2 py-1 text-[10px] font-bold text-slate-500 hover:text-slate-300 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setFeatureConfirm(m.id)}
+                      className="rounded-lg border border-amber-900/40 px-3 py-1.5 text-xs font-bold text-amber-600 hover:bg-amber-900/20 transition-colors"
+                    >
+                      📌 Feature
+                    </button>
+                  )
                 )}
 
                 {/* Delete — inline confirmation */}

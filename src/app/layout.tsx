@@ -4,12 +4,14 @@ import CursorEffects from '@/components/CursorEffects'
 import ThemeProvider from '@/components/ThemeProvider'
 import PushNotificationPrompt from '@/components/PushNotificationPrompt'
 import { MobileInstallGate } from '@/components/LazyClient'
+import { GoogleAnalytics } from '@next/third-parties/google'
 
 const BASE = 'https://sabula256.com'
 
 export const metadata: Metadata = {
   verification: {
     google: 'keICCmUnIZ-6cdt2gUUGUimARGNTkuRT1iy-d2J-VJo',
+    other: { 'msvalidate.01': '3CCAAE300B0B9E5ED67FC0DAD49AD1AB' },
   },
   metadataBase: new URL(BASE),
   title: {
@@ -48,6 +50,7 @@ export const metadata: Metadata = {
     images: ['/opengraph-image'],
     creator: '@sabula256',
   },
+  alternates: { canonical: 'https://sabula256.com' },
   robots: {
     index: true,
     follow: true,
@@ -56,10 +59,13 @@ export const metadata: Metadata = {
   manifest: '/site.webmanifest',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: 'Sabula 256',
   },
-  themeColor: '#7c3aed',
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
+  themeColor: '#00ff88',
   other: {
     'mobile-web-app-capable': 'yes',
   },
@@ -68,13 +74,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      <body className="min-h-screen bg-[#f0fdf4] text-[#0f1a10] dark:bg-[#040c06] dark:text-[#e8f5e9]">
         <ThemeProvider>
           <CursorEffects />
           <MobileInstallGate />
           {children}
           <PushNotificationPrompt />
         </ThemeProvider>
+        <GoogleAnalytics gaId="G-29V6N9CY5C" />
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));

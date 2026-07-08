@@ -13,7 +13,7 @@ export default async function AdminCommunityPage() {
     .from('markets')
     .select('id, title, total_pool, status, created_at, created_by, metadata')
     .eq('metadata->>user_created', 'true')
-    .in('status', ['open', 'closed', 'suspended'])
+    .in('status', ['pending_approval', 'open', 'closed', 'suspended'])
     .order('created_at', { ascending: false })
     .limit(200)
 

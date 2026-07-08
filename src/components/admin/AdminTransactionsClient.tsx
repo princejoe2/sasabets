@@ -8,7 +8,6 @@ interface Transaction {
   amount: number
   status: string
   reference: string | null
-  pesapal_tracking_id: string | null
   created_at: string
   profiles: { phone: string; full_name: string | null } | null
 }
@@ -39,7 +38,7 @@ export default function AdminTransactionsClient() {
     ;(async () => {
       const { data } = await supabase
         .from('transactions')
-        .select('id, type, amount, status, reference, pesapal_tracking_id, created_at, profiles(phone, full_name)')
+        .select('id, type, amount, status, reference, created_at, profiles(phone, full_name)')
         .order('created_at', { ascending: false })
         .limit(500)
       if (!cancelled) {
@@ -79,7 +78,7 @@ export default function AdminTransactionsClient() {
       t.profiles?.phone ? `+${t.profiles.phone}` : '',
       Number(t.amount),
       t.status,
-      t.reference ?? t.pesapal_tracking_id ?? '',
+      t.reference ?? '',
     ].map(csvCell).join(','))
 
     const csv = [header.map(csvCell).join(','), ...lines].join('\n')
@@ -154,7 +153,7 @@ export default function AdminTransactionsClient() {
                 {t.status}
               </span>
               <span className="text-[10px] font-mono text-slate-700 truncate max-w-[80px]">
-                {t.pesapal_tracking_id?.slice(0,8) ?? t.reference?.slice(0,8) ?? '—'}
+                {t.reference?.slice(0,8) ?? '—'}
               </span>
             </div>
           )

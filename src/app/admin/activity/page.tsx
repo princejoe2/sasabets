@@ -14,7 +14,7 @@ export default async function AdminActivityPage() {
     { data: bets },
   ] = await Promise.all([
     admin.from('transactions')
-      .select('id, amount, status, created_at, reference, pesapal_tracking_id, metadata, profiles(phone, full_name)')
+      .select('id, amount, status, created_at, reference, metadata, profiles(phone, full_name)')
       .eq('type', 'deposit')
       .order('created_at', { ascending: false })
       .limit(300),

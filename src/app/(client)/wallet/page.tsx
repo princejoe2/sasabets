@@ -10,7 +10,6 @@ interface Transaction {
   amount: number
   status: string
   balance_after: number | null
-  pesapal_tracking_id: string | null
   created_at: string
 }
 
@@ -112,7 +111,7 @@ function WalletPageContent() {
       supabase.from('wallets').select('balance, bonus_balance').eq('user_id', user.id).single(),
       supabase
         .from('transactions')
-        .select('id, type, amount, status, balance_after, pesapal_tracking_id, created_at')
+        .select('id, type, amount, status, balance_after, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50),
@@ -629,11 +628,6 @@ function WalletPageContent() {
                                 day: 'numeric', month: 'short',
                                 hour: '2-digit', minute: '2-digit',
                               })}
-                              {txn.pesapal_tracking_id && (
-                                <span className="ml-2 font-mono text-[10px] text-slate-600">
-                                  {txn.pesapal_tracking_id.slice(0, 8)}…
-                                </span>
-                              )}
                             </p>
                           </div>
 

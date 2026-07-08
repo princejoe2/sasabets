@@ -49,8 +49,15 @@ export async function middleware(request: NextRequest) {
     })
   }
 
-  const protectedRoutes = ['/wallet', '/admin']
-  const isProtected = protectedRoutes.some(r => request.nextUrl.pathname.startsWith(r))
+  const path = request.nextUrl.pathname
+
+  // Redirect logged-in users away from /auth (but not sub-paths like /auth/callback or /auth/reset-password)
+  if (path === '/auth' && user) {
+    return NextResponse.redirect(new URL('/markets', request.url))
+  }
+
+  const protectedRoutes = ['/wallet', '/admin', '/bets', '/profile', '/kyc', '/dashboard', '/invite', '/create']
+  const isProtected = protectedRoutes.some(r => path.startsWith(r))
 
   if (isProtected && !user) {
     return NextResponse.redirect(new URL('/auth', request.url))

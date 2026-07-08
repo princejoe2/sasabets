@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import ThemeToggle from '@/components/ThemeToggle'
+import { SabulaNavLogo } from '@/components/SabulaLogo'
 
 export default function Navbar() {
   const supabase = createClient()
@@ -90,19 +91,12 @@ export default function Navbar() {
   const firstName = fullName.split(' ')[0] || ''
 
   return (
-    <nav className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95">
+    <nav className="sticky top-0 z-40 border-b border-green-100/60 bg-white/95 backdrop-blur-xl dark:border-[rgba(0,255,136,0.12)] dark:bg-[rgba(4,12,6,0.92)]">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
 
         {/* ── Logo ── */}
-        <Link href="/" className="group flex shrink-0 items-center gap-2.5">
-          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 text-[17px] font-black text-white shadow-lg shadow-violet-200 transition-shadow group-hover:shadow-violet-300">
-            S
-            <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-400" />
-          </div>
-          <span className="hidden text-xl font-black tracking-tight sm:block">
-            <span className="text-violet-600">Sabula</span>
-            <span className="text-slate-900 dark:text-white"> 256</span>
-          </span>
+        <Link href="/" className="group flex shrink-0 items-center">
+          <SabulaNavLogo />
         </Link>
 
         {/* ── Nav links (hidden on mobile — accessible via bottom nav) ── */}
@@ -111,8 +105,8 @@ export default function Navbar() {
             href="/create"
             className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-black transition-colors ${
               isActive('/create')
-                ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
-                : 'text-violet-600 hover:bg-violet-50 hover:text-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20'
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-[rgba(0,255,136,0.12)] dark:text-[#00ff88]'
+                : 'text-emerald-700 hover:bg-emerald-50 dark:text-[#00ff88] dark:hover:bg-[rgba(0,255,136,0.08)]'
             }`}
           >
             <span className="text-base leading-none">＋</span> Create
@@ -121,11 +115,21 @@ export default function Navbar() {
             href="/markets"
             className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
               isActive('/markets')
-                ? 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
+                ? 'bg-emerald-50 text-emerald-700 dark:bg-[rgba(0,255,136,0.08)] dark:text-[#00ff88]'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-[rgba(255,255,255,0.6)] dark:hover:bg-[rgba(0,255,136,0.06)] dark:hover:text-white'
             }`}
           >
             Markets
+          </Link>
+          <Link
+            href="/leaderboard"
+            className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+              isActive('/leaderboard')
+                ? 'bg-emerald-50 text-emerald-700 dark:bg-[rgba(0,255,136,0.08)] dark:text-[#00ff88]'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-[rgba(255,255,255,0.6)] dark:hover:bg-[rgba(0,255,136,0.06)] dark:hover:text-white'
+            }`}
+          >
+            🏆 Leaderboard
           </Link>
         </div>
 
@@ -134,7 +138,7 @@ export default function Navbar() {
           <div className="flex items-center gap-2">
 
             {/* Balance chip */}
-            <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 sm:flex dark:border-slate-700 dark:bg-slate-800">
+            <div className="hidden items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/50 px-3.5 py-2 sm:flex dark:border-[rgba(0,255,136,0.18)] dark:bg-[rgba(0,255,136,0.05)]">
               <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shrink-0" />
               <span className="text-sm font-bold tabular-nums text-slate-800 dark:text-slate-200">
                 {firstName && <span className="text-slate-500 font-semibold">{firstName} · </span>}
@@ -155,7 +159,7 @@ export default function Navbar() {
                 setNotifCount(0)
               }}
               aria-label="Notifications"
-              className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition-all hover:border-violet-300 hover:bg-violet-50 hover:text-violet-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-violet-500 dark:hover:bg-violet-900/20"
+              className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50/40 text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 dark:border-[rgba(0,255,136,0.18)] dark:bg-[rgba(0,255,136,0.05)] dark:text-[rgba(0,255,136,0.7)] dark:hover:border-[rgba(0,255,136,0.4)] dark:hover:text-[#00ff88]"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -173,7 +177,7 @@ export default function Navbar() {
             {/* Deposit CTA */}
             <Link
               href="/wallet"
-              className="btn-glow flex items-center gap-1.5 rounded-xl bg-violet-600 px-2.5 sm:px-3.5 py-2 text-sm font-bold text-white transition-colors hover:bg-violet-500"
+              className="btn-glow flex items-center gap-1.5 rounded-xl bg-emerald-600 px-2.5 sm:px-3.5 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-500 dark:bg-[#00ff88] dark:text-[#040c06] dark:hover:bg-[#00e07a] dark:font-black"
             >
               <span className="text-base font-black leading-none">+</span>
               <span className="hidden sm:inline">Deposit</span>
@@ -186,8 +190,8 @@ export default function Navbar() {
                 aria-label="Account menu"
                 className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-all ${
                   menuOpen
-                    ? 'border-violet-300 bg-violet-50 text-violet-600 dark:border-violet-500 dark:bg-violet-900/30 dark:text-violet-400'
-                    : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                    ? 'border-emerald-300 bg-emerald-100 text-emerald-700 dark:border-[rgba(0,255,136,0.4)] dark:bg-[rgba(0,255,136,0.1)] dark:text-[#00ff88]'
+                    : 'border-emerald-100 bg-emerald-50/40 text-emerald-700 hover:border-emerald-300 dark:border-[rgba(0,255,136,0.18)] dark:bg-[rgba(0,255,136,0.05)] dark:text-[rgba(0,255,136,0.7)] dark:hover:border-[rgba(0,255,136,0.4)]'
                 }`}
               >
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -196,9 +200,9 @@ export default function Navbar() {
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 top-11 z-50 w-60 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-200/80 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/40">
+                <div className="absolute right-0 top-11 z-50 w-60 overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-xl shadow-emerald-100/30 dark:border-[rgba(0,255,136,0.15)] dark:bg-[#040c06] dark:shadow-black/60">
                   {/* Header */}
-                  <div className="border-b border-slate-100 bg-gradient-to-r from-violet-50 to-transparent px-4 py-4 dark:border-slate-700 dark:from-violet-900/20">
+                  <div className="border-b border-emerald-50 bg-gradient-to-r from-emerald-50 to-transparent px-4 py-4 dark:border-[rgba(0,255,136,0.1)] dark:from-[rgba(0,255,136,0.06)]">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Signed in as</p>
                     {fullName
                       ? <p className="mt-0.5 text-base font-black text-slate-900 dark:text-white">{fullName}</p>
@@ -220,7 +224,6 @@ export default function Navbar() {
                       { href: '/bets',                 icon: '🎯', label: 'My Predictions',   sub: undefined as string | undefined },
                       { href: '/dashboard',            icon: '🏗️', label: 'Creator Dashboard', sub: undefined as string | undefined },
                       { href: '/invite',               icon: '🎁', label: 'Invite & Earn',    sub: undefined as string | undefined },
-                      { href: '/updown',               icon: '📈', label: 'Up/Down',          sub: undefined as string | undefined },
                       { href: '/leaderboard',          icon: '🏆', label: 'Leaderboard',      sub: undefined as string | undefined },
                       { href: '/profile',              icon: '👤', label: 'Profile',          sub: undefined as string | undefined },
                       { href: '/kyc',                  icon: '🪪', label: 'Verify Identity',  sub: undefined as string | undefined },
@@ -237,22 +240,22 @@ export default function Navbar() {
                           onClick={() => setMenuOpen(false)}
                           className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
                             active
-                              ? 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400'
-                              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
+                              ? 'bg-emerald-50 text-emerald-700 dark:bg-[rgba(0,255,136,0.08)] dark:text-[#00ff88]'
+                              : 'text-slate-600 hover:bg-emerald-50/50 hover:text-slate-900 dark:text-[rgba(255,255,255,0.55)] dark:hover:bg-[rgba(0,255,136,0.05)] dark:hover:text-white'
                           }`}
                         >
                           <span className="text-base">{icon}</span>
                           <span className="flex-1">
                             <span className="block font-semibold">{label}</span>
-                            {sub && <span className="block text-[11px] font-bold text-violet-600">{sub}</span>}
+                            {sub && <span className="block text-[11px] font-bold text-emerald-600 dark:text-[#00ff88]">{sub}</span>}
                           </span>
-                          {active && <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />}
+                          {active && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-[#00ff88]" />}
                         </Link>
                       )
                     })}
                   </div>
 
-                  <div className="border-t border-slate-100 dark:border-slate-700" />
+                  <div className="border-t border-emerald-50 dark:border-[rgba(0,255,136,0.1)]" />
                   <button
                     onClick={handleLogout}
                     className="flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
@@ -268,13 +271,13 @@ export default function Navbar() {
             <ThemeToggle />
             <Link
               href="/auth"
-              className="hidden sm:inline-flex rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-600 transition-colors hover:border-violet-300 hover:text-violet-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-violet-500 dark:hover:text-violet-400"
+              className="hidden sm:inline-flex rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:border-emerald-400 hover:text-emerald-800 dark:border-[rgba(0,255,136,0.2)] dark:bg-[rgba(0,255,136,0.05)] dark:text-[rgba(0,255,136,0.8)] dark:hover:border-[rgba(0,255,136,0.4)] dark:hover:text-[#00ff88]"
             >
               Log in
             </Link>
             <Link
               href="/auth"
-              className="btn-glow rounded-xl bg-violet-600 px-3.5 sm:px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-violet-500"
+              className="btn-glow rounded-xl bg-emerald-600 px-3.5 sm:px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-500 dark:bg-[#00ff88] dark:text-[#040c06] dark:font-black dark:hover:bg-[#00e07a]"
             >
               Sign up
             </Link>

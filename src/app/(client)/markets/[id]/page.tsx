@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import BetPanel from './BetPanel'
 import MarketComments from '@/components/MarketComments'
+import FollowButton from '@/components/FollowButton'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
@@ -102,6 +103,26 @@ export default async function MarketPage({
   }
 
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Pending approval gate — only the creator can see the market before admin approves it
+  if (market.status === 'pending_approval') {
+    const isCreator = user && market.created_by === user.id
+    if (!isCreator) {
+      return (
+        <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0f] px-4 text-center">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-amber-800/40 bg-amber-900/20 text-4xl">
+            🕐
+          </div>
+          <h1 className="text-2xl font-black text-white">Market Under Review</h1>
+          <p className="mt-3 max-w-xs text-sm text-slate-400 leading-relaxed">
+            This market is awaiting admin approval before it goes live.
+          </p>
+          <p className="mt-6 text-xs text-slate-600">Check back soon.</p>
+        </div>
+      )
+    }
+  }
+
   let balance: number | null = null
   let userBet: { option_id: string; amount: number } | null = null
 
@@ -128,13 +149,16 @@ export default async function MarketPage({
     }
   }
 
+  let isFollowing = false
   if (user) {
-    const [{ data: wallet }, { data: bets }] = await Promise.all([
+    const [{ data: wallet }, { data: bets }, { data: follow }] = await Promise.all([
       supabase.from('wallets').select('balance').eq('user_id', user.id).single(),
       supabase.from('bets').select('option_id, amount').eq('user_id', user.id).eq('market_id', id).limit(1),
+      supabase.from('market_follows').select('id').eq('user_id', user.id).eq('market_id', id).maybeSingle(),
     ])
     balance = wallet?.balance ?? null
     userBet = bets?.[0] ?? null
+    isFollowing = !!follow
   }
 
   const opts = market.options as Option[]
@@ -168,6 +192,9 @@ export default async function MarketPage({
         accessToken={sp.t ?? null}
         creatorInfo={creatorInfo}
       />
+      <div className="mx-auto max-w-xl px-4 pb-2 flex justify-end">
+        <FollowButton marketId={id} initialFollowing={isFollowing} isLoggedIn={!!user} />
+      </div>
       <MarketComments marketId={id} isLoggedIn={!!user} />
     </>
   )

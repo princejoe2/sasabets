@@ -17,10 +17,11 @@ const NAV_GROUPS = [
   {
     label: 'Markets',
     items: [
-      { href: '/admin/markets',     icon: '🏪', label: 'Markets' },
-      { href: '/admin/auto-create', icon: '⚡', label: 'Auto-Create' },
-      { href: '/admin/bets',        icon: '🎯', label: 'Active Bets' },
-      { href: '/admin/payouts',     icon: '🏆', label: 'Payouts' },
+      { href: '/admin/markets',      icon: '🏪', label: 'Markets' },
+      { href: '/admin/settle-queue', icon: '⏳', label: 'Settle Queue' },
+      { href: '/admin/auto-create',  icon: '⚡', label: 'Auto-Create' },
+      { href: '/admin/bets',         icon: '🎯', label: 'Active Bets' },
+      { href: '/admin/payouts',      icon: '🏆', label: 'Payouts' },
     ],
   },
   {
@@ -52,6 +53,12 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: 'Content',
+    items: [
+      { href: '/admin/news',        icon: '📰', label: 'News Posts' },
+    ],
+  },
+  {
     label: 'System',
     items: [
       { href: '/admin/settings',    icon: '⚙️', label: 'Settings' },
@@ -65,17 +72,19 @@ export default function AdminSidebar({ adminPhone, floatBalance }: { adminPhone:
   const router = useRouter()
   const supabase = createClient()
 
-  const [badges, setBadges] = useState({ withdrawals: 0, kyc: 0, complaints: 0 })
+  const [badges, setBadges] = useState({ withdrawals: 0, kyc: 0, complaints: 0, settleQueue: 0, pendingApproval: 0 })
   const [float, setFloat] = useState(floatBalance)
 
   useEffect(() => {
     async function fetchCounts() {
-      const [w, k, c] = await Promise.all([
+      const [w, k, c, sq, pa] = await Promise.all([
         supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('type', 'withdrawal').eq('status', 'pending'),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('kyc_status', 'pending'),
         supabase.from('complaints').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+        supabase.from('markets').select('id', { count: 'exact', head: true }).eq('status', 'closed'),
+        supabase.from('markets').select('id', { count: 'exact', head: true }).eq('status', 'pending_approval'),
       ])
-      setBadges({ withdrawals: w.count ?? 0, kyc: k.count ?? 0, complaints: c.count ?? 0 })
+      setBadges({ withdrawals: w.count ?? 0, kyc: k.count ?? 0, complaints: c.count ?? 0, settleQueue: sq.count ?? 0, pendingApproval: pa.count ?? 0 })
     }
     fetchCounts()
 
@@ -83,6 +92,7 @@ export default function AdminSidebar({ adminPhone, floatBalance }: { adminPhone:
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, fetchCounts)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchCounts)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, fetchCounts)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'markets' }, fetchCounts)
       .subscribe()
 
     async function refreshFloat() {
@@ -129,9 +139,11 @@ export default function AdminSidebar({ adminPhone, floatBalance }: { adminPhone:
               {group.items.map(({ href, icon, label }) => {
                 const active = href === '/admin' ? pathname === '/admin' : pathname.startsWith(href)
                 const badge =
-                  href === '/admin/withdrawals' ? badges.withdrawals :
-                  href === '/admin/kyc'         ? badges.kyc         :
-                  href === '/admin/support'     ? badges.complaints   : 0
+                  href === '/admin/withdrawals'  ? badges.withdrawals    :
+                  href === '/admin/kyc'          ? badges.kyc            :
+                  href === '/admin/support'      ? badges.complaints      :
+                  href === '/admin/settle-queue' ? badges.settleQueue    :
+                  href === '/admin/community'    ? badges.pendingApproval : 0
                 return (
                   <Link
                     key={href}

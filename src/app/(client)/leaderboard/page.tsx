@@ -6,6 +6,7 @@ import { LeaderboardRefresher } from '@/components/LeaderboardRefresher'
 export const metadata: Metadata = {
   title: 'Leaderboard – Top Predictors',
   description: 'See Uganda\'s top predictors on Sabula 256. Ranked by net profit and win rate. Create your own market to climb the ranks.',
+  alternates: { canonical: 'https://sabula256.com/leaderboard' },
 }
 
 export const dynamic = 'force-dynamic'
@@ -154,7 +155,6 @@ export default async function LeaderboardPage({
   searchParams: Promise<{ period?: string; view?: string }>
 }) {
   const { period: periodParam, view: viewParam } = await searchParams
-  // Active period
   const period: Period = (['all', 'month', 'week'] as Period[]).includes(
     periodParam as Period,
   )
@@ -369,6 +369,37 @@ export default async function LeaderboardPage({
             Uganda&rsquo;s sharpest predictors &middot;{' '}
             <span className="text-amber-500/80">{label}</span>
           </p>
+
+          {/* Monthly prizes banner */}
+          <div className="mt-6 rounded-2xl border border-amber-500/20 bg-gradient-to-r from-amber-950/40 via-yellow-950/20 to-amber-950/40 p-4">
+            <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-amber-500">
+              🎁 Monthly Cash Prizes — Top 3 on Each Leaderboard
+            </p>
+            <div className="flex gap-3 flex-wrap">
+              <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 border border-amber-500/30 px-4 py-2.5">
+                <span className="text-xl">🥇</span>
+                <div>
+                  <p className="text-xs text-amber-600 font-bold">1st Place</p>
+                  <p className="text-base font-black text-amber-300">UGX 1,000,000</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl bg-slate-700/10 border border-slate-600/30 px-4 py-2.5">
+                <span className="text-xl">🥈</span>
+                <div>
+                  <p className="text-xs text-slate-500 font-bold">2nd Place</p>
+                  <p className="text-base font-black text-slate-300">UGX 500,000</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl bg-amber-900/10 border border-amber-800/30 px-4 py-2.5">
+                <span className="text-xl">🥉</span>
+                <div>
+                  <p className="text-xs text-amber-800 font-bold">3rd Place</p>
+                  <p className="text-base font-black text-amber-700">UGX 250,000</p>
+                </div>
+              </div>
+            </div>
+            <p className="mt-2.5 text-[11px] text-slate-600">Prizes paid to your wallet at end of month. Applies to both boards independently. <span className="text-amber-700 font-semibold">Prizes only activate when all top 3 on a board have combined activity exceeding UGX 500,000.</span></p>
+          </div>
 
           {/* User rank pill */}
           <div className="mt-5">

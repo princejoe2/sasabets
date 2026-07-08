@@ -112,6 +112,7 @@ const CAT_IMAGE: Record<Category, string> = {
 
 const CRYPTO_ICONS: Record<string, string> = {
   bitcoin:      'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
+  'pax-gold':   'https://assets.coingecko.com/coins/images/9519/large/paxg.PNG',
   ethereum:     'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
   solana:       'https://assets.coingecko.com/coins/images/4128/large/solana.png',
   binancecoin:  'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png',
@@ -138,11 +139,13 @@ function resolveVisual(
 ): SideVisualData {
   const l = label.toLowerCase().trim()
 
-  if (meta.type === 'updown') {
+  if (meta.type === 'updown' || meta.type === 'price_level') {
     const asset = String(meta.asset ?? 'bitcoin')
     const url   = CRYPTO_ICONS[asset]
     if (url) {
-      const dir = l.includes('up') ? 'up' : l.includes('down') ? 'down' : null
+      const dir = meta.type === 'updown'
+        ? (l.includes('up') ? 'up' : l.includes('down') ? 'down' : null)
+        : null
       return { kind: 'crypto', url, dir }
     }
   }
@@ -253,9 +256,13 @@ export default function BetPanel({
   const meta        = market.metadata ?? {}
   // Settlement note is stored in metadata (jsonb), not a top-level column.
   const settlementNote = typeof meta.settlement_note === 'string' ? meta.settlement_note : null
-  const isUpDown    = meta.type === 'updown'
-  const assetId     = isUpDown ? String(meta.asset ?? 'bitcoin') : null
-  const entryPrice  = isUpDown ? Number(meta.entry_price ?? 0) : 0
+  const isUpDown      = meta.type === 'updown'
+  const isPriceLevel  = meta.type === 'price_level'
+  const isAssetMarket = isUpDown || isPriceLevel
+  const assetId       = isAssetMarket ? String(meta.asset ?? 'bitcoin') : null
+  const entryPrice    = isUpDown ? Number(meta.entry_price ?? 0) : 0
+  const priceLevelTarget = isPriceLevel ? Number(meta.target_price ?? 0) : 0
+  const priceLevelDir    = isPriceLevel ? String(meta.direction ?? 'above') : 'above'
 
   const [livePrice, setLivePrice] = useState<number | null>(null)
   const [flagging, setFlagging] = useState(false)
@@ -280,7 +287,7 @@ export default function BetPanel({
   }
 
   useEffect(() => {
-    if (!isUpDown || !assetId) return
+    if (!isAssetMarket || !assetId) return
     async function fetchPrice() {
       try {
         const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${assetId}&vs_currencies=usd`)
@@ -291,11 +298,11 @@ export default function BetPanel({
     fetchPrice()
     const id = setInterval(fetchPrice, 15_000)
     return () => clearInterval(id)
-  }, [isUpDown, assetId])
+  }, [isAssetMarket, assetId])
 
-  // Auto-settle expired Up/Down markets on page load
+  // Auto-settle expired asset markets on page load
   useEffect(() => {
-    if (!isUpDown || !isOpen) return
+    if (!isAssetMarket || !isOpen) return
     const closesAt = market.closes_at ? new Date(market.closes_at) : null
     if (!closesAt || closesAt > new Date()) return
     fetch('/api/market/auto-settle', {
@@ -305,7 +312,7 @@ export default function BetPanel({
     }).then(r => r.ok && r.json()).then(d => {
       if (d?.settled) router.refresh()
     }).catch(() => {})
-  }, [isUpDown, isOpen, market.id, market.closes_at, router])
+  }, [isAssetMarket, isOpen, market.id, market.closes_at, router])
 
   const selectedOpt_init = initialPick ?? null
   const [selectedOpt, setSelectedOpt] = useState<string | null>(selectedOpt_init)
@@ -535,57 +542,103 @@ const marketUrl  = accessToken
         </div>
       </div>
 
-      {/* Live crypto price ticker for Up/Down markets */}
-      {isUpDown && (
-        <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-3">
-          <div className="mx-auto max-w-6xl flex items-center gap-6 flex-wrap">
-            <div className="flex items-center gap-1.5 text-xs text-slate-600">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-              Live price
-            </div>
-            <div className="flex items-center gap-4 flex-wrap">
-              {/* Entry */}
-              <div className="text-xs">
-                <span className="text-slate-600">Entry price </span>
-                <span className="font-black text-slate-300">${entryPrice.toLocaleString()}</span>
-              </div>
-              {/* Current */}
-              <div className="text-xs">
-                <span className="text-slate-600">Now </span>
+      {/* Live price gauge for asset markets (updown + price_level) */}
+      {isAssetMarket && (() => {
+        const ref      = isUpDown ? entryPrice : priceLevelTarget
+        const invert   = isPriceLevel && priceLevelDir === 'below'
+        const pct      = livePrice !== null && ref > 0 ? ((livePrice - ref) / ref) * 100 : null
+        const clamped  = pct !== null ? Math.max(-10, Math.min(10, pct)) : 0
+        const needleDeg = 90 - clamped * 9
+        const nRad     = needleDeg * Math.PI / 180
+        const cx = 100, cy = 92, r = 66
+        const nx = cx + r * Math.cos(nRad)
+        const ny = cy - r * Math.sin(nRad)
+        const isGood   = invert ? (pct !== null && pct < 0) : (pct !== null && pct >= 0)
+        const nColor   = livePrice === null ? '#374151' : isGood ? '#4ade80' : '#f87171'
+        const lColor   = invert ? '#4ade80' : '#f87171'
+        const rColor   = invert ? '#f87171' : '#4ade80'
+        const lLabel   = isUpDown ? 'DOWN' : (invert ? 'YES' : 'NO')
+        const rLabel   = isUpDown ? 'UP'   : (invert ? 'NO'  : 'YES')
+        const ticks    = [180, 135, 90, 45, 0]
+
+        return (
+          <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-4">
+            <div className="mx-auto max-w-6xl flex items-center gap-5 flex-wrap">
+              {/* Speedometer */}
+              <svg viewBox="0 0 200 108" className="w-40 h-auto shrink-0">
+                {/* Track */}
+                <path d="M 26 92 A 74 74 0 0 1 174 92" fill="none" stroke="#111120" strokeWidth="16" strokeLinecap="round" />
+                {/* Left half */}
+                <path d="M 26 92 A 74 74 0 0 1 100 18" fill="none" stroke={lColor} strokeWidth="13" strokeLinecap="round" opacity="0.45" />
+                {/* Right half */}
+                <path d="M 100 18 A 74 74 0 0 1 174 92" fill="none" stroke={rColor} strokeWidth="13" strokeLinecap="round" opacity="0.45" />
+                {/* Ticks */}
+                {ticks.map(deg => {
+                  const tr = deg * Math.PI / 180
+                  return (
+                    <line key={deg}
+                      x1={cx + 80 * Math.cos(tr)} y1={cy - 80 * Math.sin(tr)}
+                      x2={cx + 69 * Math.cos(tr)} y2={cy - 69 * Math.sin(tr)}
+                      stroke="#2a2a3e" strokeWidth="1.5" strokeLinecap="round"
+                    />
+                  )
+                })}
+                {/* Needle */}
                 {livePrice !== null ? (
-                  <span className="font-black tabular-nums" style={{ color: livePrice >= entryPrice ? '#4ade80' : '#f87171' }}>
-                    ${livePrice.toLocaleString()}
-                  </span>
+                  <>
+                    <line x1={cx} y1={cy} x2={nx} y2={ny} stroke={nColor} strokeWidth="2.5" strokeLinecap="round" opacity="0.9" />
+                    <circle cx={cx} cy={cy} r="5.5" fill={nColor} />
+                    <circle cx={cx} cy={cy} r="2.5" fill="#0a0a0f" />
+                  </>
                 ) : (
-                  <span className="text-slate-600 animate-pulse">fetching…</span>
+                  <circle cx={cx} cy={cy} r="5" fill="#2a2a3e" />
+                )}
+                {/* Labels */}
+                <text x="13" y="107" textAnchor="middle" fontSize="8" fontWeight="800" fill={lColor} fontFamily="system-ui,sans-serif">{lLabel}</text>
+                <text x="187" y="107" textAnchor="middle" fontSize="8" fontWeight="800" fill={rColor} fontFamily="system-ui,sans-serif">{rLabel}</text>
+              </svg>
+
+              {/* Price info */}
+              <div className="flex flex-col gap-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Live price</span>
+                </div>
+                {livePrice !== null ? (
+                  <>
+                    <p className="text-2xl font-black tabular-nums leading-none" style={{ color: nColor }}>
+                      ${livePrice.toLocaleString()}
+                    </p>
+                    {pct !== null && (
+                      <p className="text-xs font-black" style={{ color: nColor }}>
+                        {pct >= 0 ? '+' : ''}{pct.toFixed(3)}%{' '}
+                        <span className="text-slate-600 font-normal">vs {isUpDown ? 'entry' : 'target'}</span>
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-slate-600 animate-pulse">fetching…</p>
+                )}
+                <p className="text-[11px] text-slate-500">
+                  {isUpDown
+                    ? <><span className="text-slate-600">Entry</span> ${entryPrice.toLocaleString()}</>
+                    : <><span className="text-slate-600">Target</span> ${priceLevelTarget.toLocaleString()} <span className="text-slate-600">({priceLevelDir})</span></>
+                  }
+                </p>
+                {livePrice !== null && (
+                  <p className="text-xs font-bold" style={{ color: nColor }}>
+                    {isUpDown
+                      ? (livePrice >= entryPrice ? '▲ Currently UP' : '▼ Currently DOWN')
+                      : (isGood ? '✓ YES currently winning' : '✗ NO currently winning')
+                    }
+                    <span className="text-[10px] text-slate-600 font-normal"> · 15s</span>
+                  </p>
                 )}
               </div>
-              {/* Change */}
-              {livePrice !== null && entryPrice > 0 && (
-                <div className="text-xs">
-                  {(() => {
-                    const pct = ((livePrice - entryPrice) / entryPrice) * 100
-                    const color = pct >= 0 ? '#4ade80' : '#f87171'
-                    const bg    = pct >= 0 ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)'
-                    return (
-                      <span className="rounded-full px-2.5 py-1 font-black tabular-nums" style={{ color, background: bg }}>
-                        {pct >= 0 ? '▲' : '▼'} {Math.abs(pct).toFixed(3)}%
-                      </span>
-                    )
-                  })()}
-                </div>
-              )}
-              {/* Direction signal */}
-              {livePrice !== null && entryPrice > 0 && (
-                <div className="text-xs font-bold" style={{ color: livePrice >= entryPrice ? '#4ade80' : '#f87171' }}>
-                  {livePrice >= entryPrice ? '▲ Currently UP' : '▼ Currently DOWN'}
-                  <span className="text-slate-600 font-normal"> · updates every 15s</span>
-                </div>
-              )}
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* User's existing bet banner */}
       {userBet && (
@@ -798,12 +851,12 @@ const marketUrl  = accessToken
             </div>
           </div>
 
-          {/* Bet slip — sticky on desktop */}
+          {/* Event Slip — sticky on desktop */}
           <div className="lg:sticky lg:top-24 lg:self-start space-y-4">
             {isOpen && !done && (
               <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] overflow-hidden">
                 <div className="border-b border-[#1e1e2e] px-5 py-4">
-                  <h2 className="font-bold text-white">Place your prediction</h2>
+                  <h2 className="font-bold text-white">Event Slip</h2>
                   {balance !== null && (
                     <p className="text-xs text-slate-500 mt-0.5">
                       Balance: <span className="text-slate-300 font-semibold">UGX {Number(balance).toLocaleString()}</span>

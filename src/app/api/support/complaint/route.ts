@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { sendAdminTelegram } from '@/lib/whatsapp'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -26,6 +27,17 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Notify admin on Telegram
+  const { data: profile } = await admin.from('profiles').select('full_name, phone').eq('id', user.id).single()
+  const userName = profile?.full_name ?? 'Unknown'
+  const userPhone = profile?.phone ? `+${profile.phone}` : 'no phone'
+  const reviewUrl = 'https://sabula256.com/admin/support'
+  await sendAdminTelegram(
+    `📩 *New Support Complaint*\n\n👤 From: ${userName} (${userPhone})\n📋 Subject: ${subject.trim()}\n\n${message.trim().slice(0, 300)}${message.length > 300 ? '…' : ''}`,
+    [[ { text: '💬 View in Support Dashboard', url: reviewUrl } ]],
+  ).catch(() => {})
+
   return NextResponse.json({ success: true, complaint: data })
 }
 
