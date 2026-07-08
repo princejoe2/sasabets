@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { settleMarket } from '@/lib/settle-market'
 
 export async function POST(req: NextRequest) {
+  // Accept either: cron secret header/param, OR a logged-in admin session
   const cronSecret = (process.env.CRON_SECRET ?? '').replace(/[^\x20-\x7E]/g, '').trim()
-  const auth = req.headers.get('authorization')
-  const urlSecret = req.nextUrl.searchParams.get('secret')
-  if (!cronSecret || (auth !== `Bearer ${cronSecret}` && urlSecret !== cronSecret)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const auth       = req.headers.get('authorization')
+  const urlSecret  = req.nextUrl.searchParams.get('secret')
+  const viaCron    = cronSecret && (auth === `Bearer ${cronSecret}` || urlSecret === cronSecret)
+
+  if (!viaCron) {
+    // Fall back to checking admin session
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const admin = createAdminClient()
+    const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
+    if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const { marketId } = await req.json()
@@ -33,12 +42,11 @@ export async function POST(req: NextRequest) {
   if (!closesAt || closesAt > new Date()) return NextResponse.json({ skipped: true, reason: 'not expired' })
 
   const assetId = String(meta?.asset ?? 'bitcoin')
-  const cgId    = assetId // pax-gold, bitcoin, etc. pass through directly
   let currentPrice = 0
   try {
-    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cgId}&vs_currencies=usd`, { cache: 'no-store' })
+    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${assetId}&vs_currencies=usd`, { cache: 'no-store' })
     const d = await r.json()
-    currentPrice = d[cgId]?.usd ?? 0
+    currentPrice = d[assetId]?.usd ?? 0
   } catch { /* can't settle without price */ }
 
   if (!currentPrice) return NextResponse.json({ skipped: true, reason: 'price unavailable' })
@@ -51,7 +59,6 @@ export async function POST(req: NextRequest) {
     const isUp = currentPrice >= entryPrice
     winner = options.find(o => isUp ? o.label.toLowerCase().includes('up') : o.label.toLowerCase().includes('down'))
   } else {
-    // price_level
     const targetPrice = Number(meta?.target_price ?? 0)
     const direction   = String(meta?.direction ?? 'above')
     const isYes       = direction === 'above' ? currentPrice >= targetPrice : currentPrice <= targetPrice
