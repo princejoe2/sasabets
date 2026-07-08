@@ -102,6 +102,31 @@ export default function MarketCard({ market }: { market: Market }) {
   const { display: countdown, urgency, expired } = useCountdown(market.closes_at, market.id, isOpen)
   const effectivelyOpen = isOpen && !expired
 
+  // Asset market (updown / price_level) live price
+  const meta = market.metadata ?? {}
+  const isAssetMarket = meta.type === 'updown' || meta.type === 'price_level'
+  const isPriceLevel  = meta.type === 'price_level'
+  const isUpDown      = meta.type === 'updown'
+  const assetId       = isAssetMarket ? String(meta.asset ?? 'bitcoin') : null
+  const refPrice      = isUpDown ? Number(meta.entry_price ?? 0) : (isPriceLevel ? Number(meta.target_price ?? 0) : 0)
+  const direction     = isPriceLevel ? String(meta.direction ?? 'above') : 'above'
+  const [livePrice, setLivePrice] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!isAssetMarket || !assetId) return
+    let cancelled = false
+    async function fetchPrice() {
+      try {
+        const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${assetId}&vs_currencies=usd`, { cache: 'no-store' })
+        const d = await r.json()
+        if (!cancelled) setLivePrice(d[assetId!]?.usd ?? null)
+      } catch { /* ignore */ }
+    }
+    fetchPrice()
+    const id = setInterval(fetchPrice, 15000)
+    return () => { cancelled = true; clearInterval(id) }
+  }, [isAssetMarket, assetId])
+
   const optA = opts?.[0]?.label ?? ''
   const optB = opts?.[1]?.label ?? ''
   const metaPartyImage = market.metadata?.partyImage as string | undefined
@@ -115,7 +140,7 @@ export default function MarketCard({ market }: { market: Market }) {
     logoB = fromTitle.logoB
   }
   if (!logoA && !logoB && metaPartyImage) logoA = metaPartyImage
-  const hasBothLogos = !!(logoA && logoB)
+  const hasBothLogos = !!(logoA && logoB) && !isAssetMarket
 
   const { isWatched, toggle, loaded } = useWatchlist()
   const bookmarked = loaded && isWatched(market.id)
@@ -216,8 +241,92 @@ export default function MarketCard({ market }: { market: Market }) {
 
       <div className="flex flex-col flex-1 p-4">
 
+        {/* ── Asset market speedometer ── */}
+        {isAssetMarket && (() => {
+          const pct      = livePrice !== null && refPrice > 0 ? ((livePrice - refPrice) / refPrice) * 100 : null
+          const clamped  = pct !== null ? Math.max(-10, Math.min(10, pct)) : 0
+          const invert   = isPriceLevel && direction === 'below'
+          const needleDeg = 90 - clamped * (invert ? -9 : 9)
+          const nRad     = needleDeg * Math.PI / 180
+          const cx = 100, cy = 95, needleR = 66
+          const nx = cx + needleR * Math.cos(nRad)
+          const ny = cy - needleR * Math.sin(nRad)
+          const leftColor  = invert ? '#22c55e' : '#ef4444'
+          const rightColor = invert ? '#ef4444' : '#22c55e'
+          const leftLabel  = isUpDown ? 'DOWN' : (invert ? 'YES' : 'NO')
+          const rightLabel = isUpDown ? 'UP'   : (invert ? 'NO'  : 'YES')
+          const winning = pct !== null && (isUpDown ? pct >= 0 : direction === 'above' ? pct >= 0 : pct <= 0)
+          return (
+            <div className="mb-2">
+              {/* Title above gauge */}
+              <h3 className="text-[13px] font-bold leading-snug text-slate-100 mb-3 line-clamp-2">
+                {market.title}
+              </h3>
+              {/* Price row */}
+              <div className="flex items-end justify-between mb-1 px-1">
+                <div>
+                  <div className="flex items-center gap-1 mb-0.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Live</span>
+                  </div>
+                  <div className="text-2xl font-black text-white tabular-nums">
+                    {livePrice !== null ? `$${livePrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—'}
+                  </div>
+                  {pct !== null && (
+                    <div className={`text-[11px] font-black ${pct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {pct >= 0 ? '+' : ''}{pct.toFixed(2)}%
+                    </div>
+                  )}
+                </div>
+                <div className="text-right">
+                  <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">
+                    {isPriceLevel ? `Target (${direction})` : 'Entry'}
+                  </div>
+                  <div className="text-base font-black text-slate-300 tabular-nums">
+                    ${refPrice.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+              {/* Gauge SVG */}
+              <svg viewBox="0 0 200 112" className="w-full">
+                <path d="M 26 95 A 74 74 0 0 1 174 95" fill="none" stroke="#1e1e2e" strokeWidth="16" strokeLinecap="round" />
+                <path d="M 26 95 A 74 74 0 0 1 100 21" fill="none" stroke={leftColor}  strokeWidth="16" strokeLinecap="round" opacity="0.75" />
+                <path d="M 100 21 A 74 74 0 0 1 174 95" fill="none" stroke={rightColor} strokeWidth="16" strokeLinecap="round" opacity="0.75" />
+                {[180,135,90,45,0].map(deg => {
+                  const rad = deg * Math.PI / 180
+                  return <line key={deg} x1={cx + 62*Math.cos(rad)} y1={cy - 62*Math.sin(rad)} x2={cx + 72*Math.cos(rad)} y2={cy - 72*Math.sin(rad)} stroke="#2a2a3e" strokeWidth="2.5" strokeLinecap="round" />
+                })}
+                <line x1={cx} y1={cy} x2={nx} y2={ny} stroke="white" strokeWidth="3.5" strokeLinecap="round" />
+                <circle cx={cx} cy={cy} r="6" fill="white" />
+                <circle cx={cx} cy={cy} r="2.5" fill="#13131a" />
+                <text x="20" y="110" fill={leftColor}  fontSize="9" fontWeight="900" textAnchor="middle" fontFamily="monospace">{leftLabel}</text>
+                <text x="180" y="110" fill={rightColor} fontSize="9" fontWeight="900" textAnchor="middle" fontFamily="monospace">{rightLabel}</text>
+              </svg>
+              {/* Status line */}
+              <div className={`text-center text-[11px] font-black -mt-1 ${winning ? 'text-emerald-400' : 'text-red-400'}`}>
+                {pct !== null
+                  ? `${winning ? '✓' : '✗'} ${isUpDown ? (pct >= 0 ? 'UP' : 'DOWN') : (direction === 'above' ? (pct >= 0 ? 'YES' : 'NO') : (pct <= 0 ? 'YES' : 'NO'))} currently winning`
+                  : <span className="text-slate-600">Loading price…</span>
+                }
+              </div>
+              {/* Category + countdown */}
+              <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                <span className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide" style={{ background: `${cat.color}14`, color: cat.color, border: `1px solid ${cat.color}28` }}>
+                  {cat.icon} {isPriceLevel ? 'Price Target' : 'Up/Down'}
+                </span>
+                {effectivelyOpen && countdown && (
+                  <span className="rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums" style={{ color: urgency === 'final' || urgency === 'hour' ? '#fb923c' : '#64748b', background: urgency === 'final' || urgency === 'hour' ? 'rgba(249,115,22,0.1)' : '#1e1e2e' }}>
+                    ⏱ {countdown}
+                  </span>
+                )}
+                {!effectivelyOpen && <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-500 uppercase">Closed</span>}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* ── VS layout (both logos available) ── */}
-        {hasBothLogos ? (
+        {!isAssetMarket && hasBothLogos ? (
           <>
             {/* Header: category icon + date */}
             <div className="flex items-center justify-between mb-3">
@@ -271,7 +380,7 @@ export default function MarketCard({ market }: { market: Market }) {
               {market.title}
             </h3>
           </>
-        ) : (
+        ) : (!isAssetMarket && (
           /* ── Single-party layout ── */
           <>
             {/* Icon + question */}
@@ -326,7 +435,7 @@ export default function MarketCard({ market }: { market: Market }) {
               )}
             </div>
           </>
-        )}
+        ))}
 
         {/* Probability split bar (2-option markets with pool) */}
         {opts.length >= 2 && total > 0 && (
