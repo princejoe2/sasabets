@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import type { StaffRole } from '@/lib/admin-guard'
-import { ROLE_ALLOWED_PATHS } from '@/lib/admin-guard'
+import type { StaffRole } from '@/lib/admin-roles'
+import { ROLE_ALLOWED_PATHS } from '@/lib/admin-roles'
 
 type NavItem = { href: string; icon: string; label: string }
 type NavGroup = { label: string; items: NavItem[] }

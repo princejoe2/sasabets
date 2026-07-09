@@ -1,31 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { StaffRole } from '@/lib/admin-roles'
 
-export type StaffRole = 'moderator' | 'settler' | 'support' | 'analyst' | 'content'
-
-// All pages each role can access (used by sidebar + middleware)
-export const ROLE_ALLOWED_PATHS: Record<StaffRole, string[]> = {
-  moderator: [
-    '/admin', '/admin/markets', '/admin/settle-queue', '/admin/auto-create',
-    '/admin/bets', '/admin/banned-ips', '/admin/account-flags', '/admin/flags',
-    '/admin/market-events', '/admin/updown', '/admin/proposals',
-  ],
-  settler: [
-    '/admin', '/admin/settle-queue', '/admin/markets',
-  ],
-  support: [
-    '/admin', '/admin/users', '/admin/kyc', '/admin/support',
-    '/admin/notify', '/admin/activity', '/admin/transactions', '/admin/aml',
-  ],
-  analyst: [
-    '/admin', '/admin/analytics', '/admin/activity', '/admin/transactions',
-    '/admin/funds',
-  ],
-  content: [
-    '/admin', '/admin/news',
-  ],
-}
+export type { StaffRole } from '@/lib/admin-roles'
 
 export type GuardResult =
   | { error: NextResponse }
