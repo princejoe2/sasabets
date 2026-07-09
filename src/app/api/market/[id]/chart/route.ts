@@ -22,13 +22,10 @@ export async function GET(
     .eq('id', marketId)
     .single()
 
-  if (!market) return NextResponse.json({ points: [] })
+  if (!market) return NextResponse.json({ points: [], options: [] })
 
   const opts = market.options as { id: string; label: string; total_pool: number }[]
-  if (opts.length < 2) return NextResponse.json({ points: [] })
-
-  const optAId = opts[0].id
-  const optBId = opts[1].id
+  if (opts.length < 2) return NextResponse.json({ points: [], options: [] })
 
   const { data: bets } = await admin
     .from('bets')
@@ -36,28 +33,45 @@ export async function GET(
     .eq('market_id', marketId)
     .order('placed_at', { ascending: true })
 
+  const optLabels = opts.map(o => o.label)
+
+  // Build initial point — equal probability for all options
+  const equalPct = 100 / opts.length
+  const makeInitial = () => {
+    const row: Record<string, number | string> = { t: market.created_at, pool: 0 }
+    opts.forEach(o => { row[o.label] = equalPct })
+    return row
+  }
+
   if (!bets || bets.length === 0) {
     return NextResponse.json({
-      points: [{ t: market.created_at, pA: 50, pB: 50, pool: 0 }],
+      points: [makeInitial()],
+      options: optLabels,
     })
   }
 
-  let poolA = 0
-  let poolB = 0
-  const points: { t: string; pA: number; pB: number; pool: number }[] = []
-  points.push({ t: market.created_at, pA: 50, pB: 50, pool: 0 })
+  // Running pools per option
+  const pools: Record<string, number> = {}
+  opts.forEach(o => { pools[o.id] = 0 })
+
+  const points: Record<string, number | string>[] = []
+  points.push(makeInitial())
 
   for (const bet of bets) {
-    if (bet.option_id === optAId) poolA += Number(bet.amount)
-    else if (bet.option_id === optBId) poolB += Number(bet.amount)
-    const total = poolA + poolB
-    const pA = total > 0 ? (poolA / total) * 100 : 50
-    points.push({ t: bet.placed_at, pA, pB: 100 - pA, pool: total })
+    if (pools[bet.option_id] !== undefined) {
+      pools[bet.option_id] += Number(bet.amount)
+    }
+    const total = Object.values(pools).reduce((s, v) => s + v, 0)
+    const row: Record<string, number | string> = { t: bet.placed_at, pool: total }
+    opts.forEach(o => {
+      row[o.label] = total > 0 ? (pools[o.id] / total) * 100 : equalPct
+    })
+    points.push(row)
   }
 
   const sampled = downsample(points, 120)
 
-  return NextResponse.json({ points: sampled }, {
+  return NextResponse.json({ points: sampled, options: optLabels }, {
     headers: { 'Cache-Control': 'public, max-age=30, stale-while-revalidate=60' },
   })
 }

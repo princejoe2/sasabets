@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import BetPanel from './BetPanel'
 import MarketComments from '@/components/MarketComments'
 import FollowButton from '@/components/FollowButton'
+import MarketChart from '@/components/MarketChart'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
@@ -194,6 +195,9 @@ export default async function MarketPage({
       />
       <div className="mx-auto max-w-xl px-4 pb-2 flex justify-end">
         <FollowButton marketId={id} initialFollowing={isFollowing} isLoggedIn={!!user} />
+      </div>
+      <div className="mx-auto max-w-xl px-4 pb-4">
+        <MarketChart marketId={id} />
       </div>
       <MarketComments marketId={id} isLoggedIn={!!user} />
     </>
