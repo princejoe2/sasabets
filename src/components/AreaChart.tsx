@@ -44,7 +44,7 @@ function CustomTooltip({ active, payload, label, valueFormatter, categories }: a
             <span className="text-muted-foreground">{entry.name}</span>
           </span>
           <span className="font-black tabular-nums" style={{ color: entry.color }}>
-            {valueFormatter ? valueFormatter(entry.value) : entry.value}
+            {valueFormatter && entry.value != null ? valueFormatter(entry.value) : (entry.value ?? '—')}
           </span>
         </div>
       ))}
@@ -98,7 +98,7 @@ export function AreaChart({
             tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.35)' }}
             axisLine={false}
             tickLine={false}
-            tickFormatter={valueFormatter}
+            tickFormatter={valueFormatter ? (v) => (v != null ? valueFormatter(v) : '') : undefined}
           />
           <Tooltip
             content={<CustomTooltip valueFormatter={valueFormatter} categories={categories} />}
