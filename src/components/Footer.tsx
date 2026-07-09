@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import SocialFlipButton from '@/components/ui/social-flip-button'
-import { FaFacebook, FaTwitter, FaInstagram, FaWhatsapp, FaYoutube, FaTelegram, FaTiktok, FaEnvelope } from 'react-icons/fa'
+import { FaFacebook, FaInstagram, FaWhatsapp, FaYoutube, FaTelegram, FaTiktok, FaEnvelope } from 'react-icons/fa'
+import { FaXTwitter } from 'react-icons/fa6'
 
 const SOCIAL_ITEMS = [
   { letter: 'C', icon: <FaFacebook />,  label: 'Facebook',  href: '#' },
-  { letter: 'O', icon: <FaTwitter />,   label: 'Twitter/X', href: '#' },
+  { letter: 'O', icon: <FaXTwitter />,  label: 'X',         href: '#' },
   { letter: 'N', icon: <FaInstagram />, label: 'Instagram', href: '#' },
   { letter: 'T', icon: <FaWhatsapp />,  label: 'WhatsApp',  href: '#' },
   { letter: 'A', icon: <FaYoutube />,   label: 'YouTube',   href: '#' },
