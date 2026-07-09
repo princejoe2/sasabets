@@ -234,10 +234,11 @@ export default function AuthPage() {
       return
     }
 
-    const { isAdmin: admin, has2fa } = userInfo
+    const { isAdmin: admin, isStaff, has2fa } = userInfo
 
-    if (admin || has2fa) {
-      setIsAdmin(!!admin)
+    // Staff and admins both use the admin TOTP flow
+    if (admin || isStaff || has2fa) {
+      setIsAdmin(!!(admin || isStaff))
       setStep('totp')
       setLoading(false)
       return
@@ -261,6 +262,7 @@ export default function AuthPage() {
 
     setLoading(true)
 
+    // Admin and staff both verify via the admin endpoint (it sets the TOTP cookie the layout checks)
     const endpoint = isAdmin ? '/api/admin/2fa/verify' : '/api/auth/2fa/verify'
     const res = await fetch(endpoint, {
       method: 'POST',

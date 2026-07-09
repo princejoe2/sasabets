@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 
-type UserRow = { id: string; phone: string | null; full_name: string | null; staff_role: string | null }
+type StaffRow = { id: string; full_name: string | null; email: string; staff_role: string | null; created_at: string }
 
 const ROLES = [
   {
@@ -24,6 +24,7 @@ const ROLES = [
     color: 'text-sky-400 border-sky-800/40 bg-sky-900/20',
     dot: 'bg-sky-500',
     pages: ['Users', 'KYC Reviews', 'Support', 'Notifications', 'Activity', 'Transactions', 'AML Monitoring'],
+    note: 'Fund adjustments capped at UGX 100,000 per transaction',
   },
   {
     value: 'analyst',
@@ -41,80 +42,87 @@ const ROLES = [
   },
 ]
 
-function RoleBadge({ role, className = '' }: { role: string; className?: string }) {
+function RoleBadge({ role }: { role: string }) {
   const r = ROLES.find(x => x.value === role)
   if (!r) return null
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold ${r.color} ${className}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold ${r.color}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${r.dot}`} />
       {r.label}
     </span>
   )
 }
 
-export default function AdminStaffRolesClient({ users }: { users: UserRow[] }) {
-  const [rows, setRows] = useState<UserRow[]>(users)
-  const [search, setSearch] = useState('')
-  const [assigning, setAssigning] = useState<string | null>(null)
+export default function AdminStaffRolesClient({ staff }: { staff: StaffRow[] }) {
+  const [rows, setRows] = useState<StaffRow[]>(staff)
+
+  // Create form state
+  const [form, setForm] = useState({ fullName: '', email: '', role: '' })
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState('')
+  const [created, setCreated] = useState<{ email: string; fullName: string; role: string } | null>(null)
+
+  // Role change / revoke state
   const [saving, setSaving] = useState<string | null>(null)
-  const [error, setError] = useState('')
+  const [actionError, setActionError] = useState('')
 
-  const staffMembers = rows.filter(u => u.staff_role)
-  const filtered = rows.filter(u => {
-    const q = search.toLowerCase()
-    return (
-      (u.full_name ?? '').toLowerCase().includes(q) ||
-      (u.phone ?? '').includes(q)
-    )
-  })
-
-  async function assign(userId: string, role: string) {
-    setSaving(userId)
-    setError('')
+  async function createAccount(e: React.FormEvent) {
+    e.preventDefault()
+    setCreating(true)
+    setCreateError('')
+    setCreated(null)
     try {
-      const res = await fetch('/api/admin/staff-roles', {
+      const res = await fetch('/api/admin/staff-roles/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, role }),
+        body: JSON.stringify(form),
       })
-      if (!res.ok) { const d = await res.json(); setError(d.error ?? 'Failed'); return }
-      setRows(prev => prev.map(u => u.id === userId ? { ...u, staff_role: role } : u))
-      setAssigning(null)
-    } finally { setSaving(null) }
+      const data = await res.json()
+      if (!res.ok) { setCreateError(data.error ?? 'Failed to create account'); return }
+      setCreated({ email: data.email, fullName: data.fullName, role: data.role })
+      setForm({ fullName: '', email: '', role: '' })
+      setRows(prev => [{
+        id: data.userId, full_name: data.fullName, email: data.email,
+        staff_role: data.role, created_at: new Date().toISOString(),
+      }, ...prev])
+    } finally { setCreating(false) }
+  }
+
+  async function changeRole(userId: string, role: string) {
+    setSaving(userId); setActionError('')
+    const res = await fetch('/api/admin/staff-roles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, role }),
+    })
+    if (!res.ok) { const d = await res.json(); setActionError(d.error ?? 'Failed') }
+    else setRows(prev => prev.map(u => u.id === userId ? { ...u, staff_role: role } : u))
+    setSaving(null)
   }
 
   async function revoke(userId: string) {
-    setSaving(userId)
-    setError('')
-    try {
-      const res = await fetch('/api/admin/staff-roles', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
-      })
-      if (!res.ok) { const d = await res.json(); setError(d.error ?? 'Failed'); return }
-      setRows(prev => prev.map(u => u.id === userId ? { ...u, staff_role: null } : u))
-    } finally { setSaving(null) }
+    if (!confirm('Revoke this staff member\'s access? They will no longer be able to log in to the admin panel.')) return
+    setSaving(userId); setActionError('')
+    const res = await fetch('/api/admin/staff-roles', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    })
+    if (!res.ok) { const d = await res.json(); setActionError(d.error ?? 'Failed') }
+    else setRows(prev => prev.filter(u => u.id !== userId))
+    setSaving(null)
   }
 
   return (
     <div className="space-y-8 max-w-5xl">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-black text-white">Staff Roles</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Assign roles to staff members. Each role restricts access to specific sections of the admin panel.
-          Only the super admin can manage roles.
+          Create staff accounts — credentials and 2FA setup are emailed automatically. Only the super admin can manage staff.
         </p>
       </div>
 
-      {error && (
-        <div className="rounded-xl border border-red-800/40 bg-red-900/20 px-4 py-3 text-sm text-red-400">
-          {error}
-        </div>
-      )}
-
-      {/* Role Reference */}
+      {/* Role reference cards */}
       <div>
         <h2 className="text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Role Permissions</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -129,69 +137,129 @@ export default function AdminStaffRolesClient({ users }: { users: UserRow[] }) {
                   <li key={p} className="text-xs opacity-70">• {p}</li>
                 ))}
               </ul>
+              {r.note && (
+                <p className="mt-2 text-xs opacity-60 italic border-t border-current/20 pt-2">{r.note}</p>
+              )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Current Staff */}
-      {staffMembers.length > 0 && (
-        <div>
-          <h2 className="text-xs font-black uppercase tracking-widest text-slate-600 mb-3">
-            Current Staff ({staffMembers.length})
-          </h2>
+      {/* Create account form */}
+      <div className="rounded-2xl border border-[#1a1a28] bg-[#0f0f1a] p-6">
+        <h2 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-5">Create Staff Account</h2>
+        <form onSubmit={createAccount} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1.5">Full Name</label>
+              <input
+                type="text"
+                placeholder="e.g. Jane Nakato"
+                value={form.fullName}
+                onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))}
+                required
+                className="w-full rounded-xl border border-[#1a1a28] bg-[#0a0a12] px-4 py-2.5 text-sm text-white placeholder-slate-700 focus:border-slate-600 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1.5">Email Address</label>
+              <input
+                type="email"
+                placeholder="jane@example.com"
+                value={form.email}
+                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                required
+                className="w-full rounded-xl border border-[#1a1a28] bg-[#0a0a12] px-4 py-2.5 text-sm text-white placeholder-slate-700 focus:border-slate-600 focus:outline-none"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1.5">Role</label>
+            <select
+              value={form.role}
+              onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
+              required
+              className="w-full max-w-xs rounded-xl border border-[#1a1a28] bg-[#0a0a12] px-4 py-2.5 text-sm text-white focus:border-slate-600 focus:outline-none"
+            >
+              <option value="" disabled>Select a role…</option>
+              {ROLES.map(r => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {createError && (
+            <p className="text-sm text-red-400">{createError}</p>
+          )}
+
+          <div className="flex items-center gap-4 pt-1">
+            <button
+              type="submit"
+              disabled={creating}
+              className="rounded-xl bg-violet-700 hover:bg-violet-600 disabled:opacity-40 px-6 py-2.5 text-sm font-bold text-white transition-colors"
+            >
+              {creating ? 'Creating…' : 'Create Account & Send Credentials'}
+            </button>
+            <p className="text-xs text-slate-600">A password and 2FA QR code will be emailed to the staff member automatically.</p>
+          </div>
+        </form>
+
+        {/* Success banner */}
+        {created && (
+          <div className="mt-5 rounded-xl border border-emerald-800/40 bg-emerald-900/20 px-4 py-3">
+            <p className="text-sm font-bold text-emerald-400">Account created successfully</p>
+            <p className="text-xs text-emerald-600 mt-1">
+              Credentials and 2FA setup instructions sent to <strong className="text-emerald-400">{created.email}</strong> ({ROLES.find(r=>r.value===created.role)?.label}).
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Staff list */}
+      {actionError && (
+        <div className="rounded-xl border border-red-800/40 bg-red-900/20 px-4 py-3 text-sm text-red-400">
+          {actionError}
+        </div>
+      )}
+
+      <div>
+        <h2 className="text-xs font-black uppercase tracking-widest text-slate-600 mb-3">
+          Active Staff ({rows.length})
+        </h2>
+        {rows.length === 0 ? (
+          <p className="text-sm text-slate-700">No staff accounts yet. Create one above.</p>
+        ) : (
           <div className="rounded-2xl border border-[#1a1a28] overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#1a1a28] bg-[#0f0f1a]">
                   <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-widest text-slate-600">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-widest text-slate-600">Phone</th>
+                  <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-widest text-slate-600">Email</th>
                   <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-widest text-slate-600">Role</th>
                   <th className="px-4 py-3 text-right text-xs font-black uppercase tracking-widest text-slate-600">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1a1a28]">
-                {staffMembers.map(u => (
+                {rows.map(u => (
                   <tr key={u.id} className="hover:bg-[#0f0f1a] transition-colors">
-                    <td className="px-4 py-3 text-white font-semibold">
-                      {u.full_name ?? '—'}
-                    </td>
-                    <td className="px-4 py-3 text-slate-400 font-mono text-xs">
-                      {u.phone ? `+${u.phone}` : '—'}
-                    </td>
+                    <td className="px-4 py-3 text-white font-semibold">{u.full_name ?? '—'}</td>
+                    <td className="px-4 py-3 text-slate-400 text-xs font-mono">{u.email}</td>
                     <td className="px-4 py-3">
-                      {assigning === u.id ? (
-                        <div className="flex items-center gap-2">
-                          <select
-                            className="rounded-lg border border-[#1a1a28] bg-[#0a0a12] text-white text-xs px-2 py-1"
-                            defaultValue={u.staff_role ?? ''}
-                            onChange={e => { if (e.target.value) assign(u.id, e.target.value) }}
-                            disabled={saving === u.id}
-                          >
-                            {ROLES.map(r => (
-                              <option key={r.value} value={r.value}>{r.label}</option>
-                            ))}
-                          </select>
-                          <button
-                            onClick={() => setAssigning(null)}
-                            className="text-xs text-slate-600 hover:text-slate-400"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <RoleBadge role={u.staff_role!} />
-                      )}
+                      <RoleBadge role={u.staff_role!} />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => setAssigning(u.id)}
+                      <div className="flex items-center justify-end gap-3">
+                        <select
+                          className="rounded-lg border border-[#1a1a28] bg-[#0a0a12] text-white text-xs px-2 py-1 disabled:opacity-40"
+                          value=""
+                          onChange={e => { if (e.target.value) changeRole(u.id, e.target.value) }}
                           disabled={saving === u.id}
-                          className="text-xs text-slate-500 hover:text-white transition-colors"
                         >
-                          Change
-                        </button>
+                          <option value="" disabled>Change role…</option>
+                          {ROLES.filter(r => r.value !== u.staff_role).map(r => (
+                            <option key={r.value} value={r.value}>{r.label}</option>
+                          ))}
+                        </select>
                         <button
                           onClick={() => revoke(u.id)}
                           disabled={saving === u.id}
@@ -206,71 +274,6 @@ export default function AdminStaffRolesClient({ users }: { users: UserRow[] }) {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-
-      {/* Assign Role */}
-      <div>
-        <h2 className="text-xs font-black uppercase tracking-widest text-slate-600 mb-3">Assign Role to User</h2>
-        <div className="mb-3">
-          <input
-            type="text"
-            placeholder="Search by name or phone…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full max-w-sm rounded-xl border border-[#1a1a28] bg-[#0f0f1a] px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-slate-600 focus:outline-none"
-          />
-        </div>
-
-        {search.length >= 2 && (
-          <div className="rounded-2xl border border-[#1a1a28] overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#1a1a28] bg-[#0f0f1a]">
-                  <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-widest text-slate-600">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-widest text-slate-600">Phone</th>
-                  <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-widest text-slate-600">Current Role</th>
-                  <th className="px-4 py-3 text-right text-xs font-black uppercase tracking-widest text-slate-600">Assign</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1a1a28]">
-                {filtered.slice(0, 20).map(u => (
-                  <tr key={u.id} className="hover:bg-[#0f0f1a] transition-colors">
-                    <td className="px-4 py-3 text-white font-semibold">{u.full_name ?? '—'}</td>
-                    <td className="px-4 py-3 text-slate-400 font-mono text-xs">
-                      {u.phone ? `+${u.phone}` : '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      {u.staff_role ? <RoleBadge role={u.staff_role} /> : <span className="text-slate-700 text-xs">No role</span>}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <select
-                        className="rounded-lg border border-[#1a1a28] bg-[#0a0a12] text-white text-xs px-2 py-1 disabled:opacity-40"
-                        value=""
-                        onChange={e => { if (e.target.value) assign(u.id, e.target.value) }}
-                        disabled={saving === u.id}
-                      >
-                        <option value="" disabled>Assign role…</option>
-                        {ROLES.map(r => (
-                          <option key={r.value} value={r.value}>{r.label}</option>
-                        ))}
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-6 text-center text-slate-600 text-sm">
-                      No users match your search
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {search.length < 2 && (
-          <p className="text-xs text-slate-700">Type at least 2 characters to search users</p>
         )}
       </div>
     </div>

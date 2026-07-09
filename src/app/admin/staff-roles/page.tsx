@@ -14,12 +14,17 @@ export default async function StaffRolesPage() {
   const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
   if (!profile?.is_admin) redirect('/admin')
 
-  // Fetch all non-admin users for the assignment dropdown
-  const { data: users } = await admin
+  const { data: staff } = await admin
     .from('profiles')
-    .select('id, phone, full_name, staff_role')
-    .eq('is_admin', false)
-    .order('full_name', { ascending: true })
+    .select('id, full_name, staff_role, created_at')
+    .not('staff_role', 'is', null)
+    .order('created_at', { ascending: false })
 
-  return <AdminStaffRolesClient users={users ?? []} />
+  // Fetch emails from auth for display
+  const { data: { users: authUsers } } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  const emailMap = Object.fromEntries((authUsers ?? []).map(u => [u.id, u.email ?? '']))
+
+  const staffWithEmail = (staff ?? []).map(s => ({ ...s, email: emailMap[s.id] ?? '' }))
+
+  return <AdminStaffRolesClient staff={staffWithEmail} />
 }

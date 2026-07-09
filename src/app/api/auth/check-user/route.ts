@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient()
   const { data } = await admin
     .from('profiles')
-    .select('is_admin, totp_enabled, suspended, suspend_reason')
+    .select('is_admin, staff_role, totp_enabled, suspended, suspend_reason')
     .eq('id', user.id)
     .single()
 
@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     isAdmin: data?.is_admin ?? false,
+    isStaff: !!(data?.staff_role),
     has2fa: data?.totp_enabled ?? false,
   })
 }

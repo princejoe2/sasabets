@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { guardAdmin } from '@/lib/admin-guard'
+
+const SUPPORT_MAX = 100_000  // UGX hard limit per adjustment for non-super-admin
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const admin = createAdminClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
-  if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const g = await guardAdmin(['support'])
+  if ('error' in g) return g.error
+  const { admin, user, isSuperAdmin } = g
 
   const { phone, amount, note } = await req.json()
   if (!phone || amount === undefined || amount === null) {
@@ -20,10 +17,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid adjustment amount' }, { status: 400 })
   }
 
+  // Support staff cannot move more than UGX 100,000 per adjustment
+  if (!isSuperAdmin && Math.abs(adjAmount) > SUPPORT_MAX) {
+    return NextResponse.json({
+      error: `Adjustments over UGX ${SUPPORT_MAX.toLocaleString()} require super admin approval. Please contact the super admin.`,
+    }, { status: 403 })
+  }
+
   const { data: targetProfile } = await admin.from('profiles').select('id').eq('phone', phone).single()
   if (!targetProfile) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-  // Atomic adjustment via RPC — eliminates read-modify-write race between concurrent admin actions
+  // Atomic adjustment via RPC
   const { data: newBalance } = await admin.rpc('adjust_wallet_balance', {
     p_user_id: targetProfile.id,
     p_delta: adjAmount,
@@ -38,7 +42,12 @@ export async function POST(req: NextRequest) {
     amount: adjAmount,
     balance_after: Number(newBalance),
     status: 'completed',
-    metadata: { admin_adjustment: true, note: note ?? 'Manual admin adjustment', admin_id: user.id },
+    metadata: {
+      admin_adjustment: true,
+      note: note ?? 'Manual admin adjustment',
+      admin_id: user.id,
+      performed_by_role: isSuperAdmin ? 'super_admin' : 'support',
+    },
   })
 
   return NextResponse.json({ success: true, newBalance: Number(newBalance) })
