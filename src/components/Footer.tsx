@@ -1,15 +1,16 @@
 import Link from 'next/link'
 import SocialFlipButton from '@/components/ui/social-flip-button'
-import { FaFacebook, FaTwitter, FaInstagram, FaWhatsapp, FaYoutube, FaTelegram, FaTiktok } from 'react-icons/fa'
+import { FaFacebook, FaTwitter, FaInstagram, FaWhatsapp, FaYoutube, FaTelegram, FaTiktok, FaEnvelope } from 'react-icons/fa'
 
 const SOCIAL_ITEMS = [
-  { letter: 'F', icon: <FaFacebook />,  label: 'Facebook',  href: '#' },
-  { letter: 'X', icon: <FaTwitter />,   label: 'Twitter/X', href: '#' },
-  { letter: 'I', icon: <FaInstagram />, label: 'Instagram', href: '#' },
-  { letter: 'W', icon: <FaWhatsapp />,  label: 'WhatsApp',  href: '#' },
-  { letter: 'Y', icon: <FaYoutube />,   label: 'YouTube',   href: '#' },
-  { letter: 'T', icon: <FaTelegram />,  label: 'Telegram',  href: '#' },
-  { letter: 'K', icon: <FaTiktok />,    label: 'TikTok',    href: '#' },
+  { letter: 'C', icon: <FaFacebook />,  label: 'Facebook',  href: '#' },
+  { letter: 'O', icon: <FaTwitter />,   label: 'Twitter/X', href: '#' },
+  { letter: 'N', icon: <FaInstagram />, label: 'Instagram', href: '#' },
+  { letter: 'T', icon: <FaWhatsapp />,  label: 'WhatsApp',  href: '#' },
+  { letter: 'A', icon: <FaYoutube />,   label: 'YouTube',   href: '#' },
+  { letter: 'C', icon: <FaTelegram />,  label: 'Telegram',  href: '#' },
+  { letter: 'T', icon: <FaTiktok />,    label: 'TikTok',    href: '#' },
+  { letter: 'S', icon: <FaEnvelope />,  label: 'Email',     href: '/support' },
 ]
 
 export default function Footer() {
