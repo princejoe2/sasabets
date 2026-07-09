@@ -15,10 +15,10 @@ function e(key: string): string {
   return out.trim()
 }
 
-// Supabase URL and anon key hardcoded (public values) to fully bypass Vercel BOM injection.
-// NEXT_PUBLIC_ vars get inlined at build time by webpack before our e() can strip them.
-const SB_URL  = 'https://jsigphyrhgmpaydozjfa.supabase.co'
-const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzaWdwaHlyaGdtcGF5ZG96amZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2ODE2MTcsImV4cCI6MjA5NzI1NzYxN30.AAfhGjO7X89o-HL2QVmpcNrXy_Mj7aJqoLFodp0ryaI'
+// Read at call time so the BOM-strip function runs before the value is used.
+// NEXT_PUBLIC_ vars are resolved at runtime on the server (not inlined by Turbopack).
+const SB_URL  = e('NEXT_PUBLIC_SUPABASE_URL')
+const SB_ANON = e('NEXT_PUBLIC_SUPABASE_ANON_KEY')
 
 export async function createClient() {
   const cookieStore = await cookies()

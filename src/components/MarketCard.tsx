@@ -203,7 +203,7 @@ export default function MarketCard({ market }: { market: Market }) {
       onClick={() => router.push(`/markets/${market.id}`)}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
-      className="card-shine group relative flex flex-col overflow-hidden rounded-2xl cursor-pointer active:scale-[0.98]"
+      className="card-shine group relative flex flex-col h-full overflow-hidden rounded-2xl cursor-pointer active:scale-[0.98]"
       style={{
         background: '#13131a',
         border: `1.5px solid ${urgencyBorderColor}`,
@@ -241,13 +241,15 @@ export default function MarketCard({ market }: { market: Market }) {
 
       <div className="flex flex-col flex-1 p-4">
 
-        {/* ── Asset market speedometer ── */}
+
+        {/* ── Asset market layout with compact speedometer ── */}
         {isAssetMarket && (() => {
-          const pct      = livePrice !== null && refPrice > 0 ? ((livePrice - refPrice) / refPrice) * 100 : null
-          const clamped  = pct !== null ? Math.max(-10, Math.min(10, pct)) : 0
-          const invert   = isPriceLevel && direction === 'below'
+          const pct = livePrice !== null && refPrice > 0 ? ((livePrice - refPrice) / refPrice) * 100 : null
+          const invert = isPriceLevel && direction === 'below'
+          const winning = pct !== null && (isUpDown ? pct >= 0 : invert ? pct <= 0 : pct >= 0)
+          const clamped = pct !== null ? Math.max(-10, Math.min(10, pct)) : 0
           const needleDeg = 90 - clamped * (invert ? -9 : 9)
-          const nRad     = needleDeg * Math.PI / 180
+          const nRad = needleDeg * Math.PI / 180
           const cx = 100, cy = 95, needleR = 66
           const nx = cx + needleR * Math.cos(nRad)
           const ny = cy - needleR * Math.sin(nRad)
@@ -255,73 +257,67 @@ export default function MarketCard({ market }: { market: Market }) {
           const rightColor = invert ? '#ef4444' : '#22c55e'
           const leftLabel  = isUpDown ? 'DOWN' : (invert ? 'YES' : 'NO')
           const rightLabel = isUpDown ? 'UP'   : (invert ? 'NO'  : 'YES')
-          const winning = pct !== null && (isUpDown ? pct >= 0 : direction === 'above' ? pct >= 0 : pct <= 0)
           return (
-            <div className="mb-2">
-              {/* Title above gauge */}
-              <h3 className="text-[13px] font-bold leading-snug text-slate-100 mb-3 line-clamp-2">
+            <>
+              {/* Title */}
+              <h3 className="text-[13px] font-bold leading-snug text-slate-100 mb-2 line-clamp-2">
                 {market.title}
               </h3>
-              {/* Price row */}
-              <div className="flex items-end justify-between mb-1 px-1">
-                <div>
-                  <div className="flex items-center gap-1 mb-0.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Live</span>
-                  </div>
-                  <div className="text-2xl font-black text-white tabular-nums">
+
+              {/* Live price row */}
+              <div className="flex items-center justify-between mb-1 px-1">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-base font-black text-white tabular-nums">
                     {livePrice !== null ? `$${livePrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—'}
-                  </div>
+                  </span>
                   {pct !== null && (
-                    <div className={`text-[11px] font-black ${pct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {pct >= 0 ? '+' : ''}{pct.toFixed(2)}%
-                    </div>
+                    <span className={`text-[11px] font-black ${pct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {pct >= 0 ? '+' : ''}{pct.toFixed(1)}%
+                    </span>
                   )}
                 </div>
-                <div className="text-right">
-                  <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">
-                    {isPriceLevel ? `Target (${direction})` : 'Entry'}
-                  </div>
-                  <div className="text-base font-black text-slate-300 tabular-nums">
-                    ${refPrice.toLocaleString()}
-                  </div>
-                </div>
+                <span className="text-[10px] font-bold text-slate-500 tabular-nums">
+                  ref ${refPrice.toLocaleString()}
+                </span>
               </div>
-              {/* Gauge SVG */}
-              <svg viewBox="0 0 200 112" className="w-full">
-                <path d="M 26 95 A 74 74 0 0 1 174 95" fill="none" stroke="#1e1e2e" strokeWidth="16" strokeLinecap="round" />
-                <path d="M 26 95 A 74 74 0 0 1 100 21" fill="none" stroke={leftColor}  strokeWidth="16" strokeLinecap="round" opacity="0.75" />
-                <path d="M 100 21 A 74 74 0 0 1 174 95" fill="none" stroke={rightColor} strokeWidth="16" strokeLinecap="round" opacity="0.75" />
-                {[180,135,90,45,0].map(deg => {
-                  const rad = deg * Math.PI / 180
-                  return <line key={deg} x1={cx + 62*Math.cos(rad)} y1={cy - 62*Math.sin(rad)} x2={cx + 72*Math.cos(rad)} y2={cy - 72*Math.sin(rad)} stroke="#2a2a3e" strokeWidth="2.5" strokeLinecap="round" />
-                })}
-                <line x1={cx} y1={cy} x2={nx} y2={ny} stroke="white" strokeWidth="3.5" strokeLinecap="round" />
-                <circle cx={cx} cy={cy} r="6" fill="white" />
-                <circle cx={cx} cy={cy} r="2.5" fill="#13131a" />
-                <text x="20" y="110" fill={leftColor}  fontSize="9" fontWeight="900" textAnchor="middle" fontFamily="monospace">{leftLabel}</text>
-                <text x="180" y="110" fill={rightColor} fontSize="9" fontWeight="900" textAnchor="middle" fontFamily="monospace">{rightLabel}</text>
-              </svg>
-              {/* Status line */}
-              <div className={`text-center text-[11px] font-black -mt-1 ${winning ? 'text-emerald-400' : 'text-red-400'}`}>
-                {pct !== null
-                  ? `${winning ? '✓' : '✗'} ${isUpDown ? (pct >= 0 ? 'UP' : 'DOWN') : (direction === 'above' ? (pct >= 0 ? 'YES' : 'NO') : (pct <= 0 ? 'YES' : 'NO'))} currently winning`
-                  : <span className="text-slate-600">Loading price…</span>
-                }
+
+              {/* Compact speedometer */}
+              <div className="flex justify-center mb-1">
+                <svg viewBox="0 0 200 112" className="w-full max-w-[150px]">
+                  <path d="M 26 95 A 74 74 0 0 1 174 95" fill="none" stroke="#1e1e2e" strokeWidth="14" strokeLinecap="round" />
+                  <path d="M 26 95 A 74 74 0 0 1 100 21" fill="none" stroke={leftColor}  strokeWidth="10" strokeLinecap="butt" opacity="0.65" />
+                  <path d="M 100 21 A 74 74 0 0 1 174 95" fill="none" stroke={rightColor} strokeWidth="10" strokeLinecap="butt" opacity="0.65" />
+                  <line x1={cx} y1={cy} x2={nx.toFixed(1)} y2={ny.toFixed(1)} stroke="white" strokeWidth="3" strokeLinecap="round" />
+                  <circle cx={cx} cy={cy} r="5" fill="white" />
+                  <circle cx={cx} cy={cy} r="2" fill="#13131a" />
+                  <text x="18"  y="110" fill={leftColor}  fontSize="8" fontWeight="900" textAnchor="middle" fontFamily="monospace">{leftLabel}</text>
+                  <text x="182" y="110" fill={rightColor} fontSize="8" fontWeight="900" textAnchor="middle" fontFamily="monospace">{rightLabel}</text>
+                </svg>
               </div>
-              {/* Category + countdown */}
-              <div className="flex items-center gap-1.5 flex-wrap mt-2">
-                <span className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide" style={{ background: `${cat.color}14`, color: cat.color, border: `1px solid ${cat.color}28` }}>
+
+              {/* Status + category + countdown */}
+              <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                <span
+                  className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide"
+                  style={{ background: `${cat.color}14`, color: cat.color, border: `1px solid ${cat.color}28` }}
+                >
                   {cat.icon} {isPriceLevel ? 'Price Target' : 'Up/Down'}
                 </span>
+                {pct !== null && (
+                  <span className={`text-[10px] font-black ${winning ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {winning ? '✓' : '✗'} {isUpDown ? (pct >= 0 ? 'UP' : 'DOWN') : (invert ? (pct <= 0 ? 'YES' : 'NO') : (pct >= 0 ? 'YES' : 'NO'))} winning
+                  </span>
+                )}
                 {effectivelyOpen && countdown && (
-                  <span className="rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums" style={{ color: urgency === 'final' || urgency === 'hour' ? '#fb923c' : '#64748b', background: urgency === 'final' || urgency === 'hour' ? 'rgba(249,115,22,0.1)' : '#1e1e2e' }}>
+                  <span className="rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums ml-auto"
+                    style={{ color: urgency === 'final' || urgency === 'hour' ? '#fb923c' : '#64748b', background: urgency === 'final' || urgency === 'hour' ? 'rgba(249,115,22,0.1)' : '#1e1e2e' }}>
                     ⏱ {countdown}
                   </span>
                 )}
-                {!effectivelyOpen && <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-500 uppercase">Closed</span>}
+                {!effectivelyOpen && <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-500 uppercase ml-auto">Closed</span>}
               </div>
-            </div>
+            </>
           )
         })()}
 
@@ -346,7 +342,7 @@ export default function MarketCard({ market }: { market: Market }) {
             {/* VS matchup row */}
             <div className="flex items-center justify-around mb-3">
               <div className="flex flex-col items-center gap-1.5 flex-1">
-                <EntityLogo name={optA} src={logoA} size={60} shape="circle" />
+                <EntityLogo name={optA} src={logoA} size={44} shape="circle" />
                 <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400 truncate max-w-[76px] text-center">{optA}</span>
                 <span
                   className="rounded-full px-2.5 py-0.5 text-xs font-black"
@@ -364,7 +360,7 @@ export default function MarketCard({ market }: { market: Market }) {
               </div>
 
               <div className="flex flex-col items-center gap-1.5 flex-1">
-                <EntityLogo name={optB} src={logoB} size={60} shape="circle" />
+                <EntityLogo name={optB} src={logoB} size={44} shape="circle" />
                 <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400 truncate max-w-[76px] text-center">{optB}</span>
                 <span
                   className="rounded-full px-2.5 py-0.5 text-xs font-black"

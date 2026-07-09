@@ -374,9 +374,9 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
             <span className="text-lg">🔥</span>
             <h2 className="text-sm font-black uppercase tracking-widest text-amber-600">Featured Now</h2>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 [grid-auto-rows:380px]">
             {featured.map(m => (
-              <div key={m.id} className="relative rounded-2xl ring-2 ring-amber-400/60 ring-offset-2 ring-offset-slate-50">
+              <div key={m.id} className="relative h-full rounded-2xl ring-2 ring-amber-400/60 ring-offset-2 ring-offset-slate-50">
                 <div className="absolute -top-2.5 right-3 z-10 rounded-full border border-amber-300 bg-amber-400 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-950">
                   Featured
                 </div>
@@ -410,9 +410,9 @@ export default function MarketsClient({ markets, openCount: _openCount, initialC
                 </button>
               )}
             </div>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 [grid-auto-rows:380px]">
               {filtered.map(m => (
-                <div key={m.id} className="relative">
+                <div key={m.id} className="relative h-full">
                   {(m.metadata?.type === 'updown' || m.metadata?.type === 'price_level') && (
                     <div className="absolute -top-2 left-4 z-10 flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-700">
                       📈 {m.metadata?.type === 'price_level' ? 'Price Target' : 'Up/Down'}

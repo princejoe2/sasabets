@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { guardAdmin } from '@/lib/admin-guard'
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const admin    = createAdminClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: caller } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
-  if (!caller?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const g = await guardAdmin(['support'])
+  if ('error' in g) return g.error
+  const { admin } = g
 
   const { userId, status } = await req.json()
   if (!userId || !['approved', 'rejected'].includes(status)) {

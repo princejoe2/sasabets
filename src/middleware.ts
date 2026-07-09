@@ -1,14 +1,65 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// Hardcoded public values — same as server.ts — to bypass Vercel BOM injection and
-// Edge Runtime inlining quirks that can produce empty strings from NEXT_PUBLIC_ vars.
-const SB_URL  = 'https://jsigphyrhgmpaydozjfa.supabase.co'
-const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzaWdwaHlyaGdtcGF5ZG96amZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2ODE2MTcsImV4cCI6MjA5NzI1NzYxN30.AAfhGjO7X89o-HL2QVmpcNrXy_Mj7aJqoLFodp0ryaI'
+function strip(s: string) {
+  let out = ''
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i)
+    if (c >= 0x20 && c <= 0x7E) out += s[i]
+  }
+  return out.trim()
+}
+const SB_URL     = strip(process.env.NEXT_PUBLIC_SUPABASE_URL  ?? '')
+const SB_ANON    = strip(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '')
+const SB_SERVICE = strip(process.env.SUPABASE_SERVICE_ROLE_KEY ?? '')
+
+// ── IP ban cache (per isolate, refreshes every 60 s) ──────────────────────
+let ipBanCache: { ips: Set<string>; ts: number } | null = null
+const BAN_CACHE_TTL = 60_000
+
+async function loadBanCache() {
+  if (!SB_URL || !SB_SERVICE) return
+  try {
+    const now = new Date().toISOString()
+    const res = await fetch(
+      `${SB_URL}/rest/v1/banned_ips?select=ip&or=(expires_at.is.null,expires_at.gt.${now})`,
+      { headers: { apikey: SB_SERVICE, Authorization: `Bearer ${SB_SERVICE}` }, cache: 'no-store' }
+    )
+    if (res.ok) {
+      const rows: { ip: string }[] = await res.json()
+      ipBanCache = { ips: new Set(rows.map(r => r.ip)), ts: Date.now() }
+    }
+  } catch { /* allow through if DB unreachable */ }
+}
+
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    'unknown'
+  )
+}
+
+async function isBanned(ip: string): Promise<boolean> {
+  if (!ipBanCache || Date.now() - ipBanCache.ts > BAN_CACHE_TTL) {
+    await loadBanCache()
+  }
+  return ipBanCache?.ips.has(ip) ?? false
+}
 
 export async function middleware(request: NextRequest) {
+  // Block banned IPs before doing anything else
+  const clientIp = getClientIp(request)
+  if (await isBanned(clientIp)) {
+    return new NextResponse(
+      '<html><body style="font-family:sans-serif;text-align:center;padding:4rem"><h1>Access Denied</h1><p>Your IP address has been blocked.</p></body></html>',
+      { status: 403, headers: { 'Content-Type': 'text/html' } }
+    )
+  }
+
   // Forward pathname so Server Component layouts can read it
   const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-client-ip', clientIp)
   requestHeaders.set('x-pathname', request.nextUrl.pathname)
 
   let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } })

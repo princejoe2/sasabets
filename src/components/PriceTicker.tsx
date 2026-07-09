@@ -7,54 +7,6 @@ type CoinData = {
   sparkline_in_7d: { price: number[] }
 }
 
-function clamp(v: number, lo: number, hi: number) {
-  return Math.max(lo, Math.min(hi, v))
-}
-
-function Meter({ pct }: { pct: number }) {
-  const cx = 100, cy = 90, R = 74
-  const angleDeg = 90 - clamp(pct, -10, 10) * 9
-  const rad = (angleDeg * Math.PI) / 180
-  const nx = (cx + R * Math.cos(rad)).toFixed(2)
-  const ny = (cy - R * Math.sin(rad)).toFixed(2)
-
-  // 5 tick marks at -10, -5, 0, +5, +10 %
-  const ticks = [-10, -5, 0, 5, 10].map(v => {
-    const a = (90 - v * 9) * Math.PI / 180
-    return {
-      x1: (cx + (R - 10) * Math.cos(a)).toFixed(2),
-      y1: (cy - (R - 10) * Math.sin(a)).toFixed(2),
-      x2: (cx + (R - 1)  * Math.cos(a)).toFixed(2),
-      y2: (cy - (R - 1)  * Math.sin(a)).toFixed(2),
-    }
-  })
-
-  return (
-    <svg viewBox="0 0 200 104" className="w-full">
-      {/* Track */}
-      <path d="M 26 90 A 74 74 0 0 1 174 90" fill="none" stroke="#1e1e2e" strokeWidth="14" strokeLinecap="round"/>
-      {/* Red zone – left half */}
-      <path d="M 26 90 A 74 74 0 0 1 100 16" fill="none" stroke="#ef4444" strokeWidth="10" strokeLinecap="butt" opacity="0.5"/>
-      {/* Green zone – right half */}
-      <path d="M 100 16 A 74 74 0 0 1 174 90" fill="none" stroke="#22c55e" strokeWidth="10" strokeLinecap="butt" opacity="0.5"/>
-      {/* Tick marks */}
-      {ticks.map((t, i) => (
-        <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round"/>
-      ))}
-      {/* Needle shadow */}
-      <line x1={cx} y1={cy} x2={nx} y2={ny} stroke="rgba(0,0,0,0.4)" strokeWidth="4" strokeLinecap="round"/>
-      {/* Needle */}
-      <line x1={cx} y1={cy} x2={nx} y2={ny} stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-      {/* Hub */}
-      <circle cx={cx} cy={cy} r="6" fill="white" opacity="0.92"/>
-      <circle cx={cx} cy={cy} r="3" fill="#0d0d18"/>
-      {/* Labels */}
-      <text x="22"  y="102" fontSize="8" fill="rgba(239,68,68,0.7)"  textAnchor="middle" fontWeight="700">−</text>
-      <text x="178" y="102" fontSize="8" fill="rgba(34,197,94,0.7)"   textAnchor="middle" fontWeight="700">+</text>
-    </svg>
-  )
-}
-
 function Sparkline({ prices, color, gid }: { prices: number[]; color: string; gid: string }) {
   const pts = prices.slice(-24)
   if (pts.length < 2) return null
@@ -128,9 +80,6 @@ export default function PriceTicker({ coins }: { coins: CoinData[] }) {
                 </p>
               </div>
             </div>
-
-            {/* Gauge */}
-            <Meter pct={pct} />
 
             {/* Sparkline */}
             <div className="overflow-hidden rounded-lg bg-[#111120]">

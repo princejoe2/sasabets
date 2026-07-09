@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import MarketsClient from '@/components/MarketsClient'
-import PriceTicker from '@/components/PriceTicker'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -20,19 +19,6 @@ export const metadata: Metadata = {
 }
 
 export const revalidate = 30
-
-async function getPriceData() {
-  try {
-    const res = await fetch(
-      'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,pax-gold&sparkline=true&price_change_percentage=24h',
-      { next: { revalidate: 300 } }
-    )
-    if (!res.ok) return []
-    return res.json()
-  } catch {
-    return []
-  }
-}
 
 export default async function MarketsPage({
   searchParams,
@@ -62,7 +48,6 @@ export default async function MarketsPage({
   }
 
   const initialCat = (resolvedSearchParams?.cat ?? 'all') as string
-  const coins = await getPriceData()
 
   return (
     <div className="min-h-screen bg-slate-50 page-enter">
@@ -75,13 +60,6 @@ export default async function MarketsPage({
           <p className="mt-2 text-slate-500">
             {openCount} open now · Pick your outcome · Collect your winnings
           </p>
-
-          {coins.length > 0 && (
-            <div className="mt-6">
-              <p className="mb-3 text-[11px] font-black uppercase tracking-widest text-slate-400">Live Prices</p>
-              <PriceTicker coins={coins} />
-            </div>
-          )}
         </div>
       </div>
 

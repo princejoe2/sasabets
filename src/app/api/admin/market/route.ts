@@ -31,14 +31,10 @@ async function broadcastNewAdminMarket(marketId: string, title: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const admin    = createAdminClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
-  if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { guardAdmin } = await import('@/lib/admin-guard')
+  const g = await guardAdmin(['moderator'])
+  if ('error' in g) return g.error
+  const { admin, user } = g
 
   const { title, description, closesAt, options, verificationType, verificationConfig, rakePct, category, partyImage, team1Image, team2Image } = await req.json()
   if (!title || !options || options.length < 2) {

@@ -265,6 +265,7 @@ export default function BetPanel({
   const priceLevelDir    = isPriceLevel ? String(meta.direction ?? 'above') : 'above'
 
   const [livePrice, setLivePrice] = useState<number | null>(null)
+  const [chartPrices, setChartPrices] = useState<[number, number][]>([])
   const [flagging, setFlagging] = useState(false)
   const [flagged, setFlagged] = useState(false)
   const [flagReason, setFlagReason] = useState('')
@@ -298,6 +299,14 @@ export default function BetPanel({
     fetchPrice()
     const id = setInterval(fetchPrice, 15_000)
     return () => clearInterval(id)
+  }, [isAssetMarket, assetId])
+
+  useEffect(() => {
+    if (!isAssetMarket || !assetId) return
+    fetch(`/api/prices/chart?id=${assetId}&days=7`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.prices?.length) setChartPrices(d.prices) })
+      .catch(() => {})
   }, [isAssetMarket, assetId])
 
   // Auto-settle expired asset markets on page load
@@ -460,8 +469,8 @@ const marketUrl  = accessToken
             ← All markets
           </Link>
 
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="min-w-0">
               {/* Category + status badges */}
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <span
@@ -492,7 +501,7 @@ const marketUrl  = accessToken
                 )}
               </div>
 
-              <h1 className="text-3xl font-black leading-tight text-white">
+              <h1 className="text-xl sm:text-3xl font-black leading-tight text-white">
                 {market.title}
               </h1>
               {market.description && (
@@ -507,138 +516,40 @@ const marketUrl  = accessToken
             </div>
 
             {/* Pool stat + share */}
-            <div className="flex items-start gap-3 shrink-0">
-              <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] px-6 py-4 text-center">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 w-full sm:w-auto sm:shrink-0">
+              <div className="flex items-center justify-between sm:block rounded-2xl border border-[#1e1e2e] bg-[#13131a] px-4 sm:px-6 py-3 sm:py-4 sm:text-center">
                 <p className="text-xs text-slate-500 uppercase tracking-wider">Total Pool</p>
-                <p className="text-2xl font-black" style={{ color: cat.color }}>
+                <p className="text-xl sm:text-2xl font-black" style={{ color: cat.color }}>
                   UGX {Number(liveTotal).toLocaleString()}
                 </p>
-                <p className="text-xs text-slate-600 mt-0.5">community pool</p>
+                <p className="hidden sm:block text-xs text-slate-600 mt-0.5">community pool</p>
               </div>
               <div className="flex gap-2">
                 <a
                   href={waLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 rounded-2xl border border-[#1e1e2e] bg-[#13131a] px-4 py-3 text-xs font-bold text-white hover:bg-[#25D366]/20 hover:border-[#25D366]/40 transition-colors"
+                  className="flex items-center gap-1.5 rounded-2xl border border-[#1e1e2e] bg-[#13131a] px-3 sm:px-4 py-2.5 sm:py-3 text-xs font-bold text-white hover:bg-[#25D366]/20 hover:border-[#25D366]/40 transition-colors"
                 >
-                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                     <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.115 1.527 5.843L0 24l6.335-1.51A11.933 11.933 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.794 9.794 0 01-5.012-1.378l-.36-.214-3.727.888.937-3.618-.235-.372A9.794 9.794 0 012.182 12C2.182 6.578 6.578 2.182 12 2.182S21.818 6.578 21.818 12 17.422 21.818 12 21.818z"/>
                   </svg>
-                  WhatsApp
+                  <span className="hidden sm:inline">WhatsApp</span>
                 </a>
                 <a
                   href={twLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 rounded-2xl border border-[#1e1e2e] bg-[#13131a] px-4 py-3 text-xs font-bold text-slate-300 hover:border-slate-600 hover:text-white transition-colors"
+                  className="flex items-center gap-1.5 rounded-2xl border border-[#1e1e2e] bg-[#13131a] px-3 sm:px-4 py-2.5 sm:py-3 text-xs font-bold text-slate-300 hover:border-slate-600 hover:text-white transition-colors"
                 >
-                  𝕏 Tweet
+                  𝕏 <span className="hidden sm:inline">Tweet</span>
                 </a>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Live price gauge for asset markets (updown + price_level) */}
-      {isAssetMarket && (() => {
-        const ref      = isUpDown ? entryPrice : priceLevelTarget
-        const invert   = isPriceLevel && priceLevelDir === 'below'
-        const pct      = livePrice !== null && ref > 0 ? ((livePrice - ref) / ref) * 100 : null
-        const clamped  = pct !== null ? Math.max(-10, Math.min(10, pct)) : 0
-        const needleDeg = 90 - clamped * 9
-        const nRad     = needleDeg * Math.PI / 180
-        const cx = 100, cy = 92, r = 66
-        const nx = cx + r * Math.cos(nRad)
-        const ny = cy - r * Math.sin(nRad)
-        const isGood   = invert ? (pct !== null && pct < 0) : (pct !== null && pct >= 0)
-        const nColor   = livePrice === null ? '#374151' : isGood ? '#4ade80' : '#f87171'
-        const lColor   = invert ? '#4ade80' : '#f87171'
-        const rColor   = invert ? '#f87171' : '#4ade80'
-        const lLabel   = isUpDown ? 'DOWN' : (invert ? 'YES' : 'NO')
-        const rLabel   = isUpDown ? 'UP'   : (invert ? 'NO'  : 'YES')
-        const ticks    = [180, 135, 90, 45, 0]
-
-        return (
-          <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-4">
-            <div className="mx-auto max-w-6xl flex items-center gap-5 flex-wrap">
-              {/* Speedometer */}
-              <svg viewBox="0 0 200 108" className="w-40 h-auto shrink-0">
-                {/* Track */}
-                <path d="M 26 92 A 74 74 0 0 1 174 92" fill="none" stroke="#111120" strokeWidth="16" strokeLinecap="round" />
-                {/* Left half */}
-                <path d="M 26 92 A 74 74 0 0 1 100 18" fill="none" stroke={lColor} strokeWidth="13" strokeLinecap="round" opacity="0.45" />
-                {/* Right half */}
-                <path d="M 100 18 A 74 74 0 0 1 174 92" fill="none" stroke={rColor} strokeWidth="13" strokeLinecap="round" opacity="0.45" />
-                {/* Ticks */}
-                {ticks.map(deg => {
-                  const tr = deg * Math.PI / 180
-                  return (
-                    <line key={deg}
-                      x1={cx + 80 * Math.cos(tr)} y1={cy - 80 * Math.sin(tr)}
-                      x2={cx + 69 * Math.cos(tr)} y2={cy - 69 * Math.sin(tr)}
-                      stroke="#2a2a3e" strokeWidth="1.5" strokeLinecap="round"
-                    />
-                  )
-                })}
-                {/* Needle */}
-                {livePrice !== null ? (
-                  <>
-                    <line x1={cx} y1={cy} x2={nx} y2={ny} stroke={nColor} strokeWidth="2.5" strokeLinecap="round" opacity="0.9" />
-                    <circle cx={cx} cy={cy} r="5.5" fill={nColor} />
-                    <circle cx={cx} cy={cy} r="2.5" fill="#0a0a0f" />
-                  </>
-                ) : (
-                  <circle cx={cx} cy={cy} r="5" fill="#2a2a3e" />
-                )}
-                {/* Labels */}
-                <text x="13" y="107" textAnchor="middle" fontSize="8" fontWeight="800" fill={lColor} fontFamily="system-ui,sans-serif">{lLabel}</text>
-                <text x="187" y="107" textAnchor="middle" fontSize="8" fontWeight="800" fill={rColor} fontFamily="system-ui,sans-serif">{rLabel}</text>
-              </svg>
-
-              {/* Price info */}
-              <div className="flex flex-col gap-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Live price</span>
-                </div>
-                {livePrice !== null ? (
-                  <>
-                    <p className="text-2xl font-black tabular-nums leading-none" style={{ color: nColor }}>
-                      ${livePrice.toLocaleString()}
-                    </p>
-                    {pct !== null && (
-                      <p className="text-xs font-black" style={{ color: nColor }}>
-                        {pct >= 0 ? '+' : ''}{pct.toFixed(3)}%{' '}
-                        <span className="text-slate-600 font-normal">vs {isUpDown ? 'entry' : 'target'}</span>
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-sm text-slate-600 animate-pulse">fetching…</p>
-                )}
-                <p className="text-[11px] text-slate-500">
-                  {isUpDown
-                    ? <><span className="text-slate-600">Entry</span> ${entryPrice.toLocaleString()}</>
-                    : <><span className="text-slate-600">Target</span> ${priceLevelTarget.toLocaleString()} <span className="text-slate-600">({priceLevelDir})</span></>
-                  }
-                </p>
-                {livePrice !== null && (
-                  <p className="text-xs font-bold" style={{ color: nColor }}>
-                    {isUpDown
-                      ? (livePrice >= entryPrice ? '▲ Currently UP' : '▼ Currently DOWN')
-                      : (isGood ? '✓ YES currently winning' : '✗ NO currently winning')
-                    }
-                    <span className="text-[10px] text-slate-600 font-normal"> · 15s</span>
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        )
-      })()}
 
       {/* User's existing bet banner */}
       {userBet && (
@@ -660,11 +571,11 @@ const marketUrl  = accessToken
         </div>
       )}
 
-      <div className="mx-auto max-w-6xl px-4 py-10 pb-20 sm:pb-10">
-        <div className="grid gap-8 lg:grid-cols-3">
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10 pb-20 sm:pb-10">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
 
           {/* Binary head-to-head */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 order-2 lg:order-1">
             <h2 className="mb-5 text-sm font-bold uppercase tracking-widest text-slate-600">Choose your side</h2>
 
             {/* Entity matchup header */}
@@ -729,7 +640,7 @@ const marketUrl  = accessToken
                     key={opt.id}
                     onClick={() => isOpen && !done && setSelectedOpt(opt.id)}
                     disabled={!isOpen || done}
-                    className="relative flex flex-col items-center rounded-2xl p-6 text-center transition-all duration-150"
+                    className="relative flex flex-col items-center rounded-2xl p-3 sm:p-6 text-center transition-all duration-150"
                     style={{
                       background:  isSelected ? bgSel : bg,
                       border:      `2px solid ${isSelected ? bdrSel : bdr}`,
@@ -747,20 +658,20 @@ const marketUrl  = accessToken
                     </span>
 
                     {entityLogo ? (
-                      <EntityLogo name={opt.label} src={entityLogo} size={64} shape="circle" className="mb-3" />
+                      <EntityLogo name={opt.label} src={entityLogo} size={48} shape="circle" className="mb-2 sm:mb-3 sm:!w-16 sm:!h-16" />
                     ) : (
                       <SideVisual v={visual} />
                     )}
 
                     <span
-                      className="text-2xl font-black leading-tight"
+                      className="text-base sm:text-2xl font-black leading-tight"
                       style={{ color: isLoser ? '#475569' : '#f1f5f9' }}
                     >
                       {opt.label}
                     </span>
 
                     <span
-                      className="mt-3 text-3xl font-black"
+                      className="mt-1 sm:mt-3 text-2xl sm:text-3xl font-black"
                       style={{ color: isLoser ? '#334155' : color }}
                     >
                       {oddsFor(opt)}
@@ -851,8 +762,91 @@ const marketUrl  = accessToken
             </div>
           </div>
 
-          {/* Event Slip — sticky on desktop */}
-          <div className="lg:sticky lg:top-24 lg:self-start space-y-4">
+          {/* Event Slip — sticky on desktop, first on mobile */}
+          <div className="lg:sticky lg:top-24 lg:self-start space-y-4 order-1 lg:order-2">
+
+            {/* Live price ticker for asset markets */}
+            {isAssetMarket && (() => {
+              const ref      = isUpDown ? entryPrice : priceLevelTarget
+              const invert   = isPriceLevel && priceLevelDir === 'below'
+              const pct      = livePrice !== null && ref > 0 ? ((livePrice - ref) / ref) * 100 : null
+              const clamped  = pct !== null ? Math.max(-10, Math.min(10, pct)) : 0
+              const needleDeg = 90 - clamped * 9
+              const nRad     = needleDeg * Math.PI / 180
+              const cx = 100, cy = 92, r = 66
+              const nx = cx + r * Math.cos(nRad)
+              const ny = cy - r * Math.sin(nRad)
+              const isGood   = invert ? (pct !== null && pct < 0) : (pct !== null && pct >= 0)
+              const nColor   = livePrice === null ? '#374151' : isGood ? '#4ade80' : '#f87171'
+              const lColor   = invert ? '#4ade80' : '#f87171'
+              const rColor   = invert ? '#f87171' : '#4ade80'
+              const lLabel   = isUpDown ? 'DOWN' : (invert ? 'YES' : 'NO')
+              const rLabel   = isUpDown ? 'UP'   : (invert ? 'NO'  : 'YES')
+              const ticks    = [180, 135, 90, 45, 0]
+              return (
+                <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-4">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Live Price</span>
+                    <span className="ml-auto text-[10px] text-slate-700">15s</span>
+                  </div>
+                  <svg viewBox="0 0 200 108" className="w-full h-auto" style={{ maxHeight: 110 }}>
+                    <path d="M 26 92 A 74 74 0 0 1 174 92" fill="none" stroke="#111120" strokeWidth="16" strokeLinecap="round" />
+                    <path d="M 26 92 A 74 74 0 0 1 100 18" fill="none" stroke={lColor} strokeWidth="13" strokeLinecap="round" opacity="0.45" />
+                    <path d="M 100 18 A 74 74 0 0 1 174 92" fill="none" stroke={rColor} strokeWidth="13" strokeLinecap="round" opacity="0.45" />
+                    {ticks.map(deg => {
+                      const tr = deg * Math.PI / 180
+                      return (
+                        <line key={deg}
+                          x1={cx + 80 * Math.cos(tr)} y1={cy - 80 * Math.sin(tr)}
+                          x2={cx + 69 * Math.cos(tr)} y2={cy - 69 * Math.sin(tr)}
+                          stroke="#2a2a3e" strokeWidth="1.5" strokeLinecap="round"
+                        />
+                      )
+                    })}
+                    {livePrice !== null ? (
+                      <>
+                        <line x1={cx} y1={cy} x2={nx} y2={ny} stroke={nColor} strokeWidth="2.5" strokeLinecap="round" opacity="0.9" />
+                        <circle cx={cx} cy={cy} r="5.5" fill={nColor} />
+                        <circle cx={cx} cy={cy} r="2.5" fill="#0a0a0f" />
+                      </>
+                    ) : (
+                      <circle cx={cx} cy={cy} r="5" fill="#2a2a3e" />
+                    )}
+                    <text x="13" y="107" textAnchor="middle" fontSize="8" fontWeight="800" fill={lColor} fontFamily="system-ui,sans-serif">{lLabel}</text>
+                    <text x="187" y="107" textAnchor="middle" fontSize="8" fontWeight="800" fill={rColor} fontFamily="system-ui,sans-serif">{rLabel}</text>
+                  </svg>
+                  {livePrice !== null ? (
+                    <div className="mt-2 text-center space-y-0.5">
+                      <p className="text-2xl font-black tabular-nums leading-none" style={{ color: nColor }}>
+                        ${livePrice.toLocaleString()}
+                      </p>
+                      {pct !== null && (
+                        <p className="text-xs font-black" style={{ color: nColor }}>
+                          {pct >= 0 ? '+' : ''}{pct.toFixed(3)}%{' '}
+                          <span className="text-slate-600 font-normal">vs {isUpDown ? 'entry' : 'target'}</span>
+                        </p>
+                      )}
+                      <p className="text-[11px] font-bold" style={{ color: nColor }}>
+                        {isUpDown
+                          ? (livePrice >= entryPrice ? '▲ Currently UP' : '▼ Currently DOWN')
+                          : (isGood ? '✓ YES winning' : '✗ NO winning')
+                        }
+                      </p>
+                      <p className="text-[11px] text-slate-600">
+                        {isUpDown
+                          ? `Entry $${entryPrice.toLocaleString()}`
+                          : `Target $${priceLevelTarget.toLocaleString()} (${priceLevelDir})`
+                        }
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-600 text-center animate-pulse mt-2">fetching…</p>
+                  )}
+                </div>
+              )
+            })()}
+
             {isOpen && !done && (
               <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] overflow-hidden">
                 <div className="border-b border-[#1e1e2e] px-5 py-4">
@@ -1211,6 +1205,116 @@ const marketUrl  = accessToken
           </div>
         </div>
       </div>
+
+      {/* 7-day price chart — full width below all content */}
+      {isAssetMarket && chartPrices.length > 1 && (() => {
+        const W = 600, H = 220
+        const padL = 68, padR = 16, padT = 12, padB = 28
+        const cW = W - padL - padR
+        const cH = H - padT - padB
+
+        const rawPrices = chartPrices.map(p => p[1])
+        const rawTimes  = chartPrices.map(p => p[0])
+        const minP = Math.min(...rawPrices)
+        const maxP = Math.max(...rawPrices)
+        const rangeP = maxP - minP || 1
+        const minT = rawTimes[0]
+        const maxT = rawTimes[rawTimes.length - 1]
+
+        const ref = isUpDown ? entryPrice : priceLevelTarget
+        const isGoodNow = livePrice !== null && (
+          isUpDown ? livePrice >= entryPrice
+                   : priceLevelDir === 'above' ? livePrice >= ref : livePrice <= ref
+        )
+        const lineColor = livePrice === null ? '#4ade80' : isGoodNow ? '#4ade80' : '#f87171'
+
+        function px(t: number) { return padL + ((t - minT) / (maxT - minT || 1)) * cW }
+        function py(p: number) { return padT + (1 - (p - minP) / rangeP) * cH }
+
+        const polyPts = chartPrices.map(([t, p]) => `${px(t).toFixed(1)},${py(p).toFixed(1)}`).join(' ')
+        const areaD = `M ${px(minT).toFixed(1)} ${(padT + cH).toFixed(1)} ` +
+          chartPrices.map(([t, p]) => `L ${px(t).toFixed(1)},${py(p).toFixed(1)}`).join(' ') +
+          ` L ${px(maxT).toFixed(1)} ${(padT + cH).toFixed(1)} Z`
+
+        const ySteps = 5
+        const yLabels = Array.from({ length: ySteps }, (_, i) => {
+          const frac = i / (ySteps - 1)
+          const price = minP + rangeP * frac
+          const y = py(price)
+          const label = price >= 1000
+            ? `$${(price / 1000).toFixed(price >= 10000 ? 0 : 1)}k`
+            : `$${price.toFixed(0)}`
+          return { y, label }
+        })
+
+        const dayCount = 7
+        const xLabels = Array.from({ length: dayCount }, (_, i) => {
+          const t = minT + (maxT - minT) * (i / (dayCount - 1))
+          const x = px(t)
+          const label = new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          return { x, label }
+        })
+
+        const refInRange = ref > 0 && ref >= minP * 0.99 && ref <= maxP * 1.01
+        const refY = refInRange ? py(Math.max(minP, Math.min(maxP, ref))) : null
+        const liveDotY = livePrice !== null ? py(Math.max(minP, Math.min(maxP, livePrice))) : null
+        const gradId = `pchart-${market.id}`
+
+        return (
+          <div className="border-t border-[#1e1e2e] bg-[#0a0a0f] px-4 py-6 mt-2">
+            <div className="mx-auto max-w-6xl">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[11px] font-black uppercase tracking-widest text-slate-600">
+                  7-Day Price Chart · USD
+                </p>
+                <p className="text-[10px] text-slate-700">CoinGecko</p>
+              </div>
+              <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" style={{ maxHeight: 220 }}>
+                <defs>
+                  <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"   stopColor={lineColor} stopOpacity="0.22" />
+                    <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                {yLabels.map(({ y, label }, i) => (
+                  <g key={i}>
+                    <line x1={padL} y1={y.toFixed(1)} x2={W - padR} y2={y.toFixed(1)} stroke="#1a1a2e" strokeWidth="1" />
+                    <text x={padL - 5} y={(y + 3.5).toFixed(1)} textAnchor="end" fontSize="9.5" fill="#4b5563" fontFamily="ui-monospace,monospace">
+                      {label}
+                    </text>
+                  </g>
+                ))}
+                {xLabels.map(({ x, label }, i) => (
+                  <text key={i} x={x.toFixed(1)} y={H - 5} textAnchor="middle" fontSize="8.5" fill="#374151" fontFamily="system-ui,sans-serif">
+                    {label}
+                  </text>
+                ))}
+                {refY !== null && (
+                  <g>
+                    <line x1={padL} y1={refY.toFixed(1)} x2={W - padR} y2={refY.toFixed(1)} stroke="#64748b" strokeWidth="1.25" strokeDasharray="5,4" opacity="0.7" />
+                    <rect x={padL + 4} y={(refY - 9).toFixed(1)} width="82" height="11" rx="3" fill="#0a0a0f" opacity="0.85" />
+                    <text x={padL + 7} y={(refY + 0.5).toFixed(1)} fontSize="8.5" fill="#94a3b8" fontFamily="ui-monospace,monospace">
+                      {isUpDown ? 'Entry' : 'Target'} ${ref.toLocaleString()}
+                    </text>
+                  </g>
+                )}
+                <path d={areaD} fill={`url(#${gradId})`} />
+                <polyline points={polyPts} fill="none" stroke={lineColor} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                {liveDotY !== null && livePrice !== null && (
+                  <g>
+                    <circle cx={W - padR} cy={liveDotY.toFixed(1)} r="5" fill={lineColor} />
+                    <circle cx={W - padR} cy={liveDotY.toFixed(1)} r="9" fill={lineColor} opacity="0.18" />
+                    <rect x={W - padR - 72} y={(liveDotY - 10).toFixed(1)} width="64" height="12" rx="3" fill="#0a0a0f" opacity="0.9" />
+                    <text x={W - padR - 40} y={(liveDotY + 0.5).toFixed(1)} textAnchor="middle" fontSize="9" fill={lineColor} fontFamily="ui-monospace,monospace" fontWeight="700">
+                      ${livePrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                    </text>
+                  </g>
+                )}
+              </svg>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

@@ -4,6 +4,10 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { cancelAndRefundMarket } from '@/lib/refund-market'
 import { pingIndexNow } from '@/lib/indexnow'
 
+function escHtml(s: string) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 function page(title: string, message: string, success: boolean) {
   const accent = success ? '#10b981' : '#ef4444'
   const emoji  = success ? '✅' : '❌'
@@ -84,7 +88,7 @@ export async function GET(req: NextRequest) {
       pingIndexNow(`https://sabula256.com/markets/${id}`).catch(() => {})
     }
 
-    return page('Market approved!', `"${market.title}" is now live on Sabula 256.`, true)
+    return page('Market approved!', `"${escHtml(market.title)}" is now live on Sabula 256.`, true)
   }
 
   // action === 'deny'
@@ -108,5 +112,5 @@ export async function GET(req: NextRequest) {
     return page('Could not deny', result.error ?? 'Something went wrong. Try again from the admin panel.', false)
   }
 
-  return page('Market denied', `"${marketCheck.title}" was rejected and the creator's stake has been refunded.`, true)
+  return page('Market denied', `"${escHtml(marketCheck.title)}" was rejected and the creator's stake has been refunded.`, true)
 }

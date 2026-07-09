@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { getMarzStats } from '@/lib/marz'
+import { guardAdmin } from '@/lib/admin-guard'
 
 export async function GET() {
-  const supabase = await createClient()
-  const admin    = createAdminClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
-  if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const g = await guardAdmin(['analyst', 'support'])
+  if ('error' in g) return g.error
+  const { admin } = g
 
   const [{ data: txns }, { data: wallets }, marzStats] = await Promise.all([
     admin.from('transactions').select('type, amount, status, metadata'),

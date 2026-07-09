@@ -18,11 +18,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!user) redirect('/auth')
 
   const [{ data: profile }, marzBalance] = await Promise.all([
-    admin.from('profiles').select('is_admin, phone, totp_secret, totp_enabled').eq('id', user.id).single(),
+    admin.from('profiles').select('is_admin, staff_role, phone, totp_secret, totp_enabled').eq('id', user.id).single(),
     getMarzBalance().catch(() => ({ available: 0, currency: 'UGX' })),
   ])
 
-  if (!profile?.is_admin) redirect('/')
+  if (!profile?.is_admin && !profile?.staff_role) redirect('/')
 
   // On 2FA setup/verify pages: skip TOTP enforcement, render without sidebar
   if (TOTP_EXEMPT.includes(pathname)) {
@@ -42,7 +42,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-screen bg-[#08080e]">
-      <AdminSidebar adminPhone={profile.phone} floatBalance={marzBalance.available} />
+      <AdminSidebar
+        adminPhone={profile.phone}
+        floatBalance={marzBalance.available}
+        isSuperAdmin={!!profile.is_admin}
+        staffRole={profile.staff_role ?? null}
+      />
       <div className="flex-1 min-w-0 ml-60">
         <main className="min-h-screen p-8">{children}</main>
       </div>

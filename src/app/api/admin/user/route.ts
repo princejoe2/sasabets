@@ -1,19 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
-
-async function assertAdmin() {
-  const supabase = await createClient()
-  const admin = createAdminClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
-  return profile?.is_admin ? admin : null
-}
+import { guardAdmin } from '@/lib/admin-guard'
 
 // PATCH — edit details, suspend, unsuspend
 export async function PATCH(req: NextRequest) {
-  const admin = await assertAdmin()
-  if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const g = await guardAdmin(['support'])
+  if ('error' in g) return g.error
+  const { admin } = g
 
   const { userId, full_name, phone, suspended, suspend_reason, verified_creator } = await req.json()
   if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
@@ -34,15 +26,16 @@ export async function PATCH(req: NextRequest) {
   return NextResponse.json({ ok: true })
 }
 
-// DELETE — permanently delete user account
+// DELETE — permanently delete user account (super-admin only)
 export async function DELETE(req: NextRequest) {
-  const admin = await assertAdmin()
-  if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const g = await guardAdmin()
+  if ('error' in g) return g.error
+  if (!g.isSuperAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { admin } = g
 
   const { userId } = await req.json()
   if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
 
-  // Delete auth user (cascades to profiles via DB trigger)
   const { error } = await admin.auth.admin.deleteUser(userId)
   if (error) {
     console.error('[admin/user] delete failed:', error.message)

@@ -3,8 +3,13 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import type { StaffRole } from '@/lib/admin-guard'
+import { ROLE_ALLOWED_PATHS } from '@/lib/admin-guard'
 
-const NAV_GROUPS = [
+type NavItem = { href: string; icon: string; label: string }
+type NavGroup = { label: string; items: NavItem[] }
+
+const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Overview',
     items: [
@@ -63,14 +68,47 @@ const NAV_GROUPS = [
     items: [
       { href: '/admin/settings',    icon: '⚙️', label: 'Settings' },
       { href: '/admin/audit',       icon: '🔍', label: 'Audit Log' },
+      { href: '/admin/banned-ips',  icon: '🚫', label: 'IP Bans' },
+      { href: '/admin/staff-roles', icon: '👔', label: 'Staff Roles' },
     ],
   },
 ]
 
-export default function AdminSidebar({ adminPhone, floatBalance }: { adminPhone: string; floatBalance: number }) {
+// Super-admin sees everything; staff sees only their allowed paths
+function filterGroups(groups: NavGroup[], isSuperAdmin: boolean, role: StaffRole | null): NavGroup[] {
+  if (isSuperAdmin) return groups
+  if (!role) return []
+  const allowed = new Set(ROLE_ALLOWED_PATHS[role])
+  return groups
+    .map(g => ({ ...g, items: g.items.filter(i => allowed.has(i.href)) }))
+    .filter(g => g.items.length > 0)
+}
+
+const ROLE_LABELS: Record<StaffRole, string> = {
+  moderator: 'MODERATOR',
+  settler:   'SETTLER',
+  support:   'SUPPORT',
+  analyst:   'ANALYST',
+  content:   'CONTENT MGR',
+}
+
+export default function AdminSidebar({
+  adminPhone,
+  floatBalance,
+  isSuperAdmin,
+  staffRole,
+}: {
+  adminPhone: string
+  floatBalance: number
+  isSuperAdmin: boolean
+  staffRole: string | null
+}) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+
+  const role = (staffRole ?? null) as StaffRole | null
+  const visibleGroups = filterGroups(NAV_GROUPS, isSuperAdmin, role)
 
   const [badges, setBadges] = useState({ withdrawals: 0, kyc: 0, complaints: 0, settleQueue: 0, pendingApproval: 0 })
   const [float, setFloat] = useState(floatBalance)
@@ -96,6 +134,7 @@ export default function AdminSidebar({ adminPhone, floatBalance }: { adminPhone:
       .subscribe()
 
     async function refreshFloat() {
+      if (!isSuperAdmin) return
       const res = await fetch('/api/admin/marz-stats')
       if (!res.ok) return
       const data = await res.json()
@@ -130,7 +169,7 @@ export default function AdminSidebar({ adminPhone, floatBalance }: { adminPhone:
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
-        {NAV_GROUPS.map(group => (
+        {visibleGroups.map(group => (
           <div key={group.label}>
             <p className="mb-1 px-3 text-[9px] font-black uppercase tracking-widest text-slate-700">
               {group.label}
@@ -171,17 +210,21 @@ export default function AdminSidebar({ adminPhone, floatBalance }: { adminPhone:
 
       {/* Footer */}
       <div className="border-t border-[#1a1a28] px-4 py-4 space-y-3">
-        {/* Float balance */}
-        <div className="rounded-xl border border-emerald-900/40 bg-emerald-950/20 px-3 py-2.5">
-          <p className="text-[10px] text-emerald-700 uppercase tracking-wider font-bold">Float Account</p>
-          <p className="text-base font-black text-emerald-400 mt-0.5 tabular-nums">
-            UGX {float.toLocaleString()}
-          </p>
-        </div>
+        {/* Float balance — super-admin only */}
+        {isSuperAdmin && (
+          <div className="rounded-xl border border-emerald-900/40 bg-emerald-950/20 px-3 py-2.5">
+            <p className="text-[10px] text-emerald-700 uppercase tracking-wider font-bold">Float Account</p>
+            <p className="text-base font-black text-emerald-400 mt-0.5 tabular-nums">
+              UGX {float.toLocaleString()}
+            </p>
+          </div>
+        )}
         <div className="rounded-xl bg-[#1a1a28] px-3 py-2.5">
           <p className="text-[10px] text-slate-600 uppercase tracking-wider">Logged in as</p>
           <p className="text-xs font-semibold text-slate-300 mt-0.5">+{adminPhone}</p>
-          <p className="text-[10px] text-red-500 font-bold mt-0.5">ADMINISTRATOR</p>
+          <p className={`text-[10px] font-bold mt-0.5 ${isSuperAdmin ? 'text-red-500' : 'text-amber-500'}`}>
+            {isSuperAdmin ? 'SUPER ADMIN' : (role ? ROLE_LABELS[role] : 'STAFF')}
+          </p>
         </div>
         <button
           onClick={logout}

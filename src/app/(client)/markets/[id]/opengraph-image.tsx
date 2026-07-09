@@ -5,8 +5,8 @@ export const alt = 'Sabula 256 Prediction Market'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-const SB_URL  = 'https://jsigphyrhgmpaydozjfa.supabase.co'
-const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzaWdwaHlyaGdtcGF5ZG96amZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2ODE2MTcsImV4cCI6MjA5NzI1NzYxN30.AAfhGjO7X89o-HL2QVmpcNrXy_Mj7aJqoLFodp0ryaI'
+const SB_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? ''
+const SB_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
 type Opt = { id: string; label: string; total_pool: number }
 
