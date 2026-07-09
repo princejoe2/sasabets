@@ -98,7 +98,7 @@ export function AreaChart({
             tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.35)' }}
             axisLine={false}
             tickLine={false}
-            tickFormatter={valueFormatter ? (v) => (v != null ? valueFormatter(v) : '') : undefined}
+            tickFormatter={valueFormatter ? (v) => (typeof v === 'number' && isFinite(v) ? valueFormatter(v) : '') : undefined}
           />
           <Tooltip
             content={<CustomTooltip valueFormatter={valueFormatter} categories={categories} />}

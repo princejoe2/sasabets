@@ -61,7 +61,7 @@ export default function MarketChart({ marketId }: { marketId: string }) {
         data={chartData}
         index="date"
         categories={data.options}
-        valueFormatter={(n: number) => (n != null ? `${n.toFixed(0)}%` : '')}
+        valueFormatter={(n: number) => (typeof n === 'number' && isFinite(n) ? `${n.toFixed(0)}%` : '')}
         showLegend={data.options.length <= 6}
         yAxisWidth={36}
       />
