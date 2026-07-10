@@ -3,11 +3,9 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { settleMarket } from '@/lib/settle-market'
 
 export async function POST(req: NextRequest) {
-  // Accept either: cron secret header/param, OR a logged-in admin session
+  // Accept either: cron secret via Authorization header, OR a logged-in admin session
   const cronSecret = (process.env.CRON_SECRET ?? '').replace(/[^\x20-\x7E]/g, '').trim()
-  const auth       = req.headers.get('authorization')
-  const urlSecret  = req.nextUrl.searchParams.get('secret')
-  const viaCron    = cronSecret && (auth === `Bearer ${cronSecret}` || urlSecret === cronSecret)
+  const viaCron    = cronSecret && req.headers.get('authorization') === `Bearer ${cronSecret}`
 
   if (!viaCron) {
     // Fall back to checking admin session

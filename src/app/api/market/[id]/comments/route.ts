@@ -23,7 +23,10 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const supabase = await createClient()
   const admin = createAdminClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const currentUserId = user?.id ?? null
   const marketId = (await params).id
   const before = req.nextUrl.searchParams.get('before')
 
@@ -51,7 +54,7 @@ export async function GET(
       content: row.content,
       created_at: row.created_at,
       author: formatAuthor(profile?.full_name ?? null, profile?.phone ?? null),
-      user_id: row.user_id,
+      is_own: currentUserId ? row.user_id === currentUserId : false,
     }
   })
 
@@ -108,6 +111,7 @@ export async function POST(
     comment: {
       ...comment,
       author: formatAuthor(profile?.full_name ?? null, profile?.phone ?? null),
+      is_own: true,
     },
   }, { status: 201 })
 }

@@ -38,6 +38,18 @@ export async function POST(req: NextRequest) {
   if (String(title).length > 200 || String(option_a).length > 100 || String(option_b).length > 100) {
     return NextResponse.json({ error: 'Input too long' }, { status: 400 })
   }
+  // Validate closes_suggestion is a real future date (max 1 year out)
+  let safeClosesSuggestion: string | null = null
+  if (closes_suggestion) {
+    const d = new Date(closes_suggestion)
+    if (isNaN(d.getTime()) || d <= new Date()) {
+      return NextResponse.json({ error: 'Suggested closing date must be in the future' }, { status: 400 })
+    }
+    if (d > new Date(Date.now() + 366 * 24 * 60 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Suggested closing date cannot be more than a year away' }, { status: 400 })
+    }
+    safeClosesSuggestion = d.toISOString()
+  }
   if (
     containsBlocked(String(title)) ||
     containsBlocked(String(option_a)) ||
@@ -66,7 +78,7 @@ export async function POST(req: NextRequest) {
     category:          category ?? null,
     option_a,
     option_b,
-    closes_suggestion: closes_suggestion ?? null,
+    closes_suggestion: safeClosesSuggestion,
     status:            'pending',
     vote_count:        0,
   })

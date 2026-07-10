@@ -11,9 +11,7 @@ function esc(s: string): string {
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const auth = req.headers.get('authorization')
-  const url  = req.nextUrl.searchParams.get('secret')
-  if (auth !== `Bearer ${cronSecret}` && url !== cronSecret) {
+  if (req.headers.get('authorization') !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

@@ -7,7 +7,7 @@ interface Comment {
   content: string
   created_at: string
   author: string
-  user_id: string
+  is_own: boolean
 }
 
 function timeAgo(iso: string): string {
@@ -43,16 +43,8 @@ export default function MarketComments({
   const [text, setText] = useState('')
   const [error, setError] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [currentUserId, setCurrentUserId] = useState<string | undefined>()
   const bottomRef = useRef<HTMLDivElement>(null)
   const instanceId = useId()
-
-  useEffect(() => {
-    if (!isLoggedIn) return
-    createClient().auth.getUser().then(({ data: { user } }) => {
-      if (user) setCurrentUserId(user.id)
-    })
-  }, [isLoggedIn])
 
   async function loadComments(before?: string) {
     const url = `/api/market/${marketId}/comments${before ? `?before=${encodeURIComponent(before)}` : ''}`
@@ -111,7 +103,8 @@ export default function MarketComments({
   async function deleteComment(id: string) {
     setDeletingId(id)
     const supabase = createClient()
-    await supabase.from('market_comments').delete().eq('id', id).eq('user_id', currentUserId!)
+    // RLS policy `comments_delete_own` enforces auth.uid() = user_id server-side
+    await supabase.from('market_comments').delete().eq('id', id)
     setComments(prev => prev.filter(c => c.id !== id))
     setDeletingId(null)
   }
@@ -161,7 +154,7 @@ export default function MarketComments({
             </div>
 
             {/* Delete own comment */}
-            {currentUserId && c.user_id === currentUserId && (
+            {c.is_own && (
               <button
                 onClick={() => deleteComment(c.id)}
                 disabled={deletingId === c.id}

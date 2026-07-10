@@ -10,8 +10,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!newClosingDate) return NextResponse.json({ error: 'newClosingDate required' }, { status: 400 })
 
   const newDate = new Date(newClosingDate)
-  if (isNaN(newDate.getTime()) || newDate <= new Date()) {
+  const now = new Date()
+  if (isNaN(newDate.getTime()) || newDate <= now) {
     return NextResponse.json({ error: 'New closing date must be in the future' }, { status: 400 })
+  }
+  // Cap at 90 days from now to prevent creators from locking markets open indefinitely
+  const maxDate = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000)
+  if (newDate > maxDate) {
+    return NextResponse.json({ error: 'Closing date cannot be extended more than 90 days from today' }, { status: 400 })
   }
 
   const admin = createAdminClient()

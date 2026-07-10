@@ -5,9 +5,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 export async function GET(req: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const authHeader = req.headers.get('authorization')
-  const urlSecret  = req.nextUrl.searchParams.get('secret')
-  if (authHeader !== `Bearer ${cronSecret}` && urlSecret !== cronSecret) {
+  if (req.headers.get('authorization') !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

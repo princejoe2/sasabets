@@ -58,8 +58,9 @@ export async function POST(req: NextRequest) {
     ) {
       await admin.from('proposals').update({ status: 'flagged' }).eq('id', proposalId)
     } else {
-      const closesAt = p.closes_suggestion
-        ? new Date(p.closes_suggestion)
+      const suggestedClose = p.closes_suggestion ? new Date(p.closes_suggestion) : null
+      const closesAt = suggestedClose && suggestedClose > new Date()
+        ? suggestedClose
         : new Date(Date.now() + 7 * 86400000)
 
       const options = [

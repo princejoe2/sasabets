@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { guardAdmin } from '@/lib/admin-guard'
 import { cancelAndRefundMarket } from '@/lib/refund-market'
 
 // Admin takedown of a bad community market: cancels it and refunds every active
 // bet (including the creator's launch stake). Preserves instant go-live —
 // moderation happens after the fact.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
-  if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const g = await guardAdmin(['moderator'])
+  if ('error' in g) return g.error
+  const { admin, user } = g
 
   const marketId = (await params).id
   let reason = 'admin_takedown'

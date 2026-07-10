@@ -27,7 +27,8 @@ async function handleDeposit(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { amount, phone } = await req.json()
+  const body = await req.json()
+  const amount = (body as { amount?: unknown })?.amount
   if (typeof amount !== 'number' || !Number.isInteger(amount) || amount < 1000 || amount > 200_000) {
     return NextResponse.json({ error: 'Deposit must be between UGX 1,000 and UGX 200,000' }, { status: 400 })
   }
@@ -52,7 +53,10 @@ async function handleDeposit(req: NextRequest) {
     return NextResponse.json({ error: 'Too many deposit attempts. Please wait 10 minutes.' }, { status: 429 })
   }
 
-  const rawPhone = phone ?? profile?.phone ?? ''
+  // Always use the verified profile phone — never a body-supplied number.
+  // Accepting a caller-supplied phone would let any authenticated user trigger
+  // unsolicited MoMo STK push prompts on arbitrary Ugandan numbers.
+  const rawPhone = profile?.phone ?? ''
   if (!rawPhone) return NextResponse.json({ error: 'No phone number on file' }, { status: 400 })
 
   // Validate Uganda MTN/Airtel format before sending to gateway
