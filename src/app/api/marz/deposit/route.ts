@@ -28,7 +28,7 @@ async function handleDeposit(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const amount = (body as { amount?: unknown })?.amount
+  const { amount, phone } = body as { amount?: unknown; phone?: unknown }
   if (typeof amount !== 'number' || !Number.isInteger(amount) || amount < 1000 || amount > 200_000) {
     return NextResponse.json({ error: 'Deposit must be between UGX 1,000 and UGX 200,000' }, { status: 400 })
   }
@@ -53,10 +53,9 @@ async function handleDeposit(req: NextRequest) {
     return NextResponse.json({ error: 'Too many deposit attempts. Please wait 10 minutes.' }, { status: 429 })
   }
 
-  // Always use the verified profile phone — never a body-supplied number.
-  // Accepting a caller-supplied phone would let any authenticated user trigger
-  // unsolicited MoMo STK push prompts on arbitrary Ugandan numbers.
-  const rawPhone = profile?.phone ?? ''
+  // Deposits: use the body-supplied number if provided, otherwise fall back to profile.
+  // Withdrawals (separate route) always use the verified profile phone only.
+  const rawPhone = (typeof phone === 'string' && phone.trim() ? phone.trim() : null) ?? profile?.phone ?? ''
   if (!rawPhone) return NextResponse.json({ error: 'No phone number on file' }, { status: 400 })
 
   // Validate Uganda MTN/Airtel format before sending to gateway
