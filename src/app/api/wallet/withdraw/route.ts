@@ -81,9 +81,34 @@ async function handleWithdraw(req: NextRequest) {
   }
 
   // KYC gate for large withdrawals (evaluate before consuming balance).
+  // NOTE: effectively dead code since MAX_WITHDRAWAL < KYC_THRESHOLD — kept as a
+  // belt-and-braces guard; the real gate is the cumulative 30-day check below.
   if (amount > KYC_THRESHOLD && profile.kyc_status !== 'approved') {
     return NextResponse.json({
       error: 'Withdrawals above UGX 5,000,000 require identity verification. Please complete KYC first.',
+      kyc_required: true,
+    }, { status: 403 })
+  }
+
+  // Cumulative KYC gate: per-transaction caps alone let users move unlimited funds in
+  // MAX_WITHDRAWAL slices. Sum completed withdrawals over a rolling 30-day window and
+  // require KYC once (volume + this request) crosses the threshold.
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString()
+  const { data: volumeData } = await admin
+    .from('transactions')
+    .select('amount')
+    .eq('user_id', userId)
+    .eq('type', 'withdrawal')
+    .eq('status', 'completed')
+    .gte('created_at', thirtyDaysAgo)
+
+  const thirtyDayVolume = (volumeData ?? []).reduce((s, t) => s + Math.abs(Number(t.amount)), 0)
+  const CUMULATIVE_KYC_THRESHOLD = 5_000_000
+
+  if (thirtyDayVolume + amount > CUMULATIVE_KYC_THRESHOLD && profile.kyc_status !== 'approved') {
+    return NextResponse.json({
+      error: 'KYC verification required. Your 30-day withdrawal volume has exceeded UGX 5,000,000. Please complete identity verification.',
+      code: 'kyc_required',
       kyc_required: true,
     }, { status: 403 })
   }

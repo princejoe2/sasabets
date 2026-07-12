@@ -8,21 +8,49 @@ export default function Icon() {
   return new ImageResponse(
     (
       <div style={{
-        width: 32, height: 32, display: 'flex', position: 'relative',
-        background: '#040c06', borderRadius: 7, overflow: 'hidden',
+        width: 32, height: 32,
+        background: 'linear-gradient(145deg, #0d2818, #040c06)',
+        borderRadius: 8,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        {/* Bar 1 — shortest */}
-        <div style={{ position: 'absolute', bottom: 3, left: 4, width: 5, height: 9, borderRadius: '2px 2px 0 0', background: 'linear-gradient(180deg,#00ff88 0%,#003322 100%)' }} />
-        {/* Bar 2 — medium */}
-        <div style={{ position: 'absolute', bottom: 3, left: 12, width: 5, height: 14, borderRadius: '2px 2px 0 0', background: 'linear-gradient(180deg,#00ff88 0%,#005533 100%)' }} />
-        {/* Bar 3 — tallest */}
-        <div style={{ position: 'absolute', bottom: 3, left: 20, width: 5, height: 21, borderRadius: '2px 2px 0 0', background: 'linear-gradient(180deg,#00ff88 0%,#009944 100%)' }} />
-        {/* Yellow trend line */}
-        <div style={{ position: 'absolute', left: 7, bottom: 12, width: 22, height: 2, background: '#f5c518', transform: 'rotate(-36deg)', transformOrigin: 'left center', opacity: 0.92 }} />
-        {/* Glowing dot at trend line tip */}
-        <div style={{ position: 'absolute', left: 23, top: 5, width: 4, height: 4, borderRadius: 2, background: '#f5c518', opacity: 0.9 }} />
-        {/* Baseline */}
-        <div style={{ position: 'absolute', bottom: 2, left: 2, right: 2, height: 1, background: 'rgba(0,255,136,0.2)' }} />
+        {/* Gold S */}
+        <span style={{
+          color: '#f5c518',
+          fontFamily: '"Arial Black", "Arial Bold", Arial, sans-serif',
+          fontWeight: 900,
+          fontSize: 21,
+          lineHeight: 1,
+          position: 'relative',
+          zIndex: 2,
+          marginTop: -1,
+        }}>S</span>
+
+        {/* Green dot bottom-right */}
+        <div style={{
+          position: 'absolute',
+          bottom: 4,
+          right: 4,
+          width: 5,
+          height: 5,
+          borderRadius: 3,
+          background: '#00ff88',
+          zIndex: 3,
+        }} />
+
+        {/* Subtle green corner glow */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: 14,
+          height: 14,
+          borderRadius: '0 8px 0 14px',
+          background: 'rgba(0,255,136,0.12)',
+        }} />
       </div>
     ),
     { ...size }

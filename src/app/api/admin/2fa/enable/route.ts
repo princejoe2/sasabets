@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { authenticator } from 'otplib'
-import { buildTotpCookie } from '@/lib/totp-session'
+import { buildTotpCookie, verifyTotpCookie, COOKIE_NAME } from '@/lib/totp-session'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -12,12 +13,23 @@ export async function POST(req: NextRequest) {
 
   const { data: profile } = await admin
     .from('profiles')
-    .select('is_admin, totp_secret')
+    .select('is_admin, totp_secret, totp_enabled')
     .eq('id', user.id)
     .single()
 
   if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   if (!profile.totp_secret) return NextResponse.json({ error: 'Run setup first' }, { status: 400 })
+
+  // If 2FA is already enabled, re-enrollment (binding a rotated secret) requires the
+  // CURRENT TOTP session cookie — a stolen password alone must not be able to swap
+  // in an attacker-controlled secret.
+  if (profile.totp_enabled === true) {
+    const jar = await cookies()
+    const totpCookie = jar.get(COOKIE_NAME)?.value
+    if (!verifyTotpCookie(totpCookie, user.id)) {
+      return NextResponse.json({ error: 'Current 2FA verification required to rotate secret' }, { status: 403 })
+    }
+  }
 
   const { code } = await req.json()
   if (!code) return NextResponse.json({ error: 'Code required' }, { status: 400 })

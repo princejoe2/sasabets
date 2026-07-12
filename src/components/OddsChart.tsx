@@ -49,13 +49,21 @@ export default function OddsChart({
     function loadChart() {
       fetch(`/api/market/${marketId}/chart`)
         .then(r => r.json())
-        .then(d => setPoints(d.points ?? []))
+        .then(d => {
+          const pts = (d.points ?? []).map((p: Record<string, unknown>) => ({
+            t: p.t as string,
+            pA: ((p[labelA] ?? p.pA) as number) ?? 50,
+            pB: ((p[labelB] ?? p.pB) as number) ?? 50,
+            pool: p.pool as number,
+          }))
+          setPoints(pts)
+        })
         .catch(() => {})
     }
     loadChart()
     const interval = setInterval(loadChart, 30_000)
     return () => clearInterval(interval)
-  }, [marketId])
+  }, [marketId, labelA, labelB])
 
   if (points.length < 2) {
     return (

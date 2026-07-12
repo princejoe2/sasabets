@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { guardAdmin } from '@/lib/admin-guard'
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
-  if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // Same roles as the account-flags list route: moderators and support resolve flags.
+  const g = await guardAdmin(['moderator', 'support'])
+  if ('error' in g) return g.error
+  const { user, admin } = g
 
   const { error } = await admin
     .from('account_flags')

@@ -1,0 +1,23 @@
+{
+  "savedAt": "2026-07-10T14:46:54.892Z",
+  "tokens": [
+    {
+      "userId": "72b0f524-e78c-4f8c-9b03-4ea8716674b3",
+      "email": "test-seed-3@sabula256test.invalid",
+      "expiresAt": 1783698414,
+      "cookie": "sb-jsigphyrhgmpaydozjfa-auth-token=%7B%22access_token%22%3A%22eyJhbGciOiJFUzI1NiIsImtpZCI6IjA4MWVjOTY4LWM1MDgtNGU1MC05NWVhLTliNWRkZjAzMTAwYiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2pzaWdwaHlyaGdtcGF5ZG96amZhLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI3MmIwZjUyNC1lNzhjLTRmOGMtOWIwMy00ZWE4NzE2Njc0YjMiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgzNjk4NDE0LCJpYXQiOjE3ODM2OTQ4MTQsImVtYWlsIjoidGVzdC1zZWVkLTNAc2FidWxhMjU2dGVzdC5pbnZhbGlkIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZnVsbF9uYW1lIjoiQ2Fyb2xpbmUgTmFrYXRvIiwicGhvbmUiOiIyNTY3NjAwMDAwMDIifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJvdHAiLCJ0aW1lc3RhbXAiOjE3ODM2OTQ4MTR9XSwic2Vzc2lvbl9pZCI6IjY3ZGZhNzc5LTdmZWYtNDVmNS1iZWY3LTZjNDU2YmVjMjAzMyIsImlzX2Fub255bW91cyI6ZmFsc2V9.z7zhrmmd9yB1Srr-Arv-NXhN_KUT-IhstGCzL85LzyIpiDC5wuCGp79ZvSmj-2k43CcPcrmgZFLuN_m7d9fvcg%22%2C%22refresh_token%22%3A%222ifdwgkia3fv%22%2C%22token_type%22%3A%22bearer%22%2C%22expires_in%22%3A3600%2C%22expires_at%22%3A1783698414%2C%22user%22%3A%7B%22id%22%3A%2272b0f524-e78c-4f8c-9b03-4ea8716674b3%22%2C%22email%22%3A%22test-seed-3%40sabula256test.invalid%22%2C%22aud%22%3A%22authenticated%22%2C%22role%22%3A%22authenticated%22%7D%7D"
+    },
+    {
+      "userId": "26a1cdcb-4e8e-4286-ba02-6a20fa328903",
+      "email": "test-seed-7@sabula256test.invalid",
+      "expiresAt": 1783698415,
+      "cookie": "sb-jsigphyrhgmpaydozjfa-auth-token=%7B%22access_token%22%3A%22eyJhbGciOiJFUzI1NiIsImtpZCI6IjA4MWVjOTY4LWM1MDgtNGU1MC05NWVhLTliNWRkZjAzMTAwYiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2pzaWdwaHlyaGdtcGF5ZG96amZhLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIyNmExY2RjYi00ZThlLTQyODYtYmEwMi02YTIwZmEzMjg5MDMiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgzNjk4NDE1LCJpYXQiOjE3ODM2OTQ4MTUsImVtYWlsIjoidGVzdC1zZWVkLTdAc2FidWxhMjU2dGVzdC5pbnZhbGlkIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZnVsbF9uYW1lIjoiR3JhY2UgTmFrYXRvIiwicGhvbmUiOiIyNTY3NjAwMDAwMDYifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJvdHAiLCJ0aW1lc3RhbXAiOjE3ODM2OTQ4MTV9XSwic2Vzc2lvbl9pZCI6ImNjZWQ2MzczLTE4MjMtNGViNi04OGJlLWY3NDAxNmJkYmQyOCIsImlzX2Fub255bW91cyI6ZmFsc2V9.FF61HXEFjPU38xxmZhvyZC2tRKxm-BaA9XJ9lhY5QEpmuV4xiDnaMf6CojrY7-9BcWFFuYJtiumlA_G2tLm2Cw%22%2C%22refresh_token%22%3A%22fuidynffpfzl%22%2C%22token_type%22%3A%22bearer%22%2C%22expires_in%22%3A3600%2C%22expires_at%22%3A1783698415%2C%22user%22%3A%7B%22id%22%3A%2226a1cdcb-4e8e-4286-ba02-6a20fa328903%22%2C%22email%22%3A%22test-seed-7%40sabula256test.invalid%22%2C%22aud%22%3A%22authenticated%22%2C%22role%22%3A%22authenticated%22%7D%7D"
+    },
+    {
+      "userId": "1a1ee5cb-58fd-4f05-aa9b-cd6900355f66",
+      "email": "test-seed-1@sabula256test.invalid",
+      "expiresAt": 1783698415,
+      "cookie": "sb-jsigphyrhgmpaydozjfa-auth-token=%7B%22access_token%22%3A%22eyJhbGciOiJFUzI1NiIsImtpZCI6IjA4MWVjOTY4LWM1MDgtNGU1MC05NWVhLTliNWRkZjAzMTAwYiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2pzaWdwaHlyaGdtcGF5ZG96amZhLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIxYTFlZTVjYi01OGZkLTRmMDUtYWE5Yi1jZDY5MDAzNTVmNjYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgzNjk4NDE1LCJpYXQiOjE3ODM2OTQ4MTUsImVtYWlsIjoidGVzdC1zZWVkLTFAc2FidWxhMjU2dGVzdC5pbnZhbGlkIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZnVsbF9uYW1lIjoiQW1pbmEgTmFrYXRvIiwicGhvbmUiOiIyNTY3NjAwMDAwMDAifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJvdHAiLCJ0aW1lc3RhbXAiOjE3ODM2OTQ4MTV9XSwic2Vzc2lvbl9pZCI6IjE1ZWIxYjk3LTc2NzAtNDVjNS1hMTEwLTMwM2UzZjgzMmI4YiIsImlzX2Fub255bW91cyI6ZmFsc2V9.DmRFiQVQMa52T6MDoujbW2W0T3HGaWzPLJG-Ri457GoMr0wSe5tk3SB00aBjKlpkd49Tsoh4JZaLrsk9GWMXhA%22%2C%22refresh_token%22%3A%22qam7f2iuxk7e%22%2C%22token_type%22%3A%22bearer%22%2C%22expires_in%22%3A3600%2C%22expires_at%22%3A1783698415%2C%22user%22%3A%7B%22id%22%3A%221a1ee5cb-58fd-4f05-aa9b-cd6900355f66%22%2C%22email%22%3A%22test-seed-1%40sabula256test.invalid%22%2C%22aud%22%3A%22authenticated%22%2C%22role%22%3A%22authenticated%22%7D%7D"
+    }
+  ]
+}

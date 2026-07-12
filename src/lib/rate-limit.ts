@@ -26,16 +26,14 @@ export async function rateLimit(
   windowSeconds: number,
 ): Promise<{ allowed: boolean }> {
   const admin = createAdminClient()
-  const since = new Date(Date.now() - windowSeconds * 1000).toISOString()
-
-  const { count } = await admin
-    .from('rate_limit_log')
-    .select('id', { count: 'exact', head: true })
-    .eq('key', key)
-    .gte('created_at', since)
-
-  if ((count ?? 0) >= limit) return { allowed: false }
-
-  await admin.from('rate_limit_log').insert({ key })
-  return { allowed: true }
+  const { data, error } = await admin.rpc('rate_limit_check', {
+    p_key: key,
+    p_limit: limit,
+    p_window_seconds: windowSeconds,
+  })
+  if (error) {
+    console.error('[rate-limit] RPC error, failing open:', error.message)
+    return { allowed: true }
+  }
+  return { allowed: Boolean(data) }
 }

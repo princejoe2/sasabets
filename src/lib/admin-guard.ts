@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { verifyTotpCookie, COOKIE_NAME } from '@/lib/totp-session'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { StaffRole } from '@/lib/admin-roles'
 
@@ -29,6 +31,11 @@ export async function guardAdmin(allowedRoles?: StaffRole[]): Promise<GuardResul
   if (!profile) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
 
   if (profile.is_admin) {
+    const jar = await cookies()
+    const totpCookie = jar.get(COOKIE_NAME)?.value
+    if (!verifyTotpCookie(totpCookie, user.id)) {
+      return { error: NextResponse.json({ error: 'Two-factor authentication required' }, { status: 403 }) }
+    }
     return { user, admin, isSuperAdmin: true, role: null }
   }
 

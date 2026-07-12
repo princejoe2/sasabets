@@ -232,6 +232,16 @@ export default function CreateMarketPage() {
             )}
           </div>
 
+          {/* 2% earnings reminder on success */}
+          {!pendingApproval && (
+            <div className="flex items-start gap-3 rounded-xl border border-emerald-800/35 bg-emerald-900/10 px-4 py-3 text-left">
+              <span className="text-base leading-none mt-0.5">💰</span>
+              <p className="text-xs text-emerald-400 leading-relaxed">
+                <strong>You earn 2% of this market's total pool</strong> when it settles. The bigger the pool grows, the more you pocket.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-3">
             {pendingApproval ? (
               <Link href="/bets?tab=mymarkets"
@@ -323,6 +333,17 @@ export default function CreateMarketPage() {
           <p className="mb-1 text-xs font-black uppercase tracking-widest text-violet-500">Community</p>
           <h1 className="text-3xl font-black text-white">Create a Market</h1>
           <p className="mt-2 text-slate-500 text-sm">Ask a question, launch with UGX 5,000. Your market goes live after a quick admin review.</p>
+
+          {/* 2% creator earnings callout */}
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-emerald-800/35 bg-emerald-900/10 px-4 py-3">
+            <span className="text-lg leading-none mt-0.5">💰</span>
+            <div>
+              <p className="text-sm font-bold text-emerald-400">Earn 2% of your market's total pool</p>
+              <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">
+                When your market settles with a pool ≥ UGX 50,000, you automatically receive 2% of the entire pool — paid straight to your wallet.
+              </p>
+            </div>
+          </div>
 
           {/* Balance pill */}
           {balance !== null && (

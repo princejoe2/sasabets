@@ -355,7 +355,7 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
                 >
                   Edit
                 </button>
-                {m.status === 'open' && (
+                {(m.status === 'open' || m.status === 'closed') && (
                   <button
                     onClick={() => { setSettleMarket(m); setShowCreate(false); setEditingMarket(null) }}
                     className="rounded-lg border border-amber-800/50 px-3 py-1.5 text-xs font-bold text-amber-400 hover:bg-amber-900/20 transition-colors"

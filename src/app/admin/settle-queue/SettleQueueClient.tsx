@@ -60,7 +60,8 @@ export default function SettleQueueClient({ markets }: { markets: QueueMarket[] 
         {markets.map(m => {
           const isUserCreated    = m.metadata?.user_created === true
           const creatorName      = m.metadata?.creator_name as string | undefined
-          const canSettle        = !isUserCreated || m.nonCreatorBettors >= 2
+          const canSettle        = true
+          const lowParticipation = isUserCreated && m.nonCreatorBettors < 2
           const isSelected       = settling?.id === m.id
           const closedMs         = m.closes_at ? Date.now() - new Date(m.closes_at).getTime() : null
           const daysAgo          = closedMs !== null ? Math.floor(closedMs / 86_400_000) : null
@@ -116,15 +117,15 @@ export default function SettleQueueClient({ markets }: { markets: QueueMarket[] 
                     ))}
                   </div>
 
-                  {isUserCreated && !canSettle && (
-                    <p className="mt-2 text-[11px] text-amber-500">
-                      Needs {2 - m.nonCreatorBettors} more non-creator bettor{2 - m.nonCreatorBettors !== 1 ? 's' : ''} to be eligible
+                  {lowParticipation && (
+                    <p className="mt-2 text-[11px] text-slate-500">
+                      Low participation — {m.nonCreatorBettors} non-creator bettor{m.nonCreatorBettors !== 1 ? 's' : ''}
                     </p>
                   )}
                 </div>
 
                 <div className="shrink-0 pt-0.5">
-                  {canSettle ? (
+                  {canSettle && (
                     <button
                       onClick={() => selectMarket(m)}
                       className={`rounded-xl border px-4 py-2 text-sm font-bold transition-colors ${
@@ -135,10 +136,6 @@ export default function SettleQueueClient({ markets }: { markets: QueueMarket[] 
                     >
                       {isSelected ? '✕ Cancel' : 'Settle'}
                     </button>
-                  ) : (
-                    <span className="rounded-xl border border-[#1a1a28] px-4 py-2 text-sm font-bold text-slate-600 cursor-default">
-                      Not ready
-                    </span>
                   )}
                 </div>
               </div>

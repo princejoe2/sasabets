@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import PriceWidget from '@/components/PriceWidget'
 import { createClient } from '@/lib/supabase/client'
-import OddsChart from '@/components/OddsChart'
+import MarketChart from '@/components/MarketChart'
 import MarketComments from '@/components/MarketComments'
 import BetDistribution from '@/components/BetDistribution'
 import RecentBets from '@/components/RecentBets'
@@ -242,14 +242,15 @@ export default function BetPanel({
   userBet: { option_id: string; amount: number } | null
   predictorCount: number
   accessToken?: string | null
-  creatorInfo?: { name: string; verified: boolean } | null
+  creatorInfo?: { name: string; username: string | null; verified: boolean } | null
 }) {
   const router = useRouter()
+  const [liveStatus, setLiveStatus] = useState(market.status)
   const opts = market.options as Option[]
   const total = Number(market.total_pool)
   const rake = market.rake_pct ?? 0.08
-  const isOpen = market.status === 'open'
-  const isSettled = market.status === 'settled'
+  const isOpen = liveStatus === 'open'
+  const isSettled = liveStatus === 'settled'
   const cat = CAT[detectCategory(market.title, market.description ?? '')]
   const { display: countdown, urgency } = useCountdown(isOpen ? market.closes_at : null)
 
@@ -270,6 +271,26 @@ export default function BetPanel({
   const [flagged, setFlagged] = useState(false)
   const [flagReason, setFlagReason] = useState('')
   const [flagMsg, setFlagMsg] = useState<{ text: string; ok: boolean } | null>(null)
+  const [settleRequested, setSettleRequested] = useState(false)
+  const [settleReqLoading, setSettleReqLoading] = useState(false)
+  const [settleReqMsg, setSettleReqMsg] = useState<string | null>(null)
+
+  async function requestSettlement() {
+    setSettleReqLoading(true)
+    const res = await fetch('/api/market/request-settlement', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ marketId: market.id }),
+    })
+    if (res.ok) {
+      setSettleRequested(true)
+      setSettleReqMsg('Admin notified — settlement is on its way.')
+    } else {
+      const d = await res.json()
+      setSettleReqMsg(d.error ?? 'Could not send request.')
+    }
+    setSettleReqLoading(false)
+  }
 
   async function submitFlag() {
     if (!flagReason) return
@@ -339,7 +360,6 @@ export default function BetPanel({
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    if (!isOpen) return
     const supabase = createClient()
     const channel = supabase
       .channel(`market-live:${market.id}`)
@@ -347,9 +367,16 @@ export default function BetPanel({
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'markets', filter: `id=eq.${market.id}` },
         payload => {
-          const updated = payload.new as { options?: Option[]; total_pool?: number }
+          const updated = payload.new as { options?: Option[]; total_pool?: number; status?: string }
           if (updated.options) setLiveOpts(updated.options)
           if (updated.total_pool !== undefined) setLiveTotal(Number(updated.total_pool))
+          if (updated.status && updated.status !== liveStatus) {
+            setLiveStatus(updated.status)
+            // Refresh page on settle so winning banner + payouts display immediately
+            if (updated.status === 'settled' || updated.status === 'closed') {
+              router.refresh()
+            }
+          }
         }
       )
       .on(
@@ -364,7 +391,7 @@ export default function BetPanel({
       )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [market.id, isOpen])
+  }, [market.id, liveStatus, router])
 
   const fetchPreview = useCallback(async (optId: string, amt: number) => {
     if (!optId || amt < 1000) { setPreview(null); return }
@@ -454,96 +481,85 @@ const marketUrl  = accessToken
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] page-enter">
-      {/* Hero strip */}
-      <div
-        className="border-b px-4 py-10"
-        style={{ borderColor: cat.border, background: `linear-gradient(180deg, ${cat.glow} 0%, transparent 100%)` }}
-      >
+    <div className="min-h-screen bg-[#0a0c0e] page-enter" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+      {/* Clean flat header — no gradient */}
+      <div className="border-b border-[#1e2327] px-4 py-5">
         <div className="mx-auto max-w-6xl">
-          {/* Breadcrumb */}
           <Link
             href="/markets"
-            className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-300 transition-colors"
+            className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-[#5e6872] hover:text-[#eceef0] transition-colors"
           >
             ← All markets
           </Link>
 
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="min-w-0">
-              {/* Category + status badges */}
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider"
-                  style={cat.tag}
-                >
-                  {cat.icon} {cat.label}
+              {/* Minimal text badges — no colored pill backgrounds */}
+              <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-[#5e6872]">
+                  {cat.label}
                 </span>
                 {isOpen && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-900/30 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-400">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-                    LIVE
+                  <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#22c55e]">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#22c55e]" />
+                    Live
                   </span>
                 )}
                 {isOpen && countdown && (
-                  <span
-                    className="rounded-full px-3 py-1 text-xs font-bold tabular-nums"
-                    style={{ color: countdownColor, background: `${countdownColor}1a` }}
-                  >
-                    {urgency !== 'normal' && <span className="inline-block h-1.5 w-1.5 rounded-full animate-pulse mr-1.5" style={{ background: countdownColor }} />}
+                  <span className="text-[11px] font-bold tabular-nums" style={{ color: countdownColor }}>
                     {countdown}
                   </span>
                 )}
                 {!isOpen && (
-                  <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#5e6872]">
                     {market.status}
                   </span>
                 )}
               </div>
 
-              <h1 className="text-xl sm:text-3xl font-black leading-tight text-white">
+              <h1 className="text-xl sm:text-2xl font-black leading-tight text-[#eceef0]">
                 {market.title}
               </h1>
               {market.description && (
-                <p className="mt-2 text-slate-400 max-w-2xl">{market.description}</p>
+                <p className="mt-2 text-sm text-[#5e6872] max-w-2xl leading-relaxed">{market.description}</p>
               )}
               {typeof meta.resolution_criteria === 'string' && meta.resolution_criteria.trim() && (
-                <div className="mt-3 max-w-2xl rounded-xl border border-sky-800/30 bg-sky-900/10 px-4 py-3">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-sky-400">⚖️ How this resolves</p>
-                  <p className="mt-1 text-sm text-slate-300 leading-relaxed">{meta.resolution_criteria}</p>
+                <div className="mt-3 max-w-2xl rounded-xl border border-[#1e2327] bg-[#111316] px-4 py-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-[#5e6872]">How this resolves</p>
+                  <p className="mt-1 text-sm text-[#9ca3af] leading-relaxed">{meta.resolution_criteria}</p>
                 </div>
               )}
             </div>
 
             {/* Pool stat + share */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 w-full sm:w-auto sm:shrink-0">
-              <div className="flex items-center justify-between sm:block rounded-2xl border border-[#1e1e2e] bg-[#13131a] px-4 sm:px-6 py-3 sm:py-4 sm:text-center">
-                <p className="text-xs text-slate-500 uppercase tracking-wider">Total Pool</p>
-                <p className="text-xl sm:text-2xl font-black" style={{ color: cat.color }}>
+              <div className="flex items-center justify-between sm:block rounded-2xl border border-[#1e2327] bg-[#111316] px-4 sm:px-6 py-3 sm:py-4 sm:text-center">
+                <p className="text-[10px] font-bold text-[#5e6872] uppercase tracking-wider">Total Pool</p>
+                <p className="text-xl sm:text-2xl font-black text-[#22c55e]">
                   UGX {Number(liveTotal).toLocaleString()}
                 </p>
-                <p className="hidden sm:block text-xs text-slate-600 mt-0.5">community pool</p>
+                <p className="hidden sm:block text-[10px] text-[#5e6872] mt-0.5">community pool</p>
               </div>
               <div className="flex gap-2">
                 <a
                   href={waLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 rounded-2xl border border-[#1e1e2e] bg-[#13131a] px-3 sm:px-4 py-2.5 sm:py-3 text-xs font-bold text-white hover:bg-[#25D366]/20 hover:border-[#25D366]/40 transition-colors"
+                  className="flex items-center gap-1.5 rounded-2xl border border-[#1e2327] bg-[#111316] px-3 sm:px-4 py-2.5 sm:py-3 text-xs font-bold text-[#eceef0] hover:border-[#22c55e]/40 transition-colors"
                 >
                   <svg className="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                     <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.115 1.527 5.843L0 24l6.335-1.51A11.933 11.933 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.794 9.794 0 01-5.012-1.378l-.36-.214-3.727.888.937-3.618-.235-.372A9.794 9.794 0 012.182 12C2.182 6.578 6.578 2.182 12 2.182S21.818 6.578 21.818 12 17.422 21.818 12 21.818z"/>
                   </svg>
-                  <span className="hidden sm:inline">WhatsApp</span>
+                  <span className="hidden sm:inline">Share</span>
                 </a>
                 <a
                   href={twLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 rounded-2xl border border-[#1e1e2e] bg-[#13131a] px-3 sm:px-4 py-2.5 sm:py-3 text-xs font-bold text-slate-300 hover:border-slate-600 hover:text-white transition-colors"
+                  className="flex items-center gap-1.5 rounded-2xl border border-[#1e2327] bg-[#111316] px-3 sm:px-4 py-2.5 sm:py-3 text-xs font-bold text-[#5e6872] hover:border-[#3a4049] hover:text-[#eceef0] transition-colors"
                 >
-                  𝕏 <span className="hidden sm:inline">Tweet</span>
+                  𝕏
                 </a>
               </div>
             </div>
@@ -576,7 +592,7 @@ const marketUrl  = accessToken
 
           {/* Binary head-to-head */}
           <div className="lg:col-span-2 order-2 lg:order-1">
-            <h2 className="mb-5 text-sm font-bold uppercase tracking-widest text-slate-600">Choose your side</h2>
+            <h2 className="mb-5 text-xs font-bold uppercase tracking-widest text-[#5e6872]">Choose your side</h2>
 
             {/* Entity matchup header */}
             {liveOpts.length >= 2 && (() => {
@@ -607,27 +623,24 @@ const marketUrl  = accessToken
 
             {/* Settled winner banner */}
             {isSettled && winnerOpt && (
-              <div
-                className="mb-5 flex items-center gap-3 rounded-xl px-5 py-4"
-                style={{ background: cat.glow, border: `1px solid ${cat.border}` }}
-              >
+              <div className="mb-5 flex items-center gap-3 rounded-xl border border-[#22c55e]/20 bg-[#22c55e]/06 px-5 py-4">
                 <span className="text-2xl">🏆</span>
                 <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider">Winning side</p>
-                  <p className="font-black text-lg" style={{ color: cat.color }}>{winnerOpt.label}</p>
+                  <p className="text-xs text-[#5e6872] uppercase tracking-wider">Winning side</p>
+                  <p className="font-black text-lg text-[#22c55e]">{winnerOpt.label}</p>
                 </div>
               </div>
             )}
 
-            {/* Side-by-side cards */}
+            {/* Side-by-side cards — YES green / NO red */}
             <div className="grid grid-cols-2 gap-4">
               {liveOpts.slice(0, 2).map((opt, idx) => {
-                const isA       = idx === 0
-                const color     = isA ? '#a78bfa' : '#fbbf24'
-                const bg        = isA ? 'rgba(167,139,250,0.08)' : 'rgba(251,191,36,0.06)'
-                const bdr       = isA ? 'rgba(167,139,250,0.25)' : 'rgba(251,191,36,0.2)'
-                const bgSel     = isA ? 'rgba(167,139,250,0.2)'  : 'rgba(251,191,36,0.15)'
-                const bdrSel    = isA ? 'rgba(167,139,250,0.7)'  : 'rgba(251,191,36,0.6)'
+                const isYes    = opt.label.toLowerCase() === 'yes' || idx === 0
+                const color    = isYes ? '#22c55e' : '#ef4444'
+                const bg       = isYes ? 'rgba(34,197,94,0.07)'  : 'rgba(239,68,68,0.07)'
+                const bdr      = isYes ? 'rgba(34,197,94,0.18)'  : 'rgba(239,68,68,0.18)'
+                const bgSel    = isYes ? 'rgba(34,197,94,0.17)'  : 'rgba(239,68,68,0.16)'
+                const bdrSel   = isYes ? 'rgba(34,197,94,0.55)'  : 'rgba(239,68,68,0.5)'
                 const isSelected  = selectedOpt === opt.id
                 const isWinner    = isSettled && opt.id === market.winning_option_id
                 const isLoser     = isSettled && opt.id !== market.winning_option_id
@@ -640,66 +653,53 @@ const marketUrl  = accessToken
                     key={opt.id}
                     onClick={() => isOpen && !done && setSelectedOpt(opt.id)}
                     disabled={!isOpen || done}
-                    className="relative flex flex-col items-center rounded-2xl p-3 sm:p-6 text-center transition-all duration-150"
+                    className="relative flex flex-col items-center rounded-2xl p-3 sm:p-5 text-center transition-all duration-150"
                     style={{
                       background:  isSelected ? bgSel : bg,
                       border:      `2px solid ${isSelected ? bdrSel : bdr}`,
-                      opacity:     isLoser ? 0.4 : 1,
+                      opacity:     isLoser ? 0.35 : 1,
                       cursor:      isOpen && !done ? 'pointer' : 'default',
-                      boxShadow:   isSelected ? `0 0 30px ${bgSel}` : 'none',
-                      transform:   isSelected && isOpen ? 'translateY(-3px)' : 'none',
+                      boxShadow:   isSelected ? `0 0 24px ${isYes ? 'rgba(34,197,94,0.14)' : 'rgba(239,68,68,0.14)'}` : 'none',
+                      transform:   isSelected && isOpen ? 'translateY(-2px)' : 'none',
                     }}
                   >
-                    <span
-                      className="mb-3 text-[10px] font-black uppercase tracking-[0.2em]"
-                      style={{ color }}
-                    >
-                      {isA ? 'Side A' : 'Side B'}
-                    </span>
-
                     {entityLogo ? (
-                      <EntityLogo name={opt.label} src={entityLogo} size={48} shape="circle" className="mb-2 sm:mb-3 sm:!w-16 sm:!h-16" />
+                      <EntityLogo name={opt.label} src={entityLogo} size={48} shape="circle" className="mb-2 sm:mb-3 sm:!w-14 sm:!h-14" />
                     ) : (
                       <SideVisual v={visual} />
                     )}
 
                     <span
-                      className="text-base sm:text-2xl font-black leading-tight"
-                      style={{ color: isLoser ? '#475569' : '#f1f5f9' }}
+                      className="text-base sm:text-xl font-black leading-tight"
+                      style={{ color: isLoser ? '#3a4049' : '#eceef0' }}
                     >
                       {opt.label}
                     </span>
 
                     <span
-                      className="mt-1 sm:mt-3 text-2xl sm:text-3xl font-black"
-                      style={{ color: isLoser ? '#334155' : color }}
+                      className="mt-2 text-2xl sm:text-3xl font-black"
+                      style={{ color: isLoser ? '#2a3038' : color }}
                     >
                       {oddsFor(opt)}
                     </span>
 
-                    <span
-                      className="mt-1 text-xs font-semibold"
-                      style={{ color: isLoser ? '#334155' : `${color}80` }}
-                    >
+                    <span className="mt-1 text-xs font-medium" style={{ color: isLoser ? '#2a3038' : '#5e6872' }}>
                       {pctFor(opt).toFixed(1)}% of pool
                     </span>
 
                     <div className="mt-3 flex flex-wrap justify-center gap-1.5">
                       {isWinner && (
-                        <span className="rounded-full bg-emerald-900/40 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400">
-                          🏆 Winner
+                        <span className="rounded-full bg-[#22c55e]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#22c55e]">
+                          Winner
                         </span>
                       )}
                       {isUserPick && (
-                        <span className="rounded-full bg-violet-900/40 px-2.5 py-0.5 text-[10px] font-bold text-violet-400">
+                        <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-bold text-[#eceef0]">
                           Your pick
                         </span>
                       )}
                       {isSelected && isOpen && !done && (
-                        <span
-                          className="rounded-full px-2.5 py-0.5 text-[10px] font-bold"
-                          style={{ background: `${color}20`, color }}
-                        >
+                        <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold" style={{ background: `${color}18`, color }}>
                           Selected ✓
                         </span>
                       )}
@@ -711,45 +711,34 @@ const marketUrl  = accessToken
 
             {/* Tug-of-war bar */}
             {liveOpts.length >= 2 && (
-              <div className="mt-5 rounded-xl border border-[#1e1e2e] bg-[#0d0d14] p-4">
+              <div className="mt-5 rounded-xl border border-[#1e2327] bg-[#111316] p-4">
                 <div className="mb-2 flex justify-between text-xs font-bold">
-                  <span style={{ color: '#a78bfa' }}>{liveOpts[0].label}</span>
-                  <span className="text-slate-600">Pool split</span>
-                  <span style={{ color: '#fbbf24' }}>{liveOpts[1].label}</span>
+                  <span className="text-[#22c55e]">{liveOpts[0].label}</span>
+                  <span className="text-[#5e6872]">Pool split</span>
+                  <span className="text-[#ef4444]">{liveOpts[1].label}</span>
                 </div>
-                <div className="flex h-3 overflow-hidden rounded-full bg-[#1a1a2e]">
+                <div className="flex h-2.5 overflow-hidden rounded-full bg-[#1e2327]">
                   <div
                     className="h-full transition-all duration-700"
-                    style={{
-                      width: `${pctFor(liveOpts[0])}%`,
-                      background: 'linear-gradient(90deg,#6d28d9,#a78bfa)',
-                    }}
+                    style={{ width: `${pctFor(liveOpts[0])}%`, background: 'linear-gradient(90deg,#15803d,#22c55e)' }}
                   />
                   <div
                     className="h-full flex-1"
-                    style={{ background: 'linear-gradient(90deg,#b45309,#fbbf24)' }}
+                    style={{ background: 'linear-gradient(90deg,#991b1b,#ef4444)' }}
                   />
                 </div>
-                <div className="mt-1.5 flex justify-between text-[11px] text-slate-600">
+                <div className="mt-1.5 flex justify-between text-[10.5px] text-[#5e6872]">
                   <span>{pctFor(liveOpts[0]).toFixed(1)}%</span>
-                  <span>UGX {Number(liveTotal).toLocaleString()} total pool</span>
+                  <span>UGX {Number(liveTotal).toLocaleString()} pool</span>
                   <span>{pctFor(liveOpts[1]).toFixed(1)}%</span>
                 </div>
               </div>
             )}
 
             {/* Probability chart */}
-            {liveOpts.length >= 2 && (
-              <div className="mt-5">
-                <OddsChart
-                  marketId={market.id}
-                  labelA={liveOpts[0].label}
-                  labelB={liveOpts[1].label}
-                  colorA="#a78bfa"
-                  colorB="#fbbf24"
-                />
-              </div>
-            )}
+            <div className="mt-5">
+              <MarketChart marketId={market.id} />
+            </div>
 
             {/* Recent bets feed */}
             <div className="mt-5">
@@ -863,12 +852,9 @@ const marketUrl  = accessToken
                   <div>
                     <label className="mb-1.5 block text-xs font-semibold text-slate-500 uppercase tracking-wider">Your pick</label>
                     {chosenOpt ? (
-                      <div
-                        className="rounded-xl px-4 py-3 flex items-center justify-between"
-                        style={{ background: cat.glow, border: `1px solid ${cat.border}` }}
-                      >
-                        <span className="font-semibold text-slate-100">{chosenOpt.label}</span>
-                        <span className="font-black text-sm" style={{ color: cat.color }}>{oddsFor(chosenOpt)}</span>
+                      <div className="rounded-xl border border-[#22c55e]/25 bg-[#22c55e]/08 px-4 py-3 flex items-center justify-between">
+                        <span className="font-semibold text-[#eceef0]">{chosenOpt.label}</span>
+                        <span className="font-black text-sm text-[#22c55e]">{oddsFor(chosenOpt)}</span>
                       </div>
                     ) : (
                       <div className="rounded-xl border border-dashed border-[#2a2a3e] px-4 py-3 text-sm text-slate-500 text-center">
@@ -886,7 +872,7 @@ const marketUrl  = accessToken
                       onChange={e => setAmount(e.target.value)}
                       placeholder="e.g. 5000"
                       min="1000"
-                      className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm outline-none focus:border-violet-600 transition-colors"
+                      className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm outline-none focus:border-[#22c55e]/60 transition-colors text-[#eceef0] placeholder:text-[#3a4049]"
                     />
                     <div className="mt-2 grid grid-cols-4 gap-1.5">
                       {[1000, 5000, 10000, 50000].map(v => {
@@ -897,8 +883,8 @@ const marketUrl  = accessToken
                             onClick={() => setAmount(String(v))}
                             className={`rounded-lg border py-1.5 text-xs transition-colors ${
                               isGoodFaith
-                                ? 'border-violet-700/60 bg-violet-900/20 text-violet-400 font-bold hover:border-violet-500 hover:text-violet-300'
-                                : 'border-[#1e1e2e] text-slate-500 hover:border-violet-700/60 hover:text-white'
+                                ? 'border-[#22c55e]/40 bg-[#22c55e]/10 text-[#22c55e] font-bold hover:border-[#22c55e]/70 hover:text-[#4ade80]'
+                                : 'border-[#1e1e2e] text-[#5e6872] hover:border-[#22c55e]/30 hover:text-[#eceef0]'
                             }`}
                           >
                             {v >= 1000 ? `${v / 1000}k` : v}
@@ -925,7 +911,7 @@ const marketUrl  = accessToken
                           </div>
                           <div className="flex justify-between font-bold border-t border-[#1e1e2e] pt-1.5 mt-1">
                             <span className="text-slate-300">Est. return</span>
-                            <span style={{ color: cat.color }}>UGX {Number(preview.estimated_payout).toLocaleString()}</span>
+                            <span className="text-[#22c55e]">UGX {Number(preview.estimated_payout).toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between text-xs text-slate-500">
                             <span>Profit if correct</span>
@@ -960,7 +946,7 @@ const marketUrl  = accessToken
                         <>
                           <div className="flex justify-between font-bold">
                             <span className="text-slate-300">Est. payout</span>
-                            <span style={{ color: cat.color }}>UGX {estPayout.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
+                            <span className="text-[#22c55e]">UGX {estPayout.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</span>
                           </div>
                           <p className="text-[10px] text-slate-600">Payout updates as others bet</p>
                         </>
@@ -977,8 +963,8 @@ const marketUrl  = accessToken
                       disabled={loading || !selectedOpt || amtNum < 1000}
                       className="w-full rounded-xl py-3.5 text-sm font-bold transition-all disabled:opacity-40"
                       style={{
-                        background: selectedOpt && amtNum >= 1000 ? cat.color : '#1e1e2e',
-                        color: selectedOpt && amtNum >= 1000 ? '#0a0a0f' : '#64748b',
+                        background: selectedOpt && amtNum >= 1000 ? '#22c55e' : '#1e2327',
+                        color: selectedOpt && amtNum >= 1000 ? '#0a0c0e' : '#5e6872',
                       }}
                     >
                       {loading ? 'Placing…' : 'Confirm Prediction'}
@@ -986,7 +972,7 @@ const marketUrl  = accessToken
                   ) : (
                     <Link
                       href="/auth"
-                      className="block w-full rounded-xl bg-violet-600 py-3.5 text-center text-sm font-bold text-white hover:bg-violet-500 transition-colors"
+                      className="block w-full rounded-xl bg-[#22c55e] py-3.5 text-center text-sm font-bold text-[#0a0c0e] hover:bg-[#16a34a] transition-colors"
                     >
                       Log in to predict
                     </Link>
@@ -1006,10 +992,7 @@ const marketUrl  = accessToken
 
             {/* Success state */}
             {done && (
-              <div
-                className="rounded-2xl p-8 text-center space-y-4"
-                style={{ background: cat.glow, border: `1px solid ${cat.border}` }}
-              >
+              <div className="rounded-2xl border border-[#22c55e]/20 bg-[#22c55e]/06 p-8 text-center space-y-4">
                 <div className="text-5xl">🎯</div>
                 <div>
                   <p className="text-lg font-black text-white">Prediction placed!</p>
@@ -1031,8 +1014,7 @@ const marketUrl  = accessToken
                   </Link>
                   <Link
                     href="/markets"
-                    className="flex-1 rounded-xl py-2.5 text-sm font-bold text-center transition-colors"
-                    style={{ background: cat.color, color: '#0a0a0f' }}
+                    className="flex-1 rounded-xl bg-[#22c55e] py-2.5 text-sm font-bold text-center text-[#0a0c0e] hover:bg-[#16a34a] transition-colors"
                   >
                     More Markets
                   </Link>
@@ -1053,8 +1035,8 @@ const marketUrl  = accessToken
                     : 'This market is no longer accepting predictions.'}
                 </p>
                 {isSettled && settlementNote && (
-                  <div className="rounded-xl border border-violet-800/30 bg-violet-900/10 px-4 py-3 text-left">
-                    <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-violet-500">Admin note</p>
+                  <div className="rounded-xl border border-[#1e2327] bg-[#111316] px-4 py-3 text-left">
+                    <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-[#5e6872]">Admin note</p>
                     <p className="text-sm text-slate-300 leading-relaxed">{settlementNote}</p>
                   </div>
                 )}
@@ -1074,7 +1056,7 @@ const marketUrl  = accessToken
                               href={item.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="group relative block overflow-hidden rounded-lg border border-[#1e1e2e] hover:border-violet-600/50 transition-colors"
+                              className="group relative block overflow-hidden rounded-lg border border-[#1e1e2e] hover:border-[#22c55e]/30 transition-colors"
                             >
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
@@ -1102,13 +1084,28 @@ const marketUrl  = accessToken
                       href={market.settlement_evidence_url!}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700/40 py-2 text-xs font-semibold text-slate-400 hover:border-violet-600/50 hover:text-violet-400 transition-colors"
+                      className="flex items-center justify-center gap-1.5 rounded-xl border border-[#1e2327] py-2 text-xs font-semibold text-[#5e6872] hover:border-[#22c55e]/30 hover:text-[#22c55e] transition-colors"
                     >
                       <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                       View source →
                     </a>
                   )
                 })()}
+                {!isSettled && isLoggedIn && (
+                  <div>
+                    {settleReqMsg ? (
+                      <p className={`text-xs font-medium ${settleRequested ? 'text-emerald-400' : 'text-red-400'}`}>{settleReqMsg}</p>
+                    ) : (
+                      <button
+                        onClick={requestSettlement}
+                        disabled={settleReqLoading}
+                        className="w-full rounded-xl border border-amber-800/50 bg-amber-900/10 py-2.5 text-sm font-bold text-amber-400 hover:bg-amber-900/25 disabled:opacity-50 transition-colors"
+                      >
+                        {settleReqLoading ? 'Notifying admin…' : '🔔 Notify admin to settle'}
+                      </button>
+                    )}
+                  </div>
+                )}
                 <Link
                   href="/markets"
                   className="block rounded-xl border border-[#2a2a3e] py-2.5 text-sm text-slate-400 hover:text-white transition-colors"
@@ -1189,10 +1186,13 @@ const marketUrl  = accessToken
               {creatorInfo && (
                 <div className="flex justify-between items-center">
                   <span>Created by</span>
-                  <span className="text-slate-300 flex items-center gap-1">
-                    {creatorInfo.name}
+                  <span className="text-slate-300 flex items-center gap-1.5">
+                    {creatorInfo.username
+                      ? <span className="font-bold text-violet-400">@{creatorInfo.username}</span>
+                      : creatorInfo.name
+                    }
                     {creatorInfo.verified && (
-                      <span title="Verified Creator" className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-violet-600 text-[8px] font-black text-white">✓</span>
+                      <span title="Verified Creator" className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#22c55e] text-[8px] font-black text-[#0a0c0e]">✓</span>
                     )}
                   </span>
                 </div>

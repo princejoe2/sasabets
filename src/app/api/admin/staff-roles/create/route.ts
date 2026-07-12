@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authenticator } from 'otplib'
-import QRCode from 'qrcode'
 import { guardAdmin } from '@/lib/admin-guard'
 import { sendEmail, btn } from '@/lib/email'
 import type { StaffRole } from '@/lib/admin-roles'
@@ -50,9 +49,9 @@ export async function POST(req: NextRequest) {
   const userId = authData.user.id
 
   // Generate TOTP secret and enable 2FA immediately
-  const totpSecret = authenticator.generateSecret()
-  const otpUri     = authenticator.keyuri(email, 'Sabula 256 Admin', totpSecret)
-  const qrDataUrl  = await QRCode.toDataURL(otpUri, { width: 240, margin: 2 })
+  const totpSecret  = authenticator.generateSecret()
+  const otpUri      = authenticator.keyuri(email, 'Sabula 256 Admin', totpSecret)
+  const qrImageUrl  = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(otpUri)}&margin=10`
 
   // Insert profile with role + 2FA already enabled
   await g.admin.from('profiles').upsert({
@@ -103,7 +102,7 @@ export async function POST(req: NextRequest) {
           <p style="margin:0 0 12px;font-size:13px;color:#94a3b8">Your account requires 2FA. Before logging in, add this to Google Authenticator or Authy:</p>
           <p style="margin:0 0 8px;font-size:12px;color:#6ee7b7;font-weight:700">Option 1 — Scan QR code:</p>
           <div style="text-align:center;margin:0 0 12px">
-            <img src="${qrDataUrl}" alt="2FA QR Code" style="width:180px;height:180px;border-radius:8px;background:#fff;padding:8px" />
+            <img src="${qrImageUrl}" alt="2FA QR Code" style="width:180px;height:180px;border-radius:8px;background:#fff;padding:8px" />
           </div>
           <p style="margin:0 0 4px;font-size:12px;color:#6ee7b7;font-weight:700">Option 2 — Enter secret manually:</p>
           <p style="margin:0;font-family:monospace;font-size:13px;color:#34d399;word-break:break-all;background:#0a2017;padding:8px 12px;border-radius:6px">${totpSecret}</p>

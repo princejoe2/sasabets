@@ -14,6 +14,19 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient()
 
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('suspended, self_excluded_until')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.suspended) {
+    return NextResponse.json({ error: 'Your account has been suspended.' }, { status: 403 })
+  }
+  if (profile?.self_excluded_until && new Date(profile.self_excluded_until) > new Date()) {
+    return NextResponse.json({ error: 'Self-exclusion is active.' }, { status: 403 })
+  }
+
   const { data: bet } = await admin
     .from('bets')
     .select('id, user_id, market_id, option_id, amount, status, exited_at, markets(id, status, closes_at, options, total_pool)')

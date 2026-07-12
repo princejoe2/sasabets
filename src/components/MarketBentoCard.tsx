@@ -138,7 +138,7 @@ export default function MarketBentoCard({ market }: { market: Market }) {
           {hasBothLogos ? (
             <div className="flex items-center justify-center gap-3 pt-1 flex-shrink-0">
               <EntityLogo name={optA} src={logoA} size={40} shape="circle" />
-              <span className="text-[10px] font-black text-muted-foreground/40 tracking-widest">VS</span>
+              <span className="text-[11px] font-black text-muted-foreground/40 tracking-widest">VS</span>
               <EntityLogo name={optB} src={logoB} size={40} shape="circle" />
             </div>
           ) : logoA ? (
@@ -154,8 +154,8 @@ export default function MarketBentoCard({ market }: { market: Market }) {
           {/* ── Probability bar ── */}
           <div className="flex-1 flex flex-col justify-center gap-2">
             <div className="flex justify-between items-baseline">
-              <span className="text-[10px] font-mono font-bold text-emerald-400 truncate max-w-[45%]">{optA}</span>
-              {opts[1] && <span className="text-[10px] font-mono font-bold text-rose-400 truncate max-w-[45%] text-right">{optB}</span>}
+              <span className="text-[11px] font-mono font-bold text-emerald-400 truncate max-w-[45%]">{optA}</span>
+              {opts[1] && <span className="text-[11px] font-mono font-bold text-rose-400 truncate max-w-[45%] text-right">{optB}</span>}
             </div>
 
             <div className="h-2 rounded-full overflow-hidden bg-rose-500/20 relative">
@@ -179,7 +179,7 @@ export default function MarketBentoCard({ market }: { market: Market }) {
             </div>
 
             {(oddsA || oddsB) && (
-              <div className="flex justify-between text-[9px] font-mono text-muted-foreground/60">
+              <div className="flex justify-between text-[10px] font-mono font-bold text-muted-foreground/60">
                 {oddsA && <span>{oddsA}×</span>}
                 {oddsB && <span>{oddsB}×</span>}
               </div>
@@ -189,7 +189,7 @@ export default function MarketBentoCard({ market }: { market: Market }) {
           {/* ── Footer: status badge + countdown ── */}
           <div className="flex items-center justify-between flex-shrink-0">
             <span
-              className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+              className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
                 isOpen
                   ? 'bg-emerald-500/15 text-emerald-400'
                   : 'bg-muted/40 text-muted-foreground/60'
@@ -198,7 +198,7 @@ export default function MarketBentoCard({ market }: { market: Market }) {
               {isOpen ? 'LIVE' : market.status.toUpperCase()}
             </span>
             {isOpen && countdown && (
-              <span className={`text-[10px] font-mono font-bold ${timerColor}`}>
+              <span className={`text-[11px] font-mono font-bold ${timerColor}`}>
                 ⏱ {countdown}
               </span>
             )}

@@ -62,9 +62,10 @@ export default function AdminStaffRolesClient({ staff }: { staff: StaffRow[] }) 
   const [createError, setCreateError] = useState('')
   const [created, setCreated] = useState<{ email: string; fullName: string; role: string } | null>(null)
 
-  // Role change / revoke state
+  // Role change / revoke / resend state
   const [saving, setSaving] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
+  const [resent, setResent] = useState<string | null>(null)
 
   async function createAccount(e: React.FormEvent) {
     e.preventDefault()
@@ -97,6 +98,18 @@ export default function AdminStaffRolesClient({ staff }: { staff: StaffRow[] }) 
     })
     if (!res.ok) { const d = await res.json(); setActionError(d.error ?? 'Failed') }
     else setRows(prev => prev.map(u => u.id === userId ? { ...u, staff_role: role } : u))
+    setSaving(null)
+  }
+
+  async function resendCredentials(userId: string, email: string) {
+    setSaving(userId); setActionError(''); setResent(null)
+    const res = await fetch('/api/admin/staff-roles/resend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    })
+    if (!res.ok) { const d = await res.json(); setActionError(d.error ?? 'Failed to resend') }
+    else setResent(email)
     setSaving(null)
   }
 
@@ -221,6 +234,11 @@ export default function AdminStaffRolesClient({ staff }: { staff: StaffRow[] }) 
           {actionError}
         </div>
       )}
+      {resent && (
+        <div className="rounded-xl border border-emerald-800/40 bg-emerald-900/20 px-4 py-3 text-sm text-emerald-400">
+          Credentials resent to <strong>{resent}</strong>
+        </div>
+      )}
 
       <div>
         <h2 className="text-xs font-black uppercase tracking-widest text-slate-600 mb-3">
@@ -260,6 +278,13 @@ export default function AdminStaffRolesClient({ staff }: { staff: StaffRow[] }) 
                             <option key={r.value} value={r.value}>{r.label}</option>
                           ))}
                         </select>
+                        <button
+                          onClick={() => resendCredentials(u.id, u.email)}
+                          disabled={saving === u.id}
+                          className="text-xs text-sky-600 hover:text-sky-400 transition-colors disabled:opacity-40"
+                        >
+                          Resend
+                        </button>
                         <button
                           onClick={() => revoke(u.id)}
                           disabled={saving === u.id}

@@ -3,6 +3,12 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { settleMarket } from '@/lib/settle-market'
 
 export async function POST(req: NextRequest) {
+  // SECURITY NOTE: this route is intentionally NOT behind guardAdmin() (no TOTP check).
+  // It is triggered opportunistically by BetPanel on page load for expired asset markets,
+  // and by cron. The logic is safe without 2FA because the caller controls nothing but
+  // the marketId: it only settles markets that are (a) still 'open', (b) asset-type
+  // (updown/price_level), and (c) already past closes_at — and the winning outcome is
+  // determined entirely by the CoinGecko price feed, never by request input.
   // Accept either: cron secret via Authorization header, OR a logged-in admin session
   const cronSecret = (process.env.CRON_SECRET ?? '').replace(/[^\x20-\x7E]/g, '').trim()
   const viaCron    = cronSecret && req.headers.get('authorization') === `Bearer ${cronSecret}`

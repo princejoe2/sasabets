@@ -81,6 +81,15 @@ export default function DashboardPage() {
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-violet-400">Creator</p>
           <h1 className="text-4xl font-black text-white">My Dashboard</h1>
           <p className="mt-2 text-slate-500">Your markets, earnings, and performance.</p>
+          <div className="mt-5 flex items-start gap-3 rounded-xl border border-emerald-800/35 bg-emerald-900/10 px-4 py-3 max-w-lg">
+            <span className="text-lg leading-none mt-0.5">💰</span>
+            <div>
+              <p className="text-sm font-bold text-emerald-400">You earn 2% of each market's total pool at settlement</p>
+              <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">
+                When any market you created settles with a pool ≥ UGX 50,000, 2% of the whole pool goes straight to your wallet. Attract more bettors — earn more.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -127,8 +136,12 @@ export default function DashboardPage() {
                 )
               })}
               {earnings.length === 0 && (
-                <div className="py-10 text-center text-sm text-slate-600">
-                  No earnings yet — creator share (2%) is paid when your market settles with a pool ≥ UGX 50,000.
+                <div className="py-10 text-center space-y-1">
+                  <p className="text-2xl">⏳</p>
+                  <p className="text-sm font-semibold text-slate-400">No earnings yet</p>
+                  <p className="text-xs text-slate-600 max-w-xs mx-auto leading-relaxed">
+                    You receive 2% of the total pool when any market you created settles with at least UGX 50,000 in it. Share your markets to grow the pool and earn more.
+                  </p>
                 </div>
               )}
             </div>

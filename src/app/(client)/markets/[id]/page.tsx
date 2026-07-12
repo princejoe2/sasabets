@@ -3,9 +3,7 @@ import { verifyAccessToken } from '@/lib/market-token'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import BetPanel from './BetPanel'
-import MarketComments from '@/components/MarketComments'
 import FollowButton from '@/components/FollowButton'
-import MarketChart from '@/components/MarketChart'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
@@ -136,17 +134,21 @@ export default async function MarketPage({
   const predictorCount = new Set((bettorRows ?? []).map((b: { user_id: string }) => b.user_id)).size
 
   // Fetch creator profile if market has a creator
-  let creatorInfo: { name: string; verified: boolean } | null = null
+  let creatorInfo: { name: string; username: string | null; verified: boolean } | null = null
   if (market.created_by) {
     const { data: creatorProfile } = await supabase
       .from('profiles')
-      .select('full_name, verified_creator')
+      .select('full_name, verified_creator, username')
       .eq('id', market.created_by)
       .single()
     if (creatorProfile?.full_name) {
       const parts = creatorProfile.full_name.trim().split(/\s+/)
       const shortName = parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : parts[0]
-      creatorInfo = { name: shortName, verified: creatorProfile.verified_creator ?? false }
+      creatorInfo = {
+        name: shortName,
+        username: creatorProfile.username ?? (market.metadata as Record<string, unknown> | null)?.creator_username as string | null ?? null,
+        verified: creatorProfile.verified_creator ?? false,
+      }
     }
   }
 
@@ -196,10 +198,6 @@ export default async function MarketPage({
       <div className="mx-auto max-w-xl px-4 pb-2 flex justify-end">
         <FollowButton marketId={id} initialFollowing={isFollowing} isLoggedIn={!!user} />
       </div>
-      <div className="mx-auto max-w-xl px-4 pb-4">
-        <MarketChart marketId={id} />
-      </div>
-      <MarketComments marketId={id} isLoggedIn={!!user} />
     </>
   )
 }

@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 
   const { data: profile } = await admin
     .from('profiles')
-    .select('full_name, phone, suspended, self_excluded_until')
+    .select('full_name, phone, suspended, self_excluded_until, username')
     .eq('id', user.id)
     .single()
 
@@ -147,6 +147,7 @@ export async function POST(req: NextRequest) {
       category:          cat,
       user_created:      true,
       creator_name:      profile?.full_name ?? 'Community',
+      creator_username:  profile?.username ?? null,
       creator_max_stake: LAUNCH_STAKE,
       ...(resolutionText ? { resolution_criteria: resolutionText } : {}),
       ...(isPrivate && accessToken ? { private: true, access_token_hash: hashAccessToken(accessToken) } : {}),

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyPhone } from '@/lib/marz'
+import { createAdminClient } from '@/lib/supabase/server'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
@@ -19,12 +20,17 @@ export async function POST(req: NextRequest) {
   if (digits.startsWith('0')) digits = '256' + digits.slice(1)
   if (!digits.startsWith('+')) digits = '+' + digits
 
-  const result = await verifyPhone(digits)
+  const [result, dupeCheck] = await Promise.all([
+    verifyPhone(digits),
+    createAdminClient().from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('phone', digits),
+  ])
 
   return NextResponse.json({
     valid: result.valid,
-    name: result.name,
     provider: result.provider,
     phone: digits,
+    available: (dupeCheck.count ?? 0) === 0,
   })
 }

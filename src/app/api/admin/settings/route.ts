@@ -1,21 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
-
-async function getAdminOrUnauthorized() {
-  const supabase = await createClient()
-  const admin = createAdminClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
-  const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
-  if (!profile?.is_admin) return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
-  return { user, admin }
-}
+import { guardAdmin } from '@/lib/admin-guard'
 
 export async function GET() {
-  const result = await getAdminOrUnauthorized()
-  if ('error' in result) return result.error
+  // Platform-wide settings: super-admin only (guardAdmin enforces TOTP for super-admins).
+  const g = await guardAdmin()
+  if ('error' in g) return g.error
 
-  const { data, error } = await result.admin.from('platform_settings').select('key, value')
+  const { data, error } = await g.admin.from('platform_settings').select('key, value')
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const settings = Object.fromEntries((data ?? []).map(r => [r.key, r.value]))
@@ -31,8 +22,8 @@ const ALLOWED_SETTING_KEYS = new Set([
 ])
 
 export async function POST(req: NextRequest) {
-  const result = await getAdminOrUnauthorized()
-  if ('error' in result) return result.error
+  const g = await guardAdmin()
+  if ('error' in g) return g.error
 
   const body = await req.json()
   const entries = Object.entries(body).filter(([key]) => ALLOWED_SETTING_KEYS.has(key))
@@ -40,12 +31,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No valid setting keys provided' }, { status: 400 })
   }
 
-  const { error } = await result.admin.from('platform_settings').upsert(
+  const { error } = await g.admin.from('platform_settings').upsert(
     entries.map(([key, value]) => ({
       key,
       value: String(value),
       updated_at: new Date().toISOString(),
-      updated_by: result.user.id,
+      updated_by: g.user.id,
     })),
     { onConflict: 'key' }
   )

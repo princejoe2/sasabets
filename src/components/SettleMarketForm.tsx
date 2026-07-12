@@ -62,7 +62,6 @@ export default function SettleMarketForm({ market, onDone }: { market: Market; o
 
   async function handleSettle() {
     if (!winner) { setError('Select a winning option'); return }
-    if (isUserCreated && !note.trim()) { setError('A settlement note is required for community markets'); return }
     if (evidence.some(e => e.status === 'uploading')) { setError('Images are still uploading — please wait'); return }
     if (evidence.some(e => e.status === 'error')) { setError('Some images failed to upload — remove them and retry'); return }
 
@@ -123,14 +122,12 @@ export default function SettleMarketForm({ market, onDone }: { market: Market; o
       {/* Settlement note */}
       <div>
         <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">
-          Settlement note {isUserCreated && <span className="text-red-400">*</span>}
+          Settlement note <span className="text-slate-600 normal-case font-normal">(optional)</span>
         </label>
         <textarea
           value={note}
           onChange={e => setNote(e.target.value)}
-          placeholder={isUserCreated
-            ? 'Required: describe the verifiable source confirming the outcome…'
-            : 'Optional: add context for the audit trail…'}
+          placeholder="Add context or source for the audit trail…"
           rows={2}
           className="w-full rounded-lg border border-[#1e1e2e] bg-[#111118] px-3 py-2 text-sm text-slate-300 outline-none focus:border-emerald-700 resize-none placeholder:text-slate-700"
         />
@@ -225,7 +222,7 @@ export default function SettleMarketForm({ market, onDone }: { market: Market; o
       <div className="flex gap-3">
         <button
           onClick={handleSettle}
-          disabled={loading || uploading || !winner || (isUserCreated && !note.trim())}
+          disabled={loading || uploading || !winner}
           className="flex-1 rounded-lg bg-emerald-700 py-2.5 text-sm font-medium hover:bg-emerald-600 disabled:opacity-50 transition-colors"
         >
           {loading ? 'Settling…' : uploading ? 'Uploading images…' : 'Confirm & Settle'}

@@ -73,39 +73,53 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-emerald-100/60 bg-white/96 backdrop-blur-xl dark:border-[rgba(0,255,136,0.12)] dark:bg-[rgba(4,12,6,0.95)]"
+      className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t-2 border-emerald-200/70 bg-white/[0.97] backdrop-blur-2xl dark:border-white/[0.05] dark:bg-[#0d0d14]/96"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="flex items-stretch">
+      <div className="flex items-stretch h-14">
         {leftTabs.map(({ href, Icon, label }) => {
           const active = isActive(href)
           return (
             <Link key={href} href={href}
-              className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 transition-colors ${
-                active ? 'text-emerald-600 dark:text-[#00ff88]' : 'text-slate-400 dark:text-[rgba(255,255,255,0.35)]'
+              className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 transition-all duration-150 active:scale-90 ${
+                active
+                  ? 'text-emerald-600 dark:text-[#00ff88]'
+                  : 'text-slate-400 hover:text-slate-600 dark:text-white/30 dark:hover:text-white/60'
               }`}
             >
-              {active && <span className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-emerald-500 dark:bg-[#00ff88]" />}
-              <Icon active={active} />
-              <span className="text-[10px] font-semibold">{label}</span>
+              {/* Active top line */}
+              {active && (
+                <span className="absolute top-0 left-1/2 h-[3px] w-8 -translate-x-1/2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] dark:bg-[#00ff88] dark:shadow-[0_0_8px_rgba(0,255,136,0.5)]" />
+              )}
+              {/* Active bg highlight */}
+              {active && (
+                <span className="absolute inset-x-2 inset-y-1.5 rounded-xl bg-emerald-50 dark:bg-[#00ff88]/[0.07]" />
+              )}
+              <span className="relative z-10">
+                <Icon active={active} />
+              </span>
+              <span className={`relative z-10 text-[10px] font-bold transition-all duration-150 ${active ? 'text-emerald-700 dark:text-[#00ff88]' : 'opacity-60'}`}>{label}</span>
             </Link>
           )
         })}
 
         {/* Centre create button */}
         <Link href="/create"
-          className="relative flex flex-col items-center justify-center px-5 -mt-4"
+          className="relative flex flex-col items-center justify-center px-5 active:scale-90 transition-all duration-150"
         >
-          <div className={`flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all ${
-            createActive
-              ? 'bg-emerald-500 shadow-emerald-500/40 dark:bg-[#00ff88] dark:shadow-[0_0_16px_rgba(0,255,136,0.5)]'
-              : 'bg-emerald-600 shadow-emerald-600/30 hover:bg-emerald-500 dark:bg-[#00e07a] dark:hover:bg-[#00ff88] dark:shadow-[0_0_12px_rgba(0,255,136,0.3)]'
-          }`}>
+          <div
+            className={`flex h-12 w-12 items-center justify-center rounded-full transition-all duration-200 ${
+              createActive
+                ? 'bg-emerald-600 shadow-[0_0_22px_rgba(16,185,129,0.55)] dark:bg-[#00ff88] dark:shadow-[0_0_22px_rgba(0,255,136,0.55)]'
+                : 'bg-emerald-600 shadow-[0_4px_16px_rgba(16,185,129,0.4)] hover:shadow-[0_0_22px_rgba(16,185,129,0.55)] dark:bg-[#00e07a] dark:shadow-[0_4px_16px_rgba(0,255,136,0.3)] dark:hover:bg-[#00ff88]'
+            }`}
+            style={{ marginTop: '-18px' }}
+          >
             <svg className="h-6 w-6 text-white dark:text-[#040c06]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
             </svg>
           </div>
-          <span className={`mt-1 text-[10px] font-black ${createActive ? 'text-emerald-600 dark:text-[#00ff88]' : 'text-slate-400 dark:text-[rgba(255,255,255,0.35)]'}`}>Create</span>
+          <span className={`mt-1 text-[10px] font-bold transition-colors duration-150 ${createActive ? 'text-emerald-700 dark:text-[#00ff88]' : 'text-slate-400 dark:text-white/30'}`}>Create</span>
         </Link>
 
         {rightTabs.map(({ href, Icon, label }) => {
@@ -113,18 +127,27 @@ export default function BottomNav() {
           const isWallet = href === '/wallet'
           return (
             <Link key={href} href={href}
-              className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 transition-colors ${
-                active ? 'text-emerald-600 dark:text-[#00ff88]' : 'text-slate-400 dark:text-[rgba(255,255,255,0.35)]'
+              className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 transition-all duration-150 active:scale-90 ${
+                active
+                  ? 'text-emerald-600 dark:text-[#00ff88]'
+                  : 'text-slate-400 hover:text-slate-600 dark:text-white/30 dark:hover:text-white/60'
               }`}
             >
-              {active && <span className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-emerald-500 dark:bg-[#00ff88]" />}
-              <div className="relative">
-                <Icon active={active} />
-                {isWallet && notifCount > 0 && (
-                  <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />
-                )}
-              </div>
-              <span className="text-[10px] font-semibold">{label}</span>
+              {active && (
+                <span className="absolute top-0 left-1/2 h-[3px] w-8 -translate-x-1/2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] dark:bg-[#00ff88] dark:shadow-[0_0_8px_rgba(0,255,136,0.5)]" />
+              )}
+              {active && (
+                <span className="absolute inset-x-2 inset-y-1.5 rounded-xl bg-emerald-50 dark:bg-[#00ff88]/[0.07]" />
+              )}
+              <span className="relative z-10">
+                <div className="relative">
+                  <Icon active={active} />
+                  {isWallet && notifCount > 0 && (
+                    <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#0d0d14]" />
+                  )}
+                </div>
+              </span>
+              <span className={`relative z-10 text-[10px] font-bold transition-all duration-150 ${active ? 'text-emerald-700 dark:text-[#00ff88]' : 'opacity-60'}`}>{label}</span>
             </Link>
           )
         })}

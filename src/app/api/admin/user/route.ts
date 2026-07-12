@@ -12,7 +12,13 @@ export async function PATCH(req: NextRequest) {
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
   if (full_name         !== undefined) updates.full_name         = full_name
-  if (phone             !== undefined) updates.phone             = phone.replace(/\D/g, '')
+  if (phone             !== undefined) {
+    const normalized = phone.replace(/[\s\-()]/g, '').replace(/^0/, '256').replace(/^\+/, '')
+    if (!/^256(70|71|74|75|76|77|78|39)\d{7}$/.test(normalized)) {
+      return NextResponse.json({ error: 'Invalid Uganda phone number' }, { status: 400 })
+    }
+    updates.phone = normalized
+  }
   if (suspended         !== undefined) updates.suspended         = suspended
   if (suspend_reason    !== undefined) updates.suspend_reason    = suspend_reason
   if (verified_creator  !== undefined) updates.verified_creator  = verified_creator

@@ -28,9 +28,27 @@ const nextConfig = {
           { key: 'Strict-Transport-Security',  value: 'max-age=63072000; includeSubDomains; preload' },
           {
             key: 'Content-Security-Policy',
+            // Hardened 2026-07-12: 'unsafe-eval' removed from script-src — nothing in the
+            // bundle uses eval/new Function (verified: no eval-dependent third-party scripts).
+            //
+            // REMAINING RISK — script-src still allows 'unsafe-inline': the Next.js App
+            // Router emits inline <script> tags for RSC flight data / hydration (verified:
+            // 15 inline scripts on the production homepage), so removing it without a
+            // nonce would break hydration site-wide. The proper fix is nonce-based CSP with
+            // 'strict-dynamic' set per-request in middleware — but nonces force dynamic
+            // rendering, which would disable the ISR caching (revalidate) this site relies
+            // on. Until that trade-off is made, inline-script XSS is mitigated at the
+            // source instead (Markdown sanitization in news pages, no other
+            // dangerouslySetInnerHTML of user content).
+            //
+            // require-trusted-types-for 'script' was evaluated and NOT added: it would
+            // break React's dangerouslySetInnerHTML (JSON-LD blocks, news articles) in
+            // Chromium without Trusted Types policies in place.
+            //
+            // 'unsafe-inline' in style-src is required by Tailwind/framer-motion inline styles.
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "script-src 'self' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self' data:",
               "img-src 'self' data: blob: https://flagcdn.com https://upload.wikimedia.org https://commons.wikimedia.org https://assets.coingecko.com https://images.unsplash.com",

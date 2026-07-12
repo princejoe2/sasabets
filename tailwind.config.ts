@@ -13,6 +13,10 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      fontFamily: {
+        supreme: ['var(--font-supreme)', 'system-ui', 'sans-serif'],
+        chubbo:  ['var(--font-chubbo)',  'system-ui', 'sans-serif'],
+      },
     },
   },
   plugins: [],

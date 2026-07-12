@@ -2,9 +2,31 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { marked } from 'marked'
+import { marked, Renderer } from 'marked'
 
 export const revalidate = 300
+
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
+// XSS hardening: article content is rendered via dangerouslySetInnerHTML, and marked
+// passes raw HTML through by default. This renderer strips raw HTML blocks entirely,
+// escapes code, and neutralises javascript:/data: link hrefs — standard Markdown
+// (headings, bold, lists, links, code) still renders normally.
+function safeMarkdownRenderer(): Renderer {
+  const renderer = new Renderer()
+  renderer.html = () => '' // strip raw HTML blocks entirely
+  renderer.code = (code) =>
+    `<pre><code>${code.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`
+  renderer.link = ({ href, title, text }) => {
+    const raw = (href ?? '').trim()
+    // Strip whitespace/control chars before scheme check so "java\tscript:" can't slip by.
+    const scheme = raw.toLowerCase().replace(/[\s\u0000-\u001f]/g, '')
+    const safeHref = /^(javascript|data|vbscript):/.test(scheme) ? '#' : (raw || '#')
+    return `<a href="${escapeHtml(safeHref)}"${title ? ` title="${escapeHtml(title)}"` : ''} target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`
+  }
+  return renderer
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
@@ -50,7 +72,7 @@ export default async function NewsPostPage({ params }: { params: Promise<{ slug:
     ...(post.cover_image_url ? { image: post.cover_image_url } : {}),
   }
 
-  const htmlContent = marked(post.content ?? '', { async: false }) as string
+  const htmlContent = marked(post.content ?? '', { renderer: safeMarkdownRenderer(), gfm: true, breaks: true, async: false }) as string
 
   return (
     <>

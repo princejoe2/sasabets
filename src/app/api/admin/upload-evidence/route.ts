@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { guardAdmin } from '@/lib/admin-guard'
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const admin    = createAdminClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
-  if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // Settlement evidence uploads back the settle queue: same roles as /api/admin/settle.
+  const g = await guardAdmin(['moderator', 'settler'])
+  if ('error' in g) return g.error
+  const admin = g.admin
 
   const form     = await req.formData()
   const file     = form.get('file') as File | null

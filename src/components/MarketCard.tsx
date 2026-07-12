@@ -216,18 +216,22 @@ export default function MarketCard({ market }: { market: Market }) {
       {/* Community badge */}
       {!!market.metadata?.user_created && (
         <div
-          className="flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-wider"
-          style={{ background: 'rgba(0,255,136,0.07)', borderBottom: '1px solid rgba(0,255,136,0.15)', color: '#00ff88' }}
+          className="flex items-center gap-1.5 px-3 py-1 text-[11px] font-black uppercase tracking-wider"
+          style={{ background: 'rgba(139,92,246,0.08)', borderBottom: '1px solid rgba(139,92,246,0.18)', color: '#a78bfa' }}
         >
           <span>🌍</span>
-          Community · {String(market.metadata.creator_name ?? 'Member')}
+          Market by{' '}
+          {market.metadata.creator_username
+            ? <span style={{ color: '#c4b5fd' }}>@{String(market.metadata.creator_username)}</span>
+            : <span style={{ color: '#c4b5fd' }}>{String(market.metadata.creator_name ?? 'Community')}</span>
+          }
         </div>
       )}
 
       {/* Urgency top strip */}
       {effectivelyOpen && (urgency === 'final' || urgency === 'hour' || urgency === 'day') && (
         <div
-          className={`flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-black uppercase tracking-wider ${urgency === 'final' ? 'animate-pulse' : ''}`}
+          className={`flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-black uppercase tracking-wider ${urgency === 'final' ? 'animate-pulse' : ''}`}
           style={{
             background: urgency === 'final' ? 'rgba(239,68,68,0.14)' : 'rgba(249,115,22,0.1)',
             borderBottom: `1px solid ${urgency === 'final' ? 'rgba(239,68,68,0.25)' : 'rgba(249,115,22,0.2)'}`,
@@ -260,7 +264,7 @@ export default function MarketCard({ market }: { market: Market }) {
           return (
             <>
               {/* Title */}
-              <h3 className="text-[13px] font-bold leading-snug text-slate-100 mb-2 line-clamp-2">
+              <h3 className="text-[14px] font-extrabold leading-snug text-slate-100 mb-2 line-clamp-2">
                 {market.title}
               </h3>
 
@@ -272,12 +276,12 @@ export default function MarketCard({ market }: { market: Market }) {
                     {livePrice !== null ? `$${livePrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—'}
                   </span>
                   {pct !== null && (
-                    <span className={`text-[11px] font-black ${pct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    <span className={`text-[12px] font-black ${pct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                       {pct >= 0 ? '+' : ''}{pct.toFixed(1)}%
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] font-bold text-slate-500 tabular-nums">
+                <span className="text-[11px] font-bold text-slate-500 tabular-nums">
                   ref ${refPrice.toLocaleString()}
                 </span>
               </div>
@@ -299,23 +303,23 @@ export default function MarketCard({ market }: { market: Market }) {
               {/* Status + category + countdown */}
               <div className="flex items-center gap-1.5 flex-wrap mb-2">
                 <span
-                  className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide"
+                  className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-black uppercase tracking-wide"
                   style={{ background: `${cat.color}14`, color: cat.color, border: `1px solid ${cat.color}28` }}
                 >
                   {cat.icon} {isPriceLevel ? 'Price Target' : 'Up/Down'}
                 </span>
                 {pct !== null && (
-                  <span className={`text-[10px] font-black ${winning ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <span className={`text-[11px] font-black ${winning ? 'text-emerald-400' : 'text-red-400'}`}>
                     {winning ? '✓' : '✗'} {isUpDown ? (pct >= 0 ? 'UP' : 'DOWN') : (invert ? (pct <= 0 ? 'YES' : 'NO') : (pct >= 0 ? 'YES' : 'NO'))} winning
                   </span>
                 )}
                 {effectivelyOpen && countdown && (
-                  <span className="rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums ml-auto"
+                  <span className="rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ml-auto"
                     style={{ color: urgency === 'final' || urgency === 'hour' ? '#fb923c' : '#64748b', background: urgency === 'final' || urgency === 'hour' ? 'rgba(249,115,22,0.1)' : '#1e1e2e' }}>
                     ⏱ {countdown}
                   </span>
                 )}
-                {!effectivelyOpen && <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-500 uppercase ml-auto">Closed</span>}
+                {!effectivelyOpen && <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] font-bold text-slate-500 uppercase ml-auto">Closed</span>}
               </div>
             </>
           )
@@ -326,16 +330,16 @@ export default function MarketCard({ market }: { market: Market }) {
           <>
             {/* Header: category icon + date */}
             <div className="flex items-center justify-between mb-3">
-              <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider" style={{ color: cat.color }}>
+              <span className="flex items-center gap-1.5 text-[12px] font-black uppercase tracking-wider" style={{ color: cat.color }}>
                 {cat.icon} {cat.label}
               </span>
               {market.closes_at && effectivelyOpen && (
-                <span className="text-[10px] font-medium text-slate-600">
+                <span className="text-[11px] font-semibold text-slate-600">
                   {new Date(market.closes_at).toLocaleDateString('en-UG', { day: 'numeric', month: 'short', timeZone: 'Africa/Kampala' })}
                 </span>
               )}
               {!effectivelyOpen && (
-                <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[9px] font-bold uppercase text-slate-500">Closed</span>
+                <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] font-bold uppercase text-slate-500">Closed</span>
               )}
             </div>
 
@@ -343,7 +347,7 @@ export default function MarketCard({ market }: { market: Market }) {
             <div className="flex items-center justify-around mb-3">
               <div className="flex flex-col items-center gap-1.5 flex-1">
                 <EntityLogo name={optA} src={logoA} size={44} shape="circle" />
-                <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400 truncate max-w-[76px] text-center">{optA}</span>
+                <span className="text-[11px] font-extrabold uppercase tracking-wide text-slate-400 truncate max-w-[76px] text-center">{optA}</span>
                 <span
                   className="rounded-full px-2.5 py-0.5 text-xs font-black"
                   style={{ background: 'rgba(0,255,136,0.12)', color: COLOR_A }}
@@ -361,7 +365,7 @@ export default function MarketCard({ market }: { market: Market }) {
 
               <div className="flex flex-col items-center gap-1.5 flex-1">
                 <EntityLogo name={optB} src={logoB} size={44} shape="circle" />
-                <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400 truncate max-w-[76px] text-center">{optB}</span>
+                <span className="text-[11px] font-extrabold uppercase tracking-wide text-slate-400 truncate max-w-[76px] text-center">{optB}</span>
                 <span
                   className="rounded-full px-2.5 py-0.5 text-xs font-black"
                   style={{ background: 'rgba(255,51,102,0.1)', color: COLOR_B }}
@@ -372,7 +376,7 @@ export default function MarketCard({ market }: { market: Market }) {
             </div>
 
             {/* Title (shorter for vs cards) */}
-            <h3 className="text-[13px] font-bold leading-snug text-slate-300 mb-3 line-clamp-2">
+            <h3 className="text-[14px] font-extrabold leading-snug text-slate-300 mb-3 line-clamp-2">
               {market.title}
             </h3>
           </>
@@ -402,7 +406,7 @@ export default function MarketCard({ market }: { market: Market }) {
                 )}
               </div>
 
-              <h3 className="text-[13.5px] font-bold leading-snug text-slate-100 line-clamp-3 flex-1 mt-0.5">
+              <h3 className="text-[15px] font-extrabold leading-snug text-slate-100 line-clamp-3 flex-1 mt-0.5">
                 {market.title}
               </h3>
             </div>
@@ -410,14 +414,14 @@ export default function MarketCard({ market }: { market: Market }) {
             {/* Category + urgency/time pills */}
             <div className="flex items-center gap-1.5 flex-wrap mb-3">
               <span
-                className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide"
+                className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wide"
                 style={{ background: `${cat.color}14`, color: cat.color, border: `1px solid ${cat.color}28` }}
               >
                 {cat.icon} {cat.label}
               </span>
               {effectivelyOpen && countdown && (
                 <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums"
+                  className="rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums"
                   style={{
                     color: urgency === 'final' || urgency === 'hour' ? '#fb923c' : '#64748b',
                     background: urgency === 'final' || urgency === 'hour' ? 'rgba(249,115,22,0.1)' : '#1e1e2e',
@@ -427,7 +431,7 @@ export default function MarketCard({ market }: { market: Market }) {
                 </span>
               )}
               {!effectivelyOpen && (
-                <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-500 uppercase">Closed</span>
+                <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] font-bold text-slate-500 uppercase">Closed</span>
               )}
             </div>
           </>
@@ -436,7 +440,7 @@ export default function MarketCard({ market }: { market: Market }) {
         {/* Probability split bar (2-option markets with pool) */}
         {opts.length >= 2 && total > 0 && (
           <div className="mb-3">
-            <div className="flex justify-between text-[10px] font-bold mb-1">
+            <div className="flex justify-between text-[11px] font-extrabold mb-1">
               <span style={{ color: COLOR_A }}>{pctFor(opts[0]).toFixed(0)}%</span>
               {opts.length >= 2 && <span style={{ color: COLOR_B }}>{pctFor(opts[1]).toFixed(0)}%</span>}
             </div>
@@ -464,7 +468,7 @@ export default function MarketCard({ market }: { market: Market }) {
                   key={opt.id}
                   disabled={!effectivelyOpen}
                   onClick={() => effectivelyOpen && router.push(`/markets/${market.id}?pick=${opt.id}`)}
-                  className="rounded-xl py-2.5 px-3 text-xs font-bold transition-all duration-100 active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                  className="rounded-xl py-2.5 px-3 text-[13px] font-extrabold transition-all duration-100 active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                   style={{ background: bg, border: `1.5px solid ${border}`, color }}
                   onMouseEnter={e => {
                     if (!effectivelyOpen) return
@@ -480,7 +484,7 @@ export default function MarketCard({ market }: { market: Market }) {
                 >
                   <span className="truncate max-w-[64px]">{opt.label}</span>
                   {odds !== null && (
-                    <span className="text-[11px] opacity-70 flex-shrink-0">{odds}x</span>
+                    <span className="text-[12px] opacity-70 flex-shrink-0">{odds}x</span>
                   )}
                 </button>
               )
@@ -497,7 +501,7 @@ export default function MarketCard({ market }: { market: Market }) {
                 const badge = DEPTH_BADGE[depth.rating]
                 return (
                   <span
-                    className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                    className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold"
                     style={{ background: badge.bg, border: `1px solid ${badge.border}`, color: badge.color }}
                   >
                     {badge.icon} {depth.label}
@@ -509,7 +513,7 @@ export default function MarketCard({ market }: { market: Market }) {
           )}
 
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-medium text-slate-600">
+            <span className="text-[12px] font-semibold text-slate-600">
               UGX <span className="text-slate-400 font-bold">{total.toLocaleString()}</span>
             </span>
 
@@ -550,7 +554,7 @@ export default function MarketCard({ market }: { market: Market }) {
                 </svg>
               </button>
 
-              <span className="text-xs font-black ml-1 transition-all group-hover:translate-x-0.5" style={{ color: cat.color }}>
+              <span className="text-sm font-black ml-1 transition-all group-hover:translate-x-0.5" style={{ color: cat.color }}>
                 {effectivelyOpen ? 'Predict →' : 'View →'}
               </span>
             </div>

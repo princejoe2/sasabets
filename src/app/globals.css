@@ -1,6 +1,6 @@
 /* @import must precede all other rules (incl. @tailwind, which expands into
    base styles) — Turbopack enforces this strictly, unlike webpack. */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800&family=Bebas+Neue&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -12,16 +12,40 @@
   --sabula-gold:   #f5c518;
   --sabula-red:    #ff3366;
   --sabula-cyan:   #00ccff;
-  --accent:        #007a40;
+  --accent:        #059669;
+
+  /* Forecast Markets card theme — light mode (clean white) */
+  --fc-card-bg:        #ffffff;
+  --fc-card-border:    #e8eaed;
+  --fc-text-primary:   #0f172a;
+  --fc-text-secondary: #6b7280;
+  --fc-cat-bg:         rgba(255,255,255,0.97);
+  --fc-cat-border:     #e8eaed;
+  --fc-gauge-track:    #e5e7eb;
 }
-.dark { --accent: #00ff88; }
+.dark {
+  --accent: #22c55e;
+
+  /* Forecast Markets card theme — dark mode (true monochrome) */
+  --fc-card-bg:        #111316;
+  --fc-card-border:    #1e2327;
+  --fc-text-primary:   #eceef0;
+  --fc-text-secondary: #5e6872;
+  --fc-cat-bg:         rgba(8,10,12,0.97);
+  --fc-cat-border:     #191c1f;
+  --fc-gauge-track:    #252930;
+}
 
 body {
-  background-color: #f0fdf4;
-  color: #0f1a10;
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  background-color: #ecfdf5;
+  color: #052e16;
+  font-family: var(--font-supreme), 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Syne', var(--font-chubbo), system-ui, sans-serif;
 }
 
 /* ── Gradient text ── */
@@ -279,6 +303,11 @@ body {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+@keyframes menuIn {
+  from { opacity: 0; transform: scale(0.96) translateY(-6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
 .page-enter {
   animation: fadeUp 0.25s ease both;
 }
@@ -351,6 +380,23 @@ body {
   h2 { font-size: 1.375rem; line-height: 1.3; }
 }
 
+/* ── Forecast Markets card animations ── */
+@keyframes gaugeIn {
+  from { stroke-dashoffset: 126; }
+}
+@keyframes fcGlowGreen {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,204,102,0); }
+  50%       { box-shadow: 0 0 14px 1px rgba(0,204,102,0.22); }
+}
+@keyframes fcGlowRed {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+  50%       { box-shadow: 0 0 14px 1px rgba(239,68,68,0.18); }
+}
+@keyframes fcRipple {
+  from { transform: scale(0); opacity: 0.5; }
+  to   { transform: scale(2.6); opacity: 0; }
+}
+
 /* ── Streak toast slide-in ── */
 @keyframes streak-bounce-in {
   0%   { opacity: 0; transform: translateX(-50%) translateY(-20px) scale(0.9); }
@@ -358,3 +404,71 @@ body {
   100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 }
 .animate-streak-bounce-in { animation: streak-bounce-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* ══════════════════════════════════════════════════════════════
+   LIGHT MODE OVERRIDES
+   Pages were designed dark-first with hardcoded hex colors.
+   These rules force those elements into a clean light palette
+   when the .dark class is NOT on <html>.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Body: slightly heavier weight so text pops in light mode ── */
+html:not(.dark) body {
+  font-weight: 500;
+  color: #052e16;
+}
+
+/* ── Page-level dark backgrounds → soft green-white ── */
+html:not(.dark) [class*="bg-[#0a0a0f]"],
+html:not(.dark) [class*="bg-[#040c06]"],
+html:not(.dark) [class*="bg-[#061610]"],
+html:not(.dark) [class*="bg-[#0a1a0d]"] {
+  background-color: #f0fdf4 !important;
+}
+
+/* ── Card / panel dark backgrounds → pure white ── */
+html:not(.dark) [class*="bg-[#0d0d14]"],
+html:not(.dark) [class*="bg-[#1e1e2e]"],
+html:not(.dark) [class*="bg-[#122016]"] {
+  background-color: #ffffff !important;
+}
+
+/* ── Dark borders → light emerald ── */
+html:not(.dark) [class*="border-[#1e1e2e]"],
+html:not(.dark) [class*="border-[#2a2a3e]"],
+html:not(.dark) [class*="border-[#1e293b]"] {
+  border-color: #bbf7d0 !important;
+}
+
+/* ── Slate shades designed for dark backgrounds → dark in light mode ── */
+html:not(.dark) .text-slate-100 { color: #0f172a !important; font-weight: 700; }
+html:not(.dark) .text-slate-200 { color: #1e293b !important; font-weight: 600; }
+html:not(.dark) .text-slate-300 { color: #374151 !important; font-weight: 600; }
+html:not(.dark) .text-slate-400 { color: #4b5563 !important; font-weight: 500; }
+html:not(.dark) .text-slate-500 { color: #374151 !important; }
+
+/* ── White text on formerly-dark containers → dark (skip elements with own bg) ── */
+html:not(.dark) [class*="bg-[#0a0a0f]"] .text-white:not([class*="bg-"]),
+html:not(.dark) [class*="bg-[#0d0d14]"] .text-white:not([class*="bg-"]),
+html:not(.dark) [class*="bg-[#0a1a0d]"] .text-white:not([class*="bg-"]) {
+  color: #052e16 !important;
+}
+
+/* ── bg-white and its variants stay bright white (not overridden by dark CSS) ── */
+html:not(.dark) .bg-white,
+html:not(.dark) .bg-white\/95,
+html:not(.dark) .bg-white\/80 {
+  background-color: rgba(255, 255, 255, 0.97) !important;
+}
+
+/* ── Subtle dark semi-transparent backgrounds → very light ── */
+html:not(.dark) [class*="bg-[rgba(255,255,255,0.04)"],
+html:not(.dark) [class*="bg-[rgba(255,255,255,0.03)"] {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ── Loading skeleton / placeholder bg ── */
+html:not(.dark) .bg-\[\#0d0d14\].h-48,
+html:not(.dark) [class*="bg-[#0d0d14]"][class*="h-48"] {
+  background-color: #e6f4ea !important;
+}

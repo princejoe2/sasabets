@@ -1,5 +1,6 @@
 ﻿import type { Metadata } from 'next'
 import './globals.css'
+import { supreme, chubbo } from '@/lib/fonts'
 import CursorEffects from '@/components/CursorEffects'
 import ThemeProvider from '@/components/ThemeProvider'
 import PushNotificationPrompt from '@/components/PushNotificationPrompt'
@@ -73,8 +74,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-[#f0fdf4] text-[#0f1a10] dark:bg-[#040c06] dark:text-[#e8f5e9]">
+    <html lang="en" suppressHydrationWarning className={`${supreme.variable} ${chubbo.variable}`}>
+      <body className="min-h-screen bg-[#ecfdf5] text-[#052e16] dark:bg-[#040c06] dark:text-[#e8f5e9]">
         <ThemeProvider>
           <CursorEffects />
           <MobileInstallGate />

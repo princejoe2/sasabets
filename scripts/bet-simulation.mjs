@@ -10,10 +10,12 @@
  * Cleanup: node scripts/bet-simulation.mjs --cleanup
  */
 
+// Run: node --env-file=.env.local scripts/bet-simulation.mjs
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL  = 'https://jsigphyrhgmpaydozjfa.supabase.co'
-const SERVICE_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzaWdwaHlyaGdtcGF5ZG96amZhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTY4MTYxNywiZXhwIjoyMDk3MjU3NjE3fQ.h6qg0eVlboTMpCW1F3bcQg3erJMpAu_Dm9fi1hHXOrE'
+const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://jsigphyrhgmpaydozjfa.supabase.co'
+const SERVICE_KEY   = process.env.SUPABASE_SERVICE_ROLE_KEY
+if (!SERVICE_KEY) { console.error('SUPABASE_SERVICE_ROLE_KEY not set. Run: node --env-file=.env.local scripts/bet-simulation.mjs'); process.exit(1) }
 
 const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },

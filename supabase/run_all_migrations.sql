@@ -1,6 +1,6 @@
 -- ============================================================
 -- RUN THIS IN SUPABASE SQL EDITOR (Dashboard > SQL Editor)
--- Applies migrations 0002–0006 in order.
+-- Applies migrations 0002–0006, 0012 in order.
 -- Safe to run multiple times (idempotent).
 -- ============================================================
 
@@ -208,3 +208,28 @@ VALUES
   'open', '2026-08-31 21:00:00+03', '{"category":"default"}'::jsonb
 )
 ON CONFLICT DO NOTHING;
+
+-- ── 0012: Fix phone trigger + unique index on phone ──
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, phone, full_name)
+  VALUES (
+    NEW.id,
+    COALESCE(
+      NULLIF(NEW.phone, ''),
+      NULLIF(NEW.raw_user_meta_data->>'phone', ''),
+      ''
+    ),
+    COALESCE(NULLIF(NEW.raw_user_meta_data->>'full_name', ''), '')
+  );
+  INSERT INTO public.wallets (user_id)
+  VALUES (NEW.id);
+  RETURN NEW;
+END;
+$$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_phone_unique
+  ON public.profiles (phone)
+  WHERE phone IS NOT NULL AND phone != '';

@@ -2,6 +2,7 @@
 import { useState, CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
+import AnimatedButton from '@/components/ui/animated-button'
 
 // Base64-decoded at runtime to bypass BOM injection from Vercel env vars at compile time
 const _d = (b: string) => Buffer.from(b, 'base64').toString('utf8')
@@ -44,15 +45,21 @@ export default function AuthPage() {
   const [isAdmin,     setIsAdmin]     = useState(false)
   const [otpCode,     setOtpCode]     = useState('')
 
+  const [normalizedPhone, setNormalizedPhone] = useState('')
+
+  const [username,      setUsername]      = useState('')
   const [loading,       setLoading]       = useState(false)
   const [error,         setError]         = useState('')
   const [failedAttempts, setFailedAttempts] = useState(0)
   const [lockedUntil,   setLockedUntil]   = useState(0)
+  const [termsAccepted, setTermsAccepted] = useState(false)
 
   function switchMode(m: Mode) {
     setMode(m); setStep('form')
     setError(''); setTotp('')
     setPassword(''); setConfirm('')
+    setUsername('')
+    setTermsAccepted(false)
   }
 
   // ─── Registration ──────────────────────────────────────────────────────────
@@ -63,6 +70,10 @@ export default function AuthPage() {
     if (password.length < 8) { setError('Password must be at least 8 characters'); return }
     if (password !== confirm) { setError('Passwords do not match'); return }
     if (!phone) { setError('Phone number is required for deposits and withdrawals'); return }
+    if (!termsAccepted) { setError('You must accept the Terms of Service and Privacy Policy to continue'); return }
+    if (username && !/^[a-z0-9_-]{3,20}$/.test(username)) {
+      setError('Username must be 3–20 characters: letters, numbers, _ or - only'); return
+    }
 
     // Basic Uganda phone format
     const raw = phone.replace(/[\s\-()]/g, '')
@@ -75,9 +86,10 @@ export default function AuthPage() {
               : raw.startsWith('256')  ? '+' + raw
               : '+256' + raw.slice(1)
 
+    setNormalizedPhone(ph)
     setLoading(true)
 
-    // Verify phone (local regex check — proceed silently on network error)
+    // Verify phone format and availability before creating the account
     try {
       const vRes = await fetch('/api/auth/verify-phone', {
         method: 'POST',
@@ -87,6 +99,11 @@ export default function AuthPage() {
       const vData = await vRes.json()
       if (!vData.valid) {
         setError('Phone number could not be verified. Please enter an active MTN or Airtel Uganda number.')
+        setLoading(false)
+        return
+      }
+      if (vData.available === false) {
+        setError('This phone number is already registered. Please use a different number or sign in.')
         setLoading(false)
         return
       }
@@ -142,14 +159,24 @@ export default function AuthPage() {
       setLoading(false)
       return
     }
-    // Persist phone + name to profile table and credit referral if applicable
+    // Persist phone + name to profile and credit referral if applicable.
+    // Use the already-normalised +256 number so the register API doesn't
+    // need to re-normalise and the duplicate check is format-consistent.
     try {
-      await fetch('/api/auth/register', {
+      const regRes = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, name }),
+        body: JSON.stringify({ phone: normalizedPhone || phone, name, username: username.trim().toLowerCase() || undefined }),
       })
-    } catch { /* non-critical — profile metadata was already saved via user metadata */ }
+      if (!regRes.ok) {
+        const regData = await regRes.json().catch(() => ({}))
+        if (regRes.status === 409) {
+          setError(regData.error ?? 'This phone number is already taken. Please update your phone in profile settings.')
+          setLoading(false)
+          return
+        }
+      }
+    } catch { /* non-critical — phone already saved via trigger on signUp */ }
     router.push('/markets')
     router.refresh()
   }
@@ -643,6 +670,30 @@ export default function AuthPage() {
           </div>
         )}
 
+        {/* Username (register only) */}
+        {mode === 'register' && (
+          <div style={fieldGap}>
+            <label style={label}>
+              Username <span style={{ color: T.muted, fontWeight: 400 }}>(optional, e.g. john_doe)</span>
+            </label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: T.muted, fontSize: '15px', pointerEvents: 'none' }}>@</span>
+              <input
+                type="text"
+                style={{ ...inputStyle, paddingLeft: '28px' }}
+                value={username}
+                onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 20))}
+                placeholder="your_handle"
+                autoComplete="username"
+                maxLength={20}
+              />
+            </div>
+            {username && username.length < 3 && (
+              <p style={{ color: T.muted, fontSize: '11px', marginTop: '4px' }}>At least 3 characters</p>
+            )}
+          </div>
+        )}
+
         {/* Phone (register only) */}
         {mode === 'register' && (
           <div style={fieldGap}>
@@ -697,27 +748,53 @@ export default function AuthPage() {
           </div>
         )}
 
+        {mode === 'register' && (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', margin: '0 0 16px' }}>
+            <input
+              id="terms-checkbox"
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={e => { setTermsAccepted(e.target.checked); if (e.target.checked) setError('') }}
+              style={{
+                marginTop: '2px',
+                width: '16px',
+                height: '16px',
+                minWidth: '16px',
+                accentColor: T.accent,
+                cursor: 'pointer',
+              }}
+            />
+            <label htmlFor="terms-checkbox" style={{ fontSize: '13px', color: T.muted, lineHeight: 1.55, cursor: 'pointer' }}>
+              I have read and agree to the{' '}
+              <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: T.accent, textDecoration: 'underline' }} onClick={e => e.stopPropagation()}>
+                Terms of Service
+              </a>
+              ,{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: T.accent, textDecoration: 'underline' }} onClick={e => e.stopPropagation()}>
+                Privacy Policy
+              </a>
+              {', and '}
+              <a href="/responsible-gambling" target="_blank" rel="noopener noreferrer" style={{ color: T.accent, textDecoration: 'underline' }} onClick={e => e.stopPropagation()}>
+                Responsible Gambling Policy
+              </a>
+              . I confirm I am 18 years of age or older.
+            </label>
+          </div>
+        )}
+
         {error && <p style={{ color: T.error, fontSize: '13px', margin: '0 0 12px' }}>{error}</p>}
 
-        <button
-          style={{ ...btn, opacity: loading ? 0.6 : 1 }}
-          disabled={loading}
+        <AnimatedButton
+          disabled={loading || (mode === 'register' && !termsAccepted)}
           onClick={mode === 'login' ? handleLogin : handleRegister}
+          style={{ marginTop: '8px', opacity: loading || (mode === 'register' && !termsAccepted) ? 0.6 : 1 }}
+          className="w-full rounded-[10px] py-[13px] text-[15px] font-bold !bg-[#4f8ef7] dark:!bg-[#4f8ef7] !border-[#3a7bf5] !text-white [--shine:rgba(255,255,255,0.6)] dark:[--shine:rgba(255,255,255,0.6)]"
         >
           {loading
             ? (mode === 'login' ? 'Signing in…' : 'Creating account…')
             : (mode === 'login' ? 'Sign in' : 'Create account')
           }
-        </button>
-
-        {mode === 'register' && (
-          <p style={{ color: T.muted, fontSize: '12px', textAlign: 'center', marginTop: '16px', lineHeight: 1.5 }}>
-            By registering you agree to our{' '}
-            <a href="/terms" style={{ color: T.accent }}>Terms of Service</a>
-            {' '}and{' '}
-            <a href="/privacy" style={{ color: T.accent }}>Privacy Policy</a>.
-          </p>
-        )}
+        </AnimatedButton>
       </div>
     </div>
   )

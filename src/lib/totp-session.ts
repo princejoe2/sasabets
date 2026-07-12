@@ -24,7 +24,7 @@ export function buildTotpCookie(userId: string): { name: string; value: string; 
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax' as const,
       maxAge: TTL_MS / 1000,
-      path: '/admin',
+      path: '/',
     },
   }
 }

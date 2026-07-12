@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { guardAdmin } from '@/lib/admin-guard'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
-  if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // Market editing: moderators manage markets (same access level as market create/takedown).
+  const g = await guardAdmin(['moderator'])
+  if ('error' in g) return g.error
+  const { user, admin } = g
 
   const { title, description, closesAt, optALabel, optBLabel, verificationType, verificationConfig, rakePct, category, partyImage, team1Image, team2Image } = await req.json()
   if (!title?.trim()) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -75,13 +72,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
-  if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // Hard deletion is irreversible: super-admin only (moderators can use takedown instead).
+  const g = await guardAdmin()
+  if ('error' in g) return g.error
+  const { user, admin } = g
 
   // Verify market exists
   const { data: market } = await admin.from('markets').select('id, title, total_pool').eq('id', (await params).id).single()
