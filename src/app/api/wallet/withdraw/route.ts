@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { sendMoney } from '@/lib/marz'
-import { sendPayment } from '@/lib/relworx'
 
 const MIN_WITHDRAWAL = 5000
 const MAX_WITHDRAWAL = 1_000_000
@@ -61,7 +59,7 @@ async function handleWithdraw(req: NextRequest) {
 
   // Always withdraw to the user's verified profile phone — never a body-supplied number.
   const { data: profile } = await admin.from('profiles')
-    .select('phone, kyc_status, suspended, self_excluded_until')
+    .select('phone, kyc_status, suspended, self_excluded_until, full_name, username')
     .eq('id', userId).single()
 
   if (profile?.suspended) {
@@ -167,23 +165,7 @@ async function handleWithdraw(req: NextRequest) {
   }
   const newBalance = Number(balanceAfterDebit)
 
-  // Helper: atomically refund the just-debited amount, but only once. We guard on
-  // the transaction still being 'pending' so a webhook that already finalised the
-  // disbursement (completed/failed→refunded) cannot be double-refunded here.
-  async function refundOnce() {
-    const { data: claimed } = await admin
-      .from('transactions')
-      .update({ status: 'failed' })
-      .eq('reference', reference)
-      .eq('status', 'pending')
-      .select('id')
-    if (claimed && claimed.length > 0) {
-      // Only refund if WE won the race to mark it failed.
-      await admin.rpc('adjust_wallet_balance', { p_user_id: userId, p_delta: amount })
-    }
-  }
-
-  // ---- Audit row BEFORE gateway call -------------------------------------
+  // ---- Audit row — no gateway call yet (manual approval required) --------
   const { error: insertErr } = await admin.from('transactions').insert({
     user_id: userId,
     type: 'withdrawal',
@@ -194,43 +176,41 @@ async function handleWithdraw(req: NextRequest) {
     metadata: { phone: phone_number },
   })
   if (insertErr) {
-    // Could not record the ledger row — undo the debit and abort. Never call a
-    // gateway without an audit trail.
     console.error('[withdraw] audit insert failed:', insertErr.message)
     await admin.rpc('adjust_wallet_balance', { p_user_id: userId, p_delta: amount })
     return NextResponse.json({ error: 'Withdrawal failed. Please try again.' }, { status: 500 })
   }
 
-  // ---- Disbursement: MarzPay primary → Relworx fallback ------------------
-  let gateway: 'relworx' | 'marzpay'
-  let gatewayMeta: Record<string, string>
-
-  try {
-    const result = await sendMoney({ phone_number, amount, reference, description: 'Sabula 256 withdrawal' })
-    gateway = 'marzpay'
-    gatewayMeta = { phone: phone_number, marz_uuid: result.data.transaction.uuid }
-  } catch (marzErr) {
-    try {
-      const result = await sendPayment({ msisdn: phone_number, amount, reference, description: 'Sabula 256 withdrawal' })
-      gateway = 'relworx'
-      gatewayMeta = { phone: phone_number, internal_reference: result.internal_reference }
-    } catch (relworxErr) {
-      // Both gateways rejected the request outright (no disbursement accepted).
-      // Atomic, idempotent refund — safe even if a webhook races us.
-      console.error('[withdraw] both gateways failed:',
-        marzErr instanceof Error ? marzErr.message : String(marzErr), '|',
-        relworxErr instanceof Error ? relworxErr.message : String(relworxErr))
-      await refundOnce()
-      return NextResponse.json({ error: 'Disbursement failed. Your balance has been restored.' }, { status: 502 })
-    }
+  // ---- Notify admin via Telegram (approve / reject buttons) --------------
+  const botToken = process.env.TELEGRAM_BOT_TOKEN
+  const chatId   = process.env.TELEGRAM_CHAT_ID
+  if (botToken && chatId) {
+    const displayName = profile?.username ? `@${profile.username}` : (profile?.full_name ?? 'Unknown')
+    const escMd = (s: string) => s.replace(/[_*[\]()~`>#+=|{}.!\\-]/g, '\\$&')
+    const text = [
+      `💸 *Withdrawal Request*`,
+      ``,
+      `👤 ${escMd(displayName)}`,
+      `📱 ${escMd(phone_number)}`,
+      `💰 UGX ${amount.toLocaleString()}`,
+      `🆔 \`${reference}\``,
+    ].join('\n')
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'MarkdownV2',
+        reply_markup: {
+          inline_keyboard: [[
+            { text: '✅ Approve', callback_data: `approve:${reference}` },
+            { text: '❌ Reject',  callback_data: `reject:${reference}`  },
+          ]],
+        },
+      }),
+    }).catch(() => {})
   }
 
-  // Disbursement accepted by a gateway. The transaction stays 'pending' until the
-  // gateway webhook confirms completion or failure (which refunds via the same
-  // atomic guard). Record gateway metadata without clobbering the existing fields.
-  await admin.from('transactions').update({
-    metadata: { phone: phone_number, gateway, ...gatewayMeta },
-  }).eq('reference', reference)
-
-  return NextResponse.json({ success: true, newBalance, reference })
+  return NextResponse.json({ success: true, newBalance, reference, pending_approval: true })
 }

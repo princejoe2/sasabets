@@ -67,6 +67,32 @@ export async function POST(req: NextRequest) {
     txn = data
   }
 
+  // Admin-approve flow: withdrawal may already be 'processing' (claimed on approval).
+  // For withdrawal webhooks only — select directly and finalize.
+  if (!txn) {
+    const isWithdrawalEvent = status === 'success' || status === 'failed'
+    if (isWithdrawalEvent) {
+      if (customer_reference) {
+        const { data } = await admin
+          .from('transactions')
+          .select('*')
+          .eq('reference', String(customer_reference))
+          .eq('status', 'processing')
+          .single()
+        txn = data
+      }
+      if (!txn && internal_reference) {
+        const { data } = await admin
+          .from('transactions')
+          .select('*')
+          .filter('metadata->>internal_reference', 'eq', String(internal_reference))
+          .eq('status', 'processing')
+          .single()
+        txn = data
+      }
+    }
+  }
+
   if (!txn) return NextResponse.json({ received: true })  // already processed
 
   // txn.amount is signed: deposits are positive, withdrawals negative. The handling

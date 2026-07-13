@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
   // Atomic idempotency guard: only process if status is still 'pending'
   // This prevents duplicate webhook deliveries from double-crediting
-  const { data: txn, error: claimErr } = await admin
+  let { data: txn } = await admin
     .from('transactions')
     .update({ status: 'processing' })
     .eq('reference', ourRef)
@@ -63,7 +63,19 @@ export async function POST(req: NextRequest) {
     .select('*')
     .single()
 
-  if (claimErr || !txn) return NextResponse.json({ received: true })  // already processed
+  // Admin-approve flow: transaction may already be 'processing' (claimed on approval).
+  // For disbursement events only — select directly and finalize.
+  if (!txn && event_type?.startsWith('disbursement')) {
+    const { data } = await admin
+      .from('transactions')
+      .select('*')
+      .eq('reference', ourRef)
+      .eq('status', 'processing')
+      .single()
+    txn = data
+  }
+
+  if (!txn) return NextResponse.json({ received: true })  // already processed or unknown
 
   if (event_type === 'collection.completed') {
     // Always credit from our own DB record — never trust payload amount.
