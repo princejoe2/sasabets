@@ -48,11 +48,11 @@ const nextConfig = {
             // 'unsafe-inline' in style-src is required by Tailwind/framer-motion inline styles.
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline'",
-              "font-src 'self' data:",
+              "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' data: https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://flagcdn.com https://upload.wikimedia.org https://commons.wikimedia.org https://assets.coingecko.com https://images.unsplash.com",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.coingecko.com https://api.ipify.org",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.coingecko.com https://api.ipify.org https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com",
               "frame-ancestors 'none'",
               "object-src 'none'",
               "base-uri 'self'",
