@@ -4,7 +4,6 @@ import { supreme, chubbo } from '@/lib/fonts'
 import CursorEffects from '@/components/CursorEffects'
 import ThemeProvider from '@/components/ThemeProvider'
 import PushNotificationPrompt from '@/components/PushNotificationPrompt'
-import { MobileInstallGate } from '@/components/LazyClient'
 import { GoogleAnalytics } from '@next/third-parties/google'
 
 const BASE = 'https://sabula256.com'
@@ -78,7 +77,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-[#ecfdf5] text-[#052e16] dark:bg-[#040c06] dark:text-[#e8f5e9]">
         <ThemeProvider>
           <CursorEffects />
-          <MobileInstallGate />
           {children}
           <PushNotificationPrompt />
         </ThemeProvider>
