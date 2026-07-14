@@ -13,6 +13,7 @@ export interface QueueMarket {
   description?: string | null
   bettors: number
   nonCreatorBettors: number
+  status: string
 }
 
 export default function SettleQueueClient({ markets }: { markets: QueueMarket[] }) {
@@ -31,7 +32,7 @@ export default function SettleQueueClient({ markets }: { markets: QueueMarket[] 
         <p className="mt-1 text-slate-500">
           {markets.length === 0
             ? 'No markets pending settlement'
-            : `${markets.length} market${markets.length !== 1 ? 's' : ''} closed and awaiting settlement`}
+            : `${markets.length} market${markets.length !== 1 ? 's' : ''} awaiting settlement`}
         </p>
       </div>
 
@@ -83,6 +84,11 @@ export default function SettleQueueClient({ markets }: { markets: QueueMarket[] 
                     {isUserCreated && (
                       <span className="shrink-0 rounded-full border border-violet-700/40 bg-violet-900/20 px-2 py-0.5 text-[9px] font-black text-violet-400">
                         🌍 COMMUNITY
+                      </span>
+                    )}
+                    {m.status === 'open' && (
+                      <span className="shrink-0 rounded-full border border-orange-700/40 bg-orange-900/20 px-2 py-0.5 text-[9px] font-black text-orange-400">
+                        EXPIRED
                       </span>
                     )}
                   </div>

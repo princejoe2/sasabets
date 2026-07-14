@@ -8,10 +8,11 @@ export const dynamic = 'force-dynamic'
 export default async function SettleQueuePage() {
   const admin = createAdminClient()
 
+  const now = new Date().toISOString()
   const { data: markets } = await admin
     .from('markets')
-    .select('id, title, total_pool, closes_at, options, metadata, description, rake_pct, verification_type, verification_config, created_by')
-    .eq('status', 'closed')
+    .select('id, title, total_pool, closes_at, options, metadata, description, rake_pct, verification_type, verification_config, created_by, status')
+    .or(`status.eq.closed,and(status.eq.open,closes_at.lt.${now})`)
     .order('closes_at', { ascending: true })
 
   const list = markets ?? []
@@ -49,6 +50,7 @@ export default async function SettleQueuePage() {
     description:       (m as { description?: string | null }).description ?? null,
     bettors:           bettorMap[m.id]?.size ?? 0,
     nonCreatorBettors: nonCreatorBettorMap[m.id]?.size ?? 0,
+    status:            m.status,
   }))
 
   return <SettleQueueClient markets={rows} />

@@ -258,7 +258,7 @@ function WalletPageContent() {
     } else {
       // Funds always go to the verified profile number, never the editable field.
       const dest = phone ? '+' + phone : 'your registered Mobile Money number'
-      setSuccess('Withdrawal submitted! UGX ' + amtNum.toLocaleString() + ' is pending admin approval and will be sent to ' + dest + ' once approved.')
+      setSuccess('Withdrawal submitted! UGX ' + amtNum.toLocaleString() + ' will be sent to ' + dest + ' shortly.')
       setAmount('')
       await load()
     }
@@ -503,7 +503,7 @@ function WalletPageContent() {
                 {pendingWithdrawals.length} pending withdrawal{pendingWithdrawals.length > 1 ? 's' : ''}
               </p>
               <p className="mt-0.5 text-xs text-amber-500">
-                Awaiting admin approval. You will receive your funds once approved.
+                Withdrawals are processed within 24 hours to your registered Mobile Money number.
               </p>
             </div>
           )}
