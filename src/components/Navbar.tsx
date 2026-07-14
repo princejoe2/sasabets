@@ -210,16 +210,11 @@ export default function Navbar() {
                   {/* Menu items */}
                   <div className="py-1.5">
                     {[
-                      { href: '/wallet',               icon: '💳', label: 'Wallet',           sub: wallet !== null ? `UGX ${wallet.toLocaleString()}` : undefined },
-                      { href: '/bets',                 icon: '🎯', label: 'My Predictions',   sub: undefined as string | undefined },
-                      { href: '/dashboard',            icon: '🏗️', label: 'Creator Dashboard', sub: undefined as string | undefined },
-                      { href: '/invite',               icon: '🎁', label: 'Invite & Earn',    sub: undefined as string | undefined },
-                      { href: '/leaderboard',          icon: '🏆', label: 'Leaderboard',      sub: undefined as string | undefined },
-                      { href: '/profile',              icon: '👤', label: 'Profile',          sub: undefined as string | undefined },
-                      { href: '/kyc',                  icon: '🪪', label: 'Verify Identity',  sub: undefined as string | undefined },
-                      { href: '/responsible-gambling', icon: '🛡️', label: 'Responsible Play', sub: undefined as string | undefined },
-                      { href: '/help',                 icon: '❓', label: 'Help / FAQ',        sub: undefined as string | undefined },
-                      { href: '/about',                icon: 'ℹ️', label: 'About Sabula 256',  sub: undefined as string | undefined },
+                      { href: '/wallet',    icon: '💳', label: 'Wallet',            sub: wallet !== null ? `UGX ${wallet.toLocaleString()}` : undefined },
+                      { href: '/bets',      icon: '🎯', label: 'My Predictions',    sub: undefined as string | undefined },
+                      { href: '/dashboard', icon: '🏗️', label: 'Creator Dashboard', sub: undefined as string | undefined },
+                      { href: '/invite',    icon: '🎁', label: 'Invite & Earn',     sub: undefined as string | undefined },
+                      { href: '/profile',   icon: '👤', label: 'Profile',           sub: undefined as string | undefined },
                       ...(user?.email === 'taskmastersug@gmail.com' ? [{ href: '/admin/analytics', icon: '📊', label: 'Admin Dashboard', sub: undefined as string | undefined }] : []),
                     ].map(({ href, icon, label, sub }) => {
                       const active = pathname === href
