@@ -107,7 +107,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/markets', request.url))
   }
 
-  const protectedRoutes = ['/wallet', '/admin', '/bets', '/profile', '/kyc', '/dashboard', '/invite', '/create']
+  const protectedRoutes = ['/wallet', '/admin', '/bets', '/profile', '/kyc', '/dashboard', '/invite', '/create', '/settings']
   const isProtected = protectedRoutes.some(r => path.startsWith(r))
 
   if (isProtected && !user) {

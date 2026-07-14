@@ -214,7 +214,7 @@ export default function Navbar() {
                       { href: '/bets',      icon: '🎯', label: 'My Predictions',    sub: undefined as string | undefined },
                       { href: '/dashboard', icon: '🏗️', label: 'Creator Dashboard', sub: undefined as string | undefined },
                       { href: '/invite',    icon: '🎁', label: 'Invite & Earn',     sub: undefined as string | undefined },
-                      { href: '/profile',   icon: '👤', label: 'Profile',           sub: undefined as string | undefined },
+                      { href: '/settings',  icon: '⚙️', label: 'Settings',          sub: undefined as string | undefined },
                       ...(user?.email === 'taskmastersug@gmail.com' ? [{ href: '/admin/analytics', icon: '📊', label: 'Admin Dashboard', sub: undefined as string | undefined }] : []),
                     ].map(({ href, icon, label, sub }) => {
                       const active = pathname === href
