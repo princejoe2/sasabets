@@ -209,7 +209,7 @@ export default function Navbar() {
 
                   {/* Menu items */}
                   <div className="py-1.5">
-                    [
+                    {[
                       { href: '/wallet',   icon: '💳', label: 'Wallet',         sub: wallet !== null ? `UGX ${wallet.toLocaleString()}` : undefined },
                       { href: '/bets',     icon: '🎯', label: 'My Predictions', sub: undefined as string | undefined },
                       { href: '/settings', icon: '⚙️', label: 'Settings',       sub: undefined as string | undefined },
