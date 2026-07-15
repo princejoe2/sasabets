@@ -591,8 +591,13 @@ const marketUrl  = accessToken
         <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
 
           {/* Binary head-to-head */}
-          <div className="lg:col-span-2 order-2 lg:order-1">
-            <h2 className="mb-5 text-xs font-bold uppercase tracking-widest text-[#5e6872]">Choose your side</h2>
+          <div className="lg:col-span-2 order-1 lg:order-1">
+            {/* Step 1 indicator — mobile only */}
+            <div className="mb-4 flex items-center gap-2.5 lg:hidden">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#22c55e] text-[11px] font-black text-[#0a0c0e]">1</span>
+              <span className="text-[11px] font-black uppercase tracking-widest text-[#cfd6d2]">Choose your side</span>
+            </div>
+            <h2 className="mb-5 hidden lg:block text-xs font-bold uppercase tracking-widest text-[#5e6872]">Choose your side</h2>
 
             {/* Entity matchup header */}
             {liveOpts.length >= 2 && (() => {
@@ -711,23 +716,23 @@ const marketUrl  = accessToken
 
             {/* Tug-of-war bar */}
             {liveOpts.length >= 2 && (
-              <div className="mt-5 rounded-xl border border-[#1e2327] bg-[#111316] p-4">
-                <div className="mb-2 flex justify-between text-xs font-bold">
+              <div className="mt-4 rounded-2xl border border-[#1c2622] bg-[#101614] p-4">
+                <div className="mb-2.5 flex justify-between text-[13px] font-black">
                   <span className="text-[#22c55e]">{liveOpts[0].label}</span>
-                  <span className="text-[#5e6872]">Pool split</span>
+                  <span className="text-[11px] font-bold tracking-wide text-[#5e6872]">Pool split</span>
                   <span className="text-[#ef4444]">{liveOpts[1].label}</span>
                 </div>
-                <div className="flex h-2.5 overflow-hidden rounded-full bg-[#1e2327]">
+                <div className="flex h-[9px] overflow-hidden rounded-full bg-[#1c2622]">
                   <div
                     className="h-full transition-all duration-700"
-                    style={{ width: `${pctFor(liveOpts[0])}%`, background: 'linear-gradient(90deg,#15803d,#22c55e)' }}
+                    style={{ width: `${pctFor(liveOpts[0])}%`, background: 'linear-gradient(90deg,#14c56f,#22c55e)' }}
                   />
                   <div
                     className="h-full flex-1"
-                    style={{ background: 'linear-gradient(90deg,#991b1b,#ef4444)' }}
+                    style={{ background: 'linear-gradient(90deg,#ef4444,#c53a52)' }}
                   />
                 </div>
-                <div className="mt-1.5 flex justify-between text-[10.5px] text-[#5e6872]">
+                <div className="mt-2 flex justify-between text-[11px] font-semibold text-[#6f7a75]">
                   <span>{pctFor(liveOpts[0]).toFixed(1)}%</span>
                   <span>UGX {Number(liveTotal).toLocaleString()} pool</span>
                   <span>{pctFor(liveOpts[1]).toFixed(1)}%</span>
@@ -751,8 +756,8 @@ const marketUrl  = accessToken
             </div>
           </div>
 
-          {/* Event Slip — sticky on desktop, first on mobile */}
-          <div className="lg:sticky lg:top-24 lg:self-start space-y-4 order-1 lg:order-2">
+          {/* Event Slip — sticky on desktop, below cards on mobile */}
+          <div className="lg:sticky lg:top-24 lg:self-start space-y-4 order-2 lg:order-2">
 
             {/* Live price ticker for asset markets */}
             {isAssetMarket && (() => {
@@ -839,6 +844,11 @@ const marketUrl  = accessToken
             {isOpen && !done && (
               <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] overflow-hidden">
                 <div className="border-b border-[#1e1e2e] px-5 py-4">
+                  {/* Step 2 indicator — mobile only */}
+                  <div className="mb-2 flex items-center gap-2 lg:hidden">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#22c55e] text-[11px] font-black text-[#0a0c0e]">2</span>
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[#cfd6d2]">Event Slip</span>
+                  </div>
                   <h2 className="font-bold text-white">Event Slip</h2>
                   {balance !== null && (
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -857,8 +867,9 @@ const marketUrl  = accessToken
                         <span className="font-black text-sm text-[#22c55e]">{oddsFor(chosenOpt)}</span>
                       </div>
                     ) : (
-                      <div className="rounded-xl border border-dashed border-[#2a2a3e] px-4 py-3 text-sm text-slate-500 text-center">
-                        Select an outcome ↑
+                      <div className="rounded-xl border border-dashed border-[#2a2a3e] px-4 py-3 flex items-center justify-between text-sm text-slate-500">
+                        <span>No pick yet</span>
+                        <span className="text-xs">Tap YES or NO above ↑</span>
                       </div>
                     )}
                   </div>
@@ -967,7 +978,7 @@ const marketUrl  = accessToken
                         color: selectedOpt && amtNum >= 1000 ? '#0a0c0e' : '#5e6872',
                       }}
                     >
-                      {loading ? 'Placing…' : 'Confirm Prediction'}
+                      {loading ? 'Placing…' : !selectedOpt ? 'Select a side above' : !amtNum || amtNum < 1000 ? 'Enter an amount' : 'Confirm Prediction'}
                     </button>
                   ) : (
                     <Link

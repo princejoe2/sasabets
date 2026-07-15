@@ -38,12 +38,10 @@ const TYPE_EMOJI: Record<string, string> = {
 }
 
 const FILTERS: { key: FilterType; label: string }[] = [
-  { key: 'all',            label: 'All' },
-  { key: 'deposit',        label: 'Deposits' },
-  { key: 'withdrawal',     label: 'Withdrawals' },
-  { key: 'payout',         label: 'Winnings' },
-  { key: 'bet',            label: 'Bets' },
-  { key: 'referral_bonus', label: 'Referrals' },
+  { key: 'all',        label: 'All' },
+  { key: 'deposit',    label: 'Deposits' },
+  { key: 'withdrawal', label: 'Withdrawals' },
+  { key: 'payout',     label: 'Winnings' },
 ]
 
 function filterMatch(txn: Transaction, f: FilterType): boolean {
@@ -304,44 +302,46 @@ function WalletPageContent() {
       )}
 
       {/* ── Balance Hero ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-900 via-violet-800 to-indigo-900 p-6 text-white shadow-xl">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.08),transparent_60%)]" />
+      <div className="relative overflow-hidden text-white" style={{ background: 'linear-gradient(140deg, #7c3aed, #5b21b6 65%, #4c1d95)', borderRadius: 22, padding: '22px 22px 20px', boxShadow: '0 18px 40px rgba(76,29,149,0.4)' }}>
+        <div className="pointer-events-none absolute -top-10 -right-8 h-40 w-40 rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.14), transparent 70%)' }} />
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-violet-300">Available Balance</p>
-            <p className="mt-2 text-5xl font-bold tracking-tight">
+            <p className="text-[11px] font-black uppercase tracking-[1.6px]" style={{ color: '#d8c9f5' }}>Available Balance</p>
+            <p className="mt-1.5 font-bold leading-none tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 'clamp(28px, 8vw, 42px)' }}>
               {balance !== null ? `UGX ${fmt(balance)}` : '—'}
             </p>
             {locked > 0 && (
-              <p className="mt-1.5 text-xs text-violet-300">🔒 UGX {fmt(locked)} bonus · betting only</p>
+              <p className="mt-1.5 text-xs" style={{ color: '#d8c9f5' }}>🔒 UGX {fmt(locked)} bonus · betting only</p>
             )}
             {/* Mini-stats: desktop only */}
             <div className="mt-4 hidden lg:flex gap-6 text-sm">
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-violet-300">Deposited</p>
+                <p className="text-[11px] uppercase tracking-wider" style={{ color: '#d8c9f5' }}>Deposited</p>
                 <p className="font-semibold">UGX {fmt(totalDeposited)}</p>
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-violet-300">Withdrawn</p>
+                <p className="text-[11px] uppercase tracking-wider" style={{ color: '#d8c9f5' }}>Withdrawn</p>
                 <p className="font-semibold">UGX {fmt(totalWithdrawn)}</p>
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-violet-300">Won</p>
+                <p className="text-[11px] uppercase tracking-wider" style={{ color: '#d8c9f5' }}>Won</p>
                 <p className="font-semibold text-emerald-300">UGX {fmt(totalWon)}</p>
               </div>
             </div>
           </div>
           {/* CTA buttons */}
-          <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-col lg:gap-3 lg:min-w-[140px]">
+          <div className="grid grid-cols-2 gap-3 lg:flex lg:flex-col lg:gap-3 lg:min-w-[140px]">
             <button
               onClick={() => switchTab('deposit')}
-              className="rounded-xl bg-white py-3 text-sm font-bold text-violet-900 shadow hover:bg-violet-50 transition-colors"
+              className="flex items-center justify-center gap-2 rounded-[14px] py-3 text-sm font-black transition-all"
+              style={{ background: tab === 'deposit' ? '#fff' : 'rgba(255,255,255,0.16)', color: tab === 'deposit' ? '#4c1d95' : '#fff', boxShadow: tab === 'deposit' ? '0 6px 16px rgba(0,0,0,0.2)' : 'none' }}
             >
               💰 Deposit
             </button>
             <button
               onClick={() => switchTab('withdraw')}
-              className="rounded-xl border border-white/30 bg-white/10 py-3 text-sm font-bold backdrop-blur hover:bg-white/20 transition-colors"
+              className="flex items-center justify-center gap-2 rounded-[14px] py-3 text-sm font-black transition-all"
+              style={{ background: tab === 'withdraw' ? '#fff' : 'rgba(255,255,255,0.16)', color: tab === 'withdraw' ? '#4c1d95' : '#fff', boxShadow: tab === 'withdraw' ? '0 6px 16px rgba(0,0,0,0.2)' : 'none' }}
             >
               🏦 Withdraw
             </button>
@@ -349,10 +349,29 @@ function WalletPageContent() {
         </div>
       </div>
 
+      {/* ── Stat tiles — always below hero, above form on mobile ── */}
+      <div className="grid grid-cols-3 gap-2 lg:hidden">
+        <div className="rounded-2xl border border-[#1c2622] bg-[#0e1311] p-3 text-center">
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#7c8783]">Deposited</p>
+          <p className="mt-1.5 font-bold text-[#22c55e]" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 24 }}>{fmtK(totalDeposited)}</p>
+          <p className="text-[10px] font-semibold text-[#5b655f]">UGX</p>
+        </div>
+        <div className="rounded-2xl border border-[#1c2622] bg-[#0e1311] p-3 text-center">
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#7c8783]">Won</p>
+          <p className="mt-1.5 font-bold text-violet-400" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 24 }}>{fmtK(totalWon)}</p>
+          <p className="text-[10px] font-semibold text-[#5b655f]">UGX</p>
+        </div>
+        <div className="rounded-2xl border border-[#1c2622] bg-[#0e1311] p-3 text-center">
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#7c8783]">Active</p>
+          <p className="mt-1.5 font-bold text-amber-400" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 24 }}>{activeBets}</p>
+          <p className="text-[10px] font-semibold text-[#5b655f]">bets</p>
+        </div>
+      </div>
+
       {/* ── Main grid: form (left/top) | transactions (right/bottom) ── */}
       <div className="grid gap-4 lg:grid-cols-5 lg:gap-6">
 
-        {/* Form — first in DOM so it appears immediately below hero on mobile */}
+        {/* Form — first in DOM so it appears immediately below stats on mobile */}
         <div ref={formRef} className="lg:col-span-2">
           <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] overflow-hidden">
             <div className="flex border-b border-[#1e1e2e]">
@@ -476,25 +495,6 @@ function WalletPageContent() {
 
         {/* Right col: stats (mobile only) + transactions */}
         <div className="lg:col-span-3 space-y-4">
-
-          {/* Stats row — mobile only (desktop shows them inside the hero) */}
-          <div className="grid grid-cols-3 gap-2 lg:hidden">
-            <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-3 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-slate-500">Deposited</p>
-              <p className="mt-1 text-xl font-bold text-emerald-400">{fmtK(totalDeposited)}</p>
-              <p className="text-[9px] text-slate-600">UGX</p>
-            </div>
-            <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-3 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-slate-500">Won</p>
-              <p className="mt-1 text-xl font-bold text-violet-400">{fmtK(totalWon)}</p>
-              <p className="text-[9px] text-slate-600">UGX</p>
-            </div>
-            <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-3 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-slate-500">Active</p>
-              <p className="mt-1 text-xl font-bold text-amber-400">{activeBets}</p>
-              <p className="text-[9px] text-slate-600">bets</p>
-            </div>
-          </div>
 
           {/* Pending withdrawals banner */}
           {pendingWithdrawals.length > 0 && (

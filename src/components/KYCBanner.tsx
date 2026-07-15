@@ -32,7 +32,7 @@ export default function KYCBanner() {
         <p className="mt-0.5 text-sm text-amber-700 dark:text-amber-300">
           {status === 'pending'
             ? 'Your documents are under review. This usually takes 1-2 business days.'
-            : 'You need to verify your identity before you can withdraw funds above UGX 5,000,000.'}
+            : 'Required before withdrawing funds above UGX 5,000,000.'}
         </p>
       </div>
       {status !== 'pending' && (
