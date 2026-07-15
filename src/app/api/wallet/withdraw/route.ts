@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { sendMoney } from '@/lib/marz'
+import { sendPayment } from '@/lib/relworx'
 
 const MIN_WITHDRAWAL = 5000
 const MAX_WITHDRAWAL = 1_000_000
@@ -165,13 +167,13 @@ async function handleWithdraw(req: NextRequest) {
   }
   const newBalance = Number(balanceAfterDebit)
 
-  // ---- Audit row — no gateway call yet (manual approval required) --------
+  // ---- Record transaction as processing — gateway is called immediately ----
   const { error: insertErr } = await admin.from('transactions').insert({
     user_id: userId,
     type: 'withdrawal',
     amount: -amount,
     balance_after: newBalance,
-    status: 'pending',
+    status: 'processing',
     reference,
     metadata: { phone: phone_number },
   })
@@ -181,36 +183,33 @@ async function handleWithdraw(req: NextRequest) {
     return NextResponse.json({ error: 'Withdrawal failed. Please try again.' }, { status: 500 })
   }
 
-  // ---- Notify admin via Telegram (approve / reject buttons) --------------
-  const botToken = process.env.TELEGRAM_BOT_TOKEN
-  const chatId   = process.env.TELEGRAM_CHAT_ID
-  if (botToken && chatId) {
-    const displayName = profile?.username ? `@${profile.username}` : (profile?.full_name ?? 'Unknown')
-    const escMd = (s: string) => s.replace(/[_*[\]()~`>#+=|{}.!\\-]/g, '\\$&')
-    const text = [
-      `💸 *Withdrawal Request*`,
-      ``,
-      `👤 ${escMd(displayName)}`,
-      `📱 ${escMd(phone_number)}`,
-      `💰 UGX ${amount.toLocaleString()}`,
-      `🆔 \`${reference}\``,
-    ].join('\n')
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: 'MarkdownV2',
-        reply_markup: {
-          inline_keyboard: [[
-            { text: '✅ Approve', callback_data: `approve:${reference}` },
-            { text: '❌ Reject',  callback_data: `reject:${reference}`  },
-          ]],
-        },
-      }),
-    }).catch(() => {})
+  // ---- Disburse immediately: MarzPay primary → Relworx fallback -----------
+  let gatewayMeta: Record<string, string> = { phone: phone_number, gateway: '' }
+  let gatewayOk = false
+
+  try {
+    const result = await sendMoney({ phone_number, amount, reference, description: 'Sabula 256 withdrawal' })
+    gatewayMeta = { phone: phone_number, gateway: 'marzpay', marz_uuid: result.data.transaction.uuid }
+    gatewayOk = true
+  } catch {
+    try {
+      const result = await sendPayment({ msisdn: phone_number, amount, reference, description: 'Sabula 256 withdrawal' })
+      gatewayMeta = { phone: phone_number, gateway: 'relworx', internal_reference: result.internal_reference }
+      gatewayOk = true
+    } catch (err) {
+      console.error('[withdraw] both gateways failed:', err instanceof Error ? err.message : String(err))
+    }
   }
 
-  return NextResponse.json({ success: true, newBalance, reference, pending_approval: true })
+  if (!gatewayOk) {
+    // Both gateways rejected — refund atomically and mark failed
+    await admin.from('transactions').update({ status: 'failed' }).eq('reference', reference)
+    await admin.rpc('adjust_wallet_balance', { p_user_id: userId, p_delta: amount })
+    return NextResponse.json({ error: 'Payment gateway unavailable. Your balance has been restored — please try again later.' }, { status: 502 })
+  }
+
+  // Update metadata with gateway details; status stays 'processing' until gateway webhook confirms
+  await admin.from('transactions').update({ metadata: gatewayMeta }).eq('reference', reference)
+
+  return NextResponse.json({ success: true, newBalance, reference })
 }
