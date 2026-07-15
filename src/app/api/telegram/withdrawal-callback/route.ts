@@ -22,12 +22,13 @@ async function editMessage(botToken: string, chatId: number, messageId: number, 
 }
 
 export async function POST(req: NextRequest) {
-  // Verify request is genuinely from Telegram
+  // Verify request is genuinely from Telegram.
+  // Fail closed: if the secret isn't configured, refuse all requests rather than
+  // leaving withdrawal approval open to any caller.
   const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET
-  if (webhookSecret) {
-    const header = req.headers.get('x-telegram-bot-api-secret-token')
-    if (header !== webhookSecret) return NextResponse.json({ ok: false }, { status: 401 })
-  }
+  if (!webhookSecret) return NextResponse.json({ ok: false }, { status: 503 })
+  const header = req.headers.get('x-telegram-bot-api-secret-token')
+  if (header !== webhookSecret) return NextResponse.json({ ok: false }, { status: 401 })
 
   const botToken = process.env.TELEGRAM_BOT_TOKEN
   if (!botToken) return NextResponse.json({ ok: true })

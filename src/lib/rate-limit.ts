@@ -32,8 +32,9 @@ export async function rateLimit(
     p_window_seconds: windowSeconds,
   })
   if (error) {
-    console.error('[rate-limit] RPC error, failing open:', error.message)
-    return { allowed: true }
+    // Fail closed: a DB error must not bypass rate limits (e.g. TOTP brute-force during outage).
+    console.error('[rate-limit] RPC error, failing closed:', error.message)
+    return { allowed: false }
   }
   return { allowed: Boolean(data) }
 }

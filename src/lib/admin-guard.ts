@@ -24,15 +24,17 @@ export async function guardAdmin(allowedRoles?: StaffRole[]): Promise<GuardResul
 
   const { data: profile } = await admin
     .from('profiles')
-    .select('is_admin, staff_role')
+    .select('is_admin, staff_role, totp_enabled')
     .eq('id', user.id)
     .single()
 
   if (!profile) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
 
+  // Read TOTP cookie once — used for both super-admin and TOTP-enrolled staff
+  const jar = await cookies()
+  const totpCookie = jar.get(COOKIE_NAME)?.value
+
   if (profile.is_admin) {
-    const jar = await cookies()
-    const totpCookie = jar.get(COOKIE_NAME)?.value
     if (!verifyTotpCookie(totpCookie, user.id)) {
       return { error: NextResponse.json({ error: 'Two-factor authentication required' }, { status: 403 }) }
     }
@@ -40,6 +42,11 @@ export async function guardAdmin(allowedRoles?: StaffRole[]): Promise<GuardResul
   }
 
   if (allowedRoles && profile.staff_role && allowedRoles.includes(profile.staff_role as StaffRole)) {
+    // Require TOTP for staff members who have enrolled — a stolen session token alone
+    // is not sufficient to settle markets or adjust funds.
+    if (profile.totp_enabled && !verifyTotpCookie(totpCookie, user.id)) {
+      return { error: NextResponse.json({ error: 'Two-factor authentication required' }, { status: 403 }) }
+    }
     return { user, admin, isSuperAdmin: false, role: profile.staff_role as StaffRole }
   }
 
