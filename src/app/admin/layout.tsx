@@ -57,10 +57,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         userId={user.id}
         currentSessionId={currentSessionId}
       />
-      {/* lg:ml-60 leaves room for the fixed sidebar on desktop.
-          pt-14 lg:pt-0 clears the mobile top bar (hidden on desktop). */}
-      <div className="flex-1 min-w-0 lg:ml-60">
-        <main className="min-h-screen p-4 pt-[72px] lg:p-8 lg:pt-8">{children}</main>
+      {/* md:ml-60 leaves room for the fixed sidebar on tablet+.
+          pt-[72px] clears the mobile top bar (hidden on md+). */}
+      <div className="flex-1 min-w-0 md:ml-60">
+        <main className="min-h-screen p-4 pt-[72px] md:p-6 md:pt-6 lg:p-8 lg:pt-8">{children}</main>
       </div>
     </div>
   )

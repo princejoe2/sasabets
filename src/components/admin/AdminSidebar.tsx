@@ -184,7 +184,7 @@ export default function AdminSidebar({
   return (
     <>
       {/* ── Mobile top bar ──────────────────────────────────────────────── */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-30 h-14 bg-[#0a0a12] border-b border-[#1a1a28] flex items-center px-4 gap-3">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-30 h-14 bg-[#0a0a12] border-b border-[#1a1a28] flex items-center px-4 gap-3">
         <button
           onClick={() => setMobileOpen(true)}
           className="p-2 rounded-xl text-slate-400 hover:bg-[#1a1a28] hover:text-white transition-colors"
@@ -217,7 +217,7 @@ export default function AdminSidebar({
       {/* ── Mobile backdrop ─────────────────────────────────────────────── */}
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -226,9 +226,9 @@ export default function AdminSidebar({
       <aside className={`
         fixed top-0 left-0 h-screen w-60 flex flex-col border-r border-[#1a1a28] bg-[#0a0a12]
         transition-transform duration-300 ease-in-out
-        z-50 lg:z-auto
+        z-50 md:z-auto
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0
+        md:translate-x-0
       `}>
         {/* Logo + mobile close */}
         <div className="px-5 py-5 border-b border-[#1a1a28]">
@@ -242,7 +242,7 @@ export default function AdminSidebar({
             </div>
             <button
               onClick={() => setMobileOpen(false)}
-              className="lg:hidden p-1.5 rounded-lg text-slate-600 hover:text-white hover:bg-[#1a1a28] transition-colors"
+              className="md:hidden p-1.5 rounded-lg text-slate-600 hover:text-white hover:bg-[#1a1a28] transition-colors"
               aria-label="Close menu"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
