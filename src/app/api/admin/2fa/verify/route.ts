@@ -32,7 +32,12 @@ export async function POST(req: NextRequest) {
   const valid = authenticator.verify({ token: code, secret: profile.totp_secret })
   if (!valid) return NextResponse.json({ error: 'Invalid code — try again' }, { status: 400 })
 
-  const cookie = buildTotpCookie(user.id)
+  // Generate a new session ID and write it to the DB. Any other open admin session
+  // watching this column via Realtime will be signed out immediately.
+  const sessionId = crypto.randomUUID()
+  await admin.from('profiles').update({ admin_session_id: sessionId }).eq('id', user.id)
+
+  const cookie = buildTotpCookie(user.id, sessionId)
   const res = NextResponse.json({ success: true })
   res.cookies.set(cookie.name, cookie.value, cookie.options as Parameters<typeof res.cookies.set>[2])
   return res

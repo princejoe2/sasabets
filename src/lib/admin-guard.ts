@@ -24,19 +24,23 @@ export async function guardAdmin(allowedRoles?: StaffRole[]): Promise<GuardResul
 
   const { data: profile } = await admin
     .from('profiles')
-    .select('is_admin, staff_role, totp_enabled')
+    .select('is_admin, staff_role, totp_enabled, admin_session_id')
     .eq('id', user.id)
     .single()
 
   if (!profile) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
 
-  // Read TOTP cookie once — used for both super-admin and TOTP-enrolled staff
   const jar = await cookies()
   const totpCookie = jar.get(COOKIE_NAME)?.value
+  const { valid: totpValid, sessionId: cookieSessionId } = verifyTotpCookie(totpCookie, user.id)
 
   if (profile.is_admin) {
-    if (!verifyTotpCookie(totpCookie, user.id)) {
+    if (!totpValid) {
       return { error: NextResponse.json({ error: 'Two-factor authentication required' }, { status: 403 }) }
+    }
+    // Reject if the session has been displaced by a login on another device
+    if (profile.admin_session_id && cookieSessionId !== profile.admin_session_id) {
+      return { error: NextResponse.json({ error: 'Session displaced — please log in again' }, { status: 401 }) }
     }
     return { user, admin, isSuperAdmin: true, role: null }
   }
@@ -44,8 +48,13 @@ export async function guardAdmin(allowedRoles?: StaffRole[]): Promise<GuardResul
   if (allowedRoles && profile.staff_role && allowedRoles.includes(profile.staff_role as StaffRole)) {
     // Require TOTP for staff members who have enrolled — a stolen session token alone
     // is not sufficient to settle markets or adjust funds.
-    if (profile.totp_enabled && !verifyTotpCookie(totpCookie, user.id)) {
-      return { error: NextResponse.json({ error: 'Two-factor authentication required' }, { status: 403 }) }
+    if (profile.totp_enabled) {
+      if (!totpValid) {
+        return { error: NextResponse.json({ error: 'Two-factor authentication required' }, { status: 403 }) }
+      }
+      if (profile.admin_session_id && cookieSessionId !== profile.admin_session_id) {
+        return { error: NextResponse.json({ error: 'Session displaced — please log in again' }, { status: 401 }) }
+      }
     }
     return { user, admin, isSuperAdmin: false, role: profile.staff_role as StaffRole }
   }

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (profile.totp_enabled === true) {
     const jar = await cookies()
     const totpCookie = jar.get(COOKIE_NAME)?.value
-    if (!verifyTotpCookie(totpCookie, user.id)) {
+    if (!verifyTotpCookie(totpCookie, user.id).valid) {
       return NextResponse.json({ error: 'Current 2FA verification required to rotate secret' }, { status: 403 })
     }
   }
@@ -37,11 +37,11 @@ export async function POST(req: NextRequest) {
   const valid = authenticator.verify({ token: code, secret: profile.totp_secret })
   if (!valid) return NextResponse.json({ error: 'Invalid code — try again' }, { status: 400 })
 
-  // Mark TOTP as enabled
-  await admin.from('profiles').update({ totp_enabled: true }).eq('id', user.id)
+  // Generate new session ID and mark TOTP as enabled.
+  const sessionId = crypto.randomUUID()
+  await admin.from('profiles').update({ totp_enabled: true, admin_session_id: sessionId }).eq('id', user.id)
 
-  // Set 8-hour session cookie
-  const cookie = buildTotpCookie(user.id)
+  const cookie = buildTotpCookie(user.id, sessionId)
   const res = NextResponse.json({ success: true })
   res.cookies.set(cookie.name, cookie.value, cookie.options as Parameters<typeof res.cookies.set>[2])
   return res

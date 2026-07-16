@@ -18,7 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!user) redirect('/auth')
 
   const [{ data: profile }, marzBalance] = await Promise.all([
-    admin.from('profiles').select('is_admin, staff_role, phone, totp_secret, totp_enabled').eq('id', user.id).single(),
+    admin.from('profiles').select('is_admin, staff_role, phone, totp_secret, totp_enabled, admin_session_id').eq('id', user.id).single(),
     getMarzBalance().catch(() => ({ available: 0, currency: 'UGX' })),
   ])
 
@@ -36,7 +36,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const cookieStore = await cookies()
   const totpCookie = cookieStore.get(COOKIE_NAME)?.value
-  if (!verifyTotpCookie(totpCookie, user.id)) {
+  const { valid: totpValid, sessionId: currentSessionId } = verifyTotpCookie(totpCookie, user.id)
+  if (!totpValid) {
+    redirect('/admin/verify-2fa')
+  }
+
+  // If the session ID in the cookie no longer matches the DB, another device has
+  // logged in and displaced this session. Force re-authentication.
+  if (profile.admin_session_id && currentSessionId !== profile.admin_session_id) {
     redirect('/admin/verify-2fa')
   }
 
@@ -47,9 +54,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         floatBalance={marzBalance.available}
         isSuperAdmin={!!profile.is_admin}
         staffRole={profile.staff_role ?? null}
+        userId={user.id}
+        currentSessionId={currentSessionId}
       />
-      <div className="flex-1 min-w-0 ml-60">
-        <main className="min-h-screen p-8">{children}</main>
+      {/* lg:ml-60 leaves room for the fixed sidebar on desktop.
+          pt-14 lg:pt-0 clears the mobile top bar (hidden on desktop). */}
+      <div className="flex-1 min-w-0 lg:ml-60">
+        <main className="min-h-screen p-4 pt-[72px] lg:p-8 lg:pt-8">{children}</main>
       </div>
     </div>
   )

@@ -21,7 +21,7 @@ export async function GET() {
   if (profile.totp_enabled === true) {
     const jar = await cookies()
     const totpCookie = jar.get(COOKIE_NAME)?.value
-    if (!verifyTotpCookie(totpCookie, user.id)) {
+    if (!verifyTotpCookie(totpCookie, user.id).valid) {
       return NextResponse.json({ error: 'Current 2FA verification required to rotate secret' }, { status: 403 })
     }
   }
