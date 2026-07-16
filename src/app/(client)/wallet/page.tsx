@@ -108,6 +108,9 @@ function WalletPageContent() {
   const [phone,         setPhone]         = useState('')
   const [processing,    setProcessing]    = useState(isCallback)
   const [pendingRef,    setPendingRef]    = useState<string | null>(null)
+  const [phoneInput,    setPhoneInput]    = useState('')
+  const [phoneLoading,  setPhoneLoading]  = useState(false)
+  const [phoneError,    setPhoneError]    = useState('')
 
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -261,6 +264,29 @@ function WalletPageContent() {
       await load()
     }
     setLoading(false)
+  }
+
+  async function savePhone() {
+    const raw = phoneInput.replace(/[\s\-()]/g, '')
+    if (!/^(\+256|256|0)(7\d{8}|39\d{7})$/.test(raw)) {
+      setPhoneError('Enter a valid Ugandan Mobile Money number (MTN or Airtel)')
+      return
+    }
+    setPhoneLoading(true); setPhoneError('')
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: raw }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      setPhoneError(data.error ?? 'Failed to save phone number')
+      setPhoneLoading(false)
+      return
+    }
+    await load()
+    setPhoneInput('')
+    setPhoneLoading(false)
   }
 
   const amtNum = parseFloat(amount) || 0
@@ -452,20 +478,42 @@ function WalletPageContent() {
                       ))}
                     </div>
                   </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">Send to (your verified number)</label>
-                    <input
-                      type="tel"
-                      value={withdrawPhone}
-                      readOnly
-                      disabled
-                      placeholder="+256 700 000 000"
-                      className="w-full cursor-not-allowed rounded-lg border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm text-slate-400 outline-none"
-                    />
-                    <p className="mt-1 text-[11px] text-slate-600">
-                      Withdrawals go to your verified profile number for security.
-                    </p>
-                  </div>
+                  {!phone ? (
+                    <div className="rounded-xl border border-amber-700/40 bg-amber-900/10 p-4 space-y-3">
+                      <p className="text-sm font-semibold text-amber-400">Add your Mobile Money number</p>
+                      <p className="text-xs text-amber-600">You need a registered Mobile Money number before you can withdraw. Enter your MTN or Airtel Uganda number below.</p>
+                      <input
+                        type="tel"
+                        value={phoneInput}
+                        onChange={e => { setPhoneInput(e.target.value); setPhoneError('') }}
+                        placeholder="0712 345 678"
+                        className="w-full rounded-lg border border-amber-700/30 bg-[#0a0a0f] px-4 py-3 text-sm outline-none focus:border-amber-600 transition-colors"
+                      />
+                      {phoneError && <p className="text-xs text-red-400">{phoneError}</p>}
+                      <button
+                        onClick={savePhone}
+                        disabled={phoneLoading || !phoneInput}
+                        className="w-full rounded-lg bg-amber-700 py-2.5 text-sm font-bold hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                      >
+                        {phoneLoading ? 'Saving…' : 'Save number'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium text-slate-400">Send to (your verified number)</label>
+                      <input
+                        type="tel"
+                        value={withdrawPhone}
+                        readOnly
+                        disabled
+                        placeholder="+256 700 000 000"
+                        className="w-full cursor-not-allowed rounded-lg border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm text-slate-400 outline-none"
+                      />
+                      <p className="mt-1 text-[11px] text-slate-600">
+                        Withdrawals go to your verified profile number for security.
+                      </p>
+                    </div>
+                  )}
                   {amtNum > 0 && balance !== null && (
                     <div className="rounded-lg bg-[#0a0a0f] px-4 py-3 text-xs space-y-1">
                       <div className="flex justify-between text-slate-400">
@@ -482,7 +530,7 @@ function WalletPageContent() {
                   {success && <p className="text-sm text-emerald-400">{success}</p>}
                   <button
                     onClick={handleWithdraw}
-                    disabled={loading || amtNum < 5000 || (balance !== null && amtNum > balance)}
+                    disabled={loading || !phone || amtNum < 5000 || (balance !== null && amtNum > balance)}
                     className="w-full rounded-xl bg-emerald-700 py-3.5 text-sm font-bold hover:bg-emerald-600 disabled:opacity-40 transition-colors">
                     {loading ? 'Processing…' : 'Request Withdrawal'}
                   </button>

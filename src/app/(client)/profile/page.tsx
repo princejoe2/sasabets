@@ -31,6 +31,11 @@ export default function ProfilePage() {
   const [waLoading,        setWaLoading]        = useState(false)
   const [waMsg,            setWaMsg]            = useState<string | null>(null)
 
+  // Phone add state (for Google OAuth users who have no phone yet)
+  const [phoneInput,   setPhoneInput]   = useState('')
+  const [phoneLoading, setPhoneLoading] = useState(false)
+  const [phoneMsg,     setPhoneMsg]     = useState<{ text: string; ok: boolean } | null>(null)
+
   // 2FA management state
   const [show2faSetup,  setShow2faSetup]  = useState(false)
   const [show2faDisable, setShow2faDisable] = useState(false)
@@ -88,6 +93,36 @@ export default function ProfilePage() {
     }
     load()
   }, [])
+
+  // ── Phone (Google OAuth users) ──────────────────────────────────────────────
+
+  async function savePhone() {
+    const raw = phoneInput.replace(/[\s\-()]/g, '')
+    if (!/^(\+256|256|0)(7\d{8}|39\d{7})$/.test(raw)) {
+      setPhoneMsg({ text: 'Enter a valid Ugandan MTN or Airtel number', ok: false })
+      return
+    }
+    setPhoneLoading(true); setPhoneMsg(null)
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: raw }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      setPhoneMsg({ text: data.error ?? 'Failed to save', ok: false })
+      setPhoneLoading(false)
+      return
+    }
+    // Normalise and store locally so the page updates without a full reload
+    let normalised = raw
+    if (normalised.startsWith('0'))    normalised = '256' + normalised.slice(1)
+    if (normalised.startsWith('+256')) normalised = normalised.slice(1)
+    setPhone(normalised)
+    setPhoneMsg({ text: 'Phone number saved!', ok: true })
+    setPhoneInput('')
+    setPhoneLoading(false)
+  }
 
   // ── 2FA management ──────────────────────────────────────────────────────────
 
@@ -273,9 +308,31 @@ export default function ProfilePage() {
             {/* Phone */}
             <div>
               <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Mobile Money Number</p>
-              <div className="rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3">
-                <span className="text-sm text-slate-300">{phone ? `+${phone}` : '—'}</span>
-              </div>
+              {phone ? (
+                <div className="rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3">
+                  <span className="text-sm text-slate-300">+{phone}</span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <input
+                    type="tel"
+                    value={phoneInput}
+                    onChange={e => { setPhoneInput(e.target.value); setPhoneMsg(null) }}
+                    placeholder="0712 345 678"
+                    className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors"
+                  />
+                  {phoneMsg && (
+                    <p className={`text-xs ${phoneMsg.ok ? 'text-emerald-400' : 'text-red-400'}`}>{phoneMsg.text}</p>
+                  )}
+                  <button
+                    onClick={savePhone}
+                    disabled={phoneLoading || !phoneInput}
+                    className="w-full rounded-xl border border-violet-700/50 bg-violet-900/20 py-2.5 text-xs font-bold text-violet-400 hover:bg-violet-900/40 disabled:opacity-40 transition-colors"
+                  >
+                    {phoneLoading ? 'Saving…' : 'Save Mobile Money number'}
+                  </button>
+                </div>
+              )}
               <p className="mt-1.5 text-[11px] text-slate-600">Used for MTN Mobile Money deposits and withdrawals.</p>
             </div>
           </div>
