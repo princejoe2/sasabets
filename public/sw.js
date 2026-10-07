@@ -1,4 +1,4 @@
-const CACHE = 'sabula-v1'
+const CACHE = 'sabula-v2'
 const SHELL = ['/', '/markets', '/offline.html']
 
 self.addEventListener('install', e => {
@@ -15,6 +15,11 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return
+  const url = e.request.url
+  // Don't intercept external CDNs — let the browser handle them with its own
+  // CSP context so we avoid connect-src violations from the SW's fetch scope.
+  if (url.startsWith('https://fonts.googleapis.com') ||
+      url.startsWith('https://fonts.gstatic.com')) return
   e.respondWith(
     fetch(e.request).catch(() => caches.match(e.request).then(r => r || caches.match('/offline.html')))
   )
