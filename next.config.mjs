@@ -15,6 +15,11 @@ const nextConfig = {
   // inlining for any bundler to BOM-corrupt — the old webpack cache-version hack
   // is no longer needed under Turbopack.
   generateBuildId: async () => `build-${Date.now()}`,
+  async redirects() {
+    return [
+      { source: '/favicon.ico', destination: '/icon-192.png', permanent: false },
+    ]
+  },
   async headers() {
     return [
       {
@@ -52,7 +57,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' data: https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://flagcdn.com https://upload.wikimedia.org https://commons.wikimedia.org https://assets.coingecko.com https://images.unsplash.com",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.coingecko.com https://api.ipify.org https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.coingecko.com https://api.ipify.org https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://fonts.googleapis.com https://fonts.gstatic.com",
               "frame-ancestors 'none'",
               "object-src 'none'",
               "base-uri 'self'",

@@ -63,6 +63,11 @@ export const metadata: Metadata = {
     title: 'Sabula 256',
   },
   icons: {
+    icon: [
+      { url: '/sabula256-icon.svg', type: 'image/svg+xml' },
+      { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
+    ],
+    shortcut: '/icon-192.png',
     apple: '/apple-touch-icon.png',
   },
   themeColor: '#00ff88',
