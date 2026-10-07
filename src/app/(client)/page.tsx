@@ -60,14 +60,20 @@ const jsonLd = [
 export default async function HomePage() {
   const supabase = await createClient()
 
-  const [{ data: markets }, { count: userCount }] = await Promise.all([
-    supabase
-      .from('markets')
-      .select('id, title, description, total_pool, options, closes_at, status, rake_pct, created_at, metadata')
-      .or('metadata->>private.is.null,metadata->>private.neq.true')
-      .order('created_at', { ascending: false }),
-    supabase.from('profiles').select('*', { count: 'exact', head: true }),
-  ])
+  const marketsResult = await supabase
+    .from('markets')
+    .select('id, title, description, total_pool, options, closes_at, status, rake_pct, created_at, metadata')
+    .or('metadata->>private.is.null,metadata->>private.neq.true')
+    .order('created_at', { ascending: false })
+  const profilesResult = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+
+  if (marketsResult.error) console.error('[HomePage] markets query error:', marketsResult.error)
+  if (profilesResult.error) console.error('[HomePage] profiles query error:', profilesResult.error)
+
+  const markets = marketsResult.data
+  const userCount = profilesResult.count
 
   const all       = markets ?? []
   const openCount = all.filter(m => m.status === 'open').length

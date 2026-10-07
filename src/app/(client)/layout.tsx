@@ -9,17 +9,26 @@ import BottomNav from '@/components/BottomNav'
 import { ClosingSoonBanner, StreakTracker } from '@/components/LazyClient'
 
 export default async function ClientLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  let user = null
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase.auth.getUser()
+    user = data.user
 
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single()
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single()
 
-    if (profile?.is_admin) redirect('/admin')
+      if (profile?.is_admin) redirect('/admin')
+    }
+  } catch (err: unknown) {
+    // Log the real error so it appears in Vercel runtime logs
+    // (digest is sent to the browser; full message only on server)
+    if ((err as { digest?: string })?.digest?.startsWith('NEXT_REDIRECT')) throw err
+    console.error('[ClientLayout] Server component error:', err)
   }
 
   return (
