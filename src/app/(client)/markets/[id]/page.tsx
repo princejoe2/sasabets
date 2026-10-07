@@ -14,7 +14,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     .eq('id', id)
     .single()
   if (!m) return {}
-  const opts = m.options as Array<{ label: string; total_pool: number }>
+  const rawOpts = m.options as unknown
+  const opts: Array<{ label: string; total_pool: number }> = Array.isArray(rawOpts)
+    ? rawOpts
+    : (rawOpts as { value?: Array<{ label: string; total_pool: number }> })?.value ?? []
   const pool = Number(m.total_pool)
   const poolStr = pool >= 1_000_000
     ? `UGX ${(pool / 1_000_000).toFixed(1)}M`
@@ -164,7 +167,10 @@ export default async function MarketPage({
     isFollowing = !!follow
   }
 
-  const opts = market.options as Option[]
+  const rawOpts = market.options as unknown
+  const opts: Option[] = Array.isArray(rawOpts)
+    ? rawOpts
+    : (rawOpts as { value?: Option[] })?.value ?? []
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Event',
