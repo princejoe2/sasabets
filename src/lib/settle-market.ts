@@ -159,6 +159,29 @@ export async function settleMarket(
     })
     .eq('id', marketId)
 
+  // Update market_outcomes display status. Winning slug is the option ID with _yes/_no stripped;
+  // for binary markets (id = 'yes'/'no') the id is the slug directly.
+  const winningSlug = winningOptionId.endsWith('_yes')
+    ? winningOptionId.slice(0, -4)
+    : winningOptionId.endsWith('_no')
+    ? winningOptionId.slice(0, -3)
+    : winningOptionId
+
+  const { data: allOutcomes } = await admin
+    .from('market_outcomes')
+    .select('id, slug')
+    .eq('market_id', marketId)
+
+  if (allOutcomes && allOutcomes.length > 0) {
+    await Promise.all(allOutcomes.map(o =>
+      admin.from('market_outcomes')
+        .update({ status: o.slug === winningSlug ? 'resolved_yes' : 'resolved_no' })
+        .eq('id', o.id)
+    ))
+  }
+  // TODO(multi-candidate): also pay out NO bettors on every non-winning outcome
+  // (requires a second settlement pass per losing outcome's NO sub-pool).
+
   // Fire settlement emails — non-blocking, never delay settlement
   sendSettlementEmails(admin, {
     marketId, marketTitle: claimed.title, winningOptionId,

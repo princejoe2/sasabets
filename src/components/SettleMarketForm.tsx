@@ -17,6 +17,17 @@ type EvidenceImg = {
   remoteUrl?: string
 }
 
+function groupOptions(options: Array<{ id: string; label: string; total_pool: number }>) {
+  const isBinary = options.length <= 2 || options.every(o => ['yes', 'no', 'up', 'down'].includes(o.id))
+  if (isBinary) return options.map(o => ({ id: o.id, display: o.label, pool: o.total_pool }))
+  return options.map(o => {
+    const isYes = o.id.endsWith('_yes')
+    const slug  = isYes ? o.id.slice(0, -4) : o.id.slice(0, -3)
+    const side  = isYes ? 'YES ✓' : 'NO ✗'
+    return { id: o.id, display: `${slug} — ${side} (UGX ${Number(o.total_pool).toLocaleString()})`, pool: o.total_pool }
+  })
+}
+
 export default function SettleMarketForm({ market, onDone }: { market: Market; onDone: () => void }) {
   const router  = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -104,7 +115,7 @@ export default function SettleMarketForm({ market, onDone }: { market: Market; o
 
       {/* Options */}
       <div className="space-y-2">
-        {market.options.map(opt => (
+        {groupOptions(market.options).map(opt => (
           <button
             key={opt.id}
             onClick={() => setWinner(opt.id)}
@@ -114,7 +125,7 @@ export default function SettleMarketForm({ market, onDone }: { market: Market; o
                 : 'border-[#1e1e2e] text-slate-300 hover:border-emerald-800'
             }`}
           >
-            {opt.label} — UGX {Number(opt.total_pool ?? 0).toLocaleString()}
+            {opt.display}
           </button>
         ))}
       </div>
