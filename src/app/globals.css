@@ -37,7 +37,7 @@
 }
 
 body {
-  background-color: #ecfdf5;
+  /* background set per-layout — see (client)/layout.tsx and .market-root */
   color: #052e16;
   font-family: var(--font-supreme), 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 16px;
@@ -159,6 +159,20 @@ h1, h2, h3, h4, h5, h6 {
 .dark body {
   background-color: #040c06;
   color: #e8f5e9;
+}
+
+/* ── Market page root — always pure black regardless of system theme ── */
+.market-root {
+  background: #000000;
+  color: #F5F5F5;
+  font-family: Inter, system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+/* ── Tabular numbers — prevents digit-width jitter ── */
+.tabular {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Green grid background overlay (dark mode only) ── */
