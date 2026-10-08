@@ -1,157 +1,245 @@
 'use client'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { AnimatePresence, motion } from 'framer-motion'
+
+// ─── Icons ───────────────────────────────────────────────────────────────────
 
 function HomeIcon({ active }: { active: boolean }) {
   return (
-    <svg className="h-5 w-5" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'}
+         stroke="currentColor" strokeWidth={1.75}>
+      <path strokeLinecap="round" strokeLinejoin="round"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
     </svg>
   )
 }
 
-function MarketsIcon({ active }: { active: boolean }) {
+function SearchIcon({ active }: { active: boolean }) {
   return (
-    <svg className="h-5 w-5" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" strokeWidth={active ? 2 : 1.75}>
+      <circle cx="11" cy="11" r="8" />
+      <path strokeLinecap="round" d="m21 21-4.35-4.35" />
     </svg>
   )
 }
 
-function BetsIcon({ active }: { active: boolean }) {
+function MoreIcon({ active }: { active: boolean }) {
   return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.75}>
-      <circle cx="12" cy="12" r="10" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="12" cy="12" r="5" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" strokeWidth={active ? 2 : 1.75}>
+      <circle cx="5"  cy="12" r="1" fill="currentColor" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" />
+      <circle cx="19" cy="12" r="1" fill="currentColor" />
     </svg>
   )
 }
 
-function WalletIcon({ active }: { active: boolean }) {
-  return (
-    <svg className="h-5 w-5" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-    </svg>
+// ─── Tab button ───────────────────────────────────────────────────────────────
+
+function NavTab({
+  href, label, children, active, onClick,
+}: {
+  href?: string; label: string; children: React.ReactNode; active: boolean; onClick?: () => void
+}) {
+  const cls = [
+    'relative flex flex-1 flex-col items-center justify-center gap-0.5 transition-all duration-150 active:scale-90',
+    active ? 'text-white' : 'text-mk-muted hover:text-mk-secondary',
+  ].join(' ')
+
+  const inner = (
+    <>
+      {active && (
+        <span className="absolute top-0 left-1/2 h-[2px] w-8 -translate-x-1/2 rounded-full"
+              style={{ background: 'var(--mk-accent)' }} />
+      )}
+      <span className="relative z-10">{children}</span>
+      <span className={[
+        'relative z-10 text-[10px] font-bold transition-colors duration-150',
+        active ? 'text-white' : 'opacity-50',
+      ].join(' ')}>
+        {label}
+      </span>
+    </>
   )
+
+  if (href) return <Link href={href} className={cls}>{inner}</Link>
+  return <button className={cls} onClick={onClick}>{inner}</button>
 }
+
+// ─── More sheet content ───────────────────────────────────────────────────────
+
+const MORE_LINKS = [
+  { href: '/bets',        icon: '🎯', label: 'My Predictions' },
+  { href: '/wallet',      icon: '💳', label: 'Wallet'         },
+  { href: '/leaderboard', icon: '🏆', label: 'Leaderboard'    },
+  { href: '/settings',    icon: '⚙️', label: 'Settings'       },
+]
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function BottomNav() {
   const pathname = usePathname()
-  const supabase = createClient()
-  const [notifCount, setNotifCount] = useState(0)
+  const router   = useRouter()
 
+  const [scrolledPast, setScrolledPast] = useState(false)
+  const [moreOpen,     setMoreOpen]     = useState(false)
+
+  // Detect scroll past ~1 screen height → show back-to-top
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return
-      const seen = localStorage.getItem(`notif-seen-${user.id}`)
-      const q = supabase
-        .from('transactions')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'completed')
-        .in('type', ['deposit', 'payout', 'cashout', 'referral_bonus'])
-      if (seen) q.gt('created_at', seen)
-      q.then(({ count }) => setNotifCount(count ?? 0))
-    })
-  }, [pathname])
+    function onScroll() {
+      setScrolledPast(window.scrollY > window.innerHeight * 0.85)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Close "More" sheet on route change
+  useEffect(() => { setMoreOpen(false) }, [pathname])
+
+  // Lock body scroll when More sheet is open
+  useEffect(() => {
+    if (moreOpen) {
+      const prev = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = prev }
+    }
+  }, [moreOpen])
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href)
-
-  const leftTabs  = [
-    { href: '/',        Icon: HomeIcon,    label: 'Home'    },
-    { href: '/markets', Icon: MarketsIcon, label: 'Markets' },
-  ]
-  const rightTabs = [
-    { href: '/bets',   Icon: BetsIcon,   label: 'My Bets' },
-    { href: '/wallet', Icon: WalletIcon, label: 'Wallet'  },
-  ]
-
-  const createActive = pathname.startsWith('/create')
+  const createActive = isActive('/create')
+  const moreActive   = ['/bets', '/wallet', '/leaderboard', '/settings'].some(h => pathname.startsWith(h))
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-bottom-nav sm:hidden border-t-2 border-emerald-200/70 bg-white/[0.97] backdrop-blur-2xl dark:border-white/[0.05] dark:bg-[#0d0d14]/96"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-    >
-      <div className="flex items-stretch h-14">
-        {leftTabs.map(({ href, Icon, label }) => {
-          const active = isActive(href)
-          return (
-            <Link key={href} href={href}
-              className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 transition-all duration-150 active:scale-90 ${
-                active
-                  ? 'text-emerald-600 dark:text-[#00ff88]'
-                  : 'text-slate-400 hover:text-slate-600 dark:text-white/30 dark:hover:text-white/60'
-              }`}
-            >
-              {/* Active top line */}
-              {active && (
-                <span className="absolute top-0 left-1/2 h-[3px] w-8 -translate-x-1/2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] dark:bg-[#00ff88] dark:shadow-[0_0_8px_rgba(0,255,136,0.5)]" />
-              )}
-              {/* Active bg highlight */}
-              {active && (
-                <span className="absolute inset-x-2 inset-y-1.5 rounded-xl bg-emerald-50 dark:bg-[#00ff88]/[0.07]" />
-              )}
-              <span className="relative z-10">
-                <Icon active={active} />
-              </span>
-              <span className={`relative z-10 text-[10px] font-bold transition-all duration-150 ${active ? 'text-emerald-700 dark:text-[#00ff88]' : 'opacity-60'}`}>{label}</span>
-            </Link>
-          )
-        })}
+    <>
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-bottom-nav sm:hidden border-t border-mk-border backdrop-blur-xl"
+        style={{ background: 'rgba(0,0,0,0.96)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <div className="relative flex items-stretch h-14">
 
-        {/* Centre create button */}
-        <Link href="/create"
-          className="relative flex flex-col items-center justify-center px-5 active:scale-90 transition-all duration-150"
-        >
-          <div
-            className={`flex h-12 w-12 items-center justify-center rounded-full transition-all duration-200 ${
-              createActive
-                ? 'bg-emerald-600 shadow-[0_0_22px_rgba(16,185,129,0.55)] dark:bg-[#00ff88] dark:shadow-[0_0_22px_rgba(0,255,136,0.55)]'
-                : 'bg-emerald-600 shadow-[0_4px_16px_rgba(16,185,129,0.4)] hover:shadow-[0_0_22px_rgba(16,185,129,0.55)] dark:bg-[#00e07a] dark:shadow-[0_4px_16px_rgba(0,255,136,0.3)] dark:hover:bg-[#00ff88]'
-            }`}
-            style={{ marginTop: '-18px' }}
-          >
-            <svg className="h-6 w-6 text-white dark:text-[#040c06]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
-            </svg>
+          {/* Home */}
+          <NavTab href="/" label="Home" active={isActive('/')}>
+            <HomeIcon active={isActive('/')} />
+          </NavTab>
+
+          {/* Search */}
+          <NavTab href="/markets" label="Search" active={isActive('/markets')}>
+            <SearchIcon active={isActive('/markets')} />
+          </NavTab>
+
+          {/* Centre — Create / Back-to-top */}
+          <div className="relative flex flex-col items-center justify-center px-4">
+
+            {/* Create button — visible when NOT scrolled past threshold */}
+            <Link
+              href="/create"
+              aria-label="Create market"
+              className={[
+                'flex h-12 w-12 items-center justify-center rounded-full transition-all duration-250 active:scale-90',
+                createActive
+                  ? 'shadow-[0_0_22px_rgba(255,159,67,0.5)]'
+                  : 'shadow-[0_4px_16px_rgba(255,159,67,0.3)] hover:shadow-[0_0_22px_rgba(255,159,67,0.5)]',
+                scrolledPast ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 scale-100',
+              ].join(' ')}
+              style={{ background: 'var(--mk-accent)', marginTop: '-18px' }}
+            >
+              <svg className="h-6 w-6 text-black" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            </Link>
+            <span className={[
+              'text-[10px] font-bold mt-1 transition-all duration-250',
+              createActive ? 'text-white' : 'text-mk-muted opacity-60',
+              scrolledPast ? 'opacity-0' : '',
+            ].join(' ')}>
+              Create
+            </span>
+
+            {/* Back-to-top — overlays Create when scrolled */}
+            <button
+              onClick={scrollToTop}
+              aria-label="Back to top"
+              className={[
+                'absolute flex items-center justify-center h-11 w-11 rounded-full text-black font-bold text-lg transition-all duration-250 active:scale-90',
+                scrolledPast ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-50 pointer-events-none',
+              ].join(' ')}
+              style={{ background: 'var(--mk-accent)', marginTop: '-18px', top: '50%', transform: scrolledPast ? 'translateY(-50%) scale(1)' : 'translateY(-50%) scale(0.5)' }}
+            >
+              ↑
+            </button>
           </div>
-          <span className={`mt-1 text-[10px] font-bold transition-colors duration-150 ${createActive ? 'text-emerald-700 dark:text-[#00ff88]' : 'text-slate-400 dark:text-white/30'}`}>Create</span>
-        </Link>
 
-        {rightTabs.map(({ href, Icon, label }) => {
-          const active   = isActive(href)
-          const isWallet = href === '/wallet'
-          return (
-            <Link key={href} href={href}
-              className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 transition-all duration-150 active:scale-90 ${
-                active
-                  ? 'text-emerald-600 dark:text-[#00ff88]'
-                  : 'text-slate-400 hover:text-slate-600 dark:text-white/30 dark:hover:text-white/60'
-              }`}
+          {/* More */}
+          <NavTab label="More" active={moreActive || moreOpen} onClick={() => setMoreOpen(o => !o)}>
+            <MoreIcon active={moreActive || moreOpen} />
+          </NavTab>
+
+        </div>
+      </nav>
+
+      {/* ── More sheet ──────────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {moreOpen && (
+          <>
+            <motion.div
+              key="more-backdrop"
+              className="fixed inset-0 z-sheet-backdrop sm:hidden"
+              style={{ background: 'rgba(0,0,0,0.6)' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setMoreOpen(false)}
+            />
+            <motion.div
+              key="more-sheet"
+              className="fixed bottom-0 left-0 right-0 z-sheet sm:hidden"
+              style={{
+                background:         'var(--mk-card)',
+                borderRadius:       '20px 20px 0 0',
+                paddingBottom:      'env(safe-area-inset-bottom)',
+                borderTop:          '1px solid var(--mk-card-border)',
+              }}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             >
-              {active && (
-                <span className="absolute top-0 left-1/2 h-[3px] w-8 -translate-x-1/2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] dark:bg-[#00ff88] dark:shadow-[0_0_8px_rgba(0,255,136,0.5)]" />
-              )}
-              {active && (
-                <span className="absolute inset-x-2 inset-y-1.5 rounded-xl bg-emerald-50 dark:bg-[#00ff88]/[0.07]" />
-              )}
-              <span className="relative z-10">
-                <div className="relative">
-                  <Icon active={active} />
-                  {isWallet && notifCount > 0 && (
-                    <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#0d0d14]" />
-                  )}
-                </div>
-              </span>
-              <span className={`relative z-10 text-[10px] font-bold transition-all duration-150 ${active ? 'text-emerald-700 dark:text-[#00ff88]' : 'opacity-60'}`}>{label}</span>
-            </Link>
-          )
-        })}
-      </div>
-    </nav>
+              {/* Drag handle */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="h-1 w-10 rounded-full bg-mk-border" />
+              </div>
+              <p className="px-5 pt-1 pb-3 text-[10px] font-bold uppercase tracking-widest text-mk-muted">More</p>
+
+              <div className="pb-4">
+                {MORE_LINKS.map(({ href, icon, label }) => (
+                  <Link key={href} href={href} onClick={() => setMoreOpen(false)}
+                    className={[
+                      'flex items-center gap-4 px-5 py-4 text-sm font-semibold transition-colors',
+                      pathname.startsWith(href)
+                        ? 'text-white bg-mk-raised'
+                        : 'text-mk-secondary hover:bg-mk-raised hover:text-mk-text',
+                    ].join(' ')}
+                  >
+                    <span className="text-xl leading-none">{icon}</span>
+                    <span className="text-[15px]">{label}</span>
+                    {pathname.startsWith(href) && (
+                      <span className="ml-auto h-1.5 w-1.5 rounded-full" style={{ background: 'var(--mk-accent)' }} />
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   )
 }

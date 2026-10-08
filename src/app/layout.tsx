@@ -4,6 +4,7 @@ import { supreme, chubbo, inter } from '@/lib/fonts'
 import CursorEffects from '@/components/CursorEffects'
 import ThemeProvider from '@/components/ThemeProvider'
 import PushNotificationPrompt from '@/components/PushNotificationPrompt'
+import RouteProgressBar from '@/components/RouteProgressBar'
 import { GoogleAnalytics } from '@next/third-parties/google'
 
 const BASE = 'https://sabula256.com'
@@ -85,6 +86,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning className={`dark ${supreme.variable} ${chubbo.variable} ${inter.variable}`}>
       <body className="min-h-screen bg-black text-[#F5F5F5] antialiased">
         <ThemeProvider>
+          <RouteProgressBar />
           <CursorEffects />
           {children}
           <PushNotificationPrompt />
