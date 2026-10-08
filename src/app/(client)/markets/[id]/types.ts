@@ -46,9 +46,11 @@ export function outcomeSubPool(
   options: OptionRow[],
 ): { yes: number; no: number; total: number } {
   if (['yes', 'no', 'up', 'down'].includes(outcome.slug)) {
-    const opt = options.find(o => o.id === outcome.slug)
-    const yes = Number(opt?.total_pool ?? 0)
-    return { yes, no: 0, total: yes }
+    const opt       = options.find(o => o.id === outcome.slug)
+    const yes       = Number(opt?.total_pool ?? 0)
+    const mktTotal  = options.reduce((s, o) => s + Number(o.total_pool), 0)
+    // Prize pool is the entire market; no=0 so the NO button shows '—' on binary outcomes
+    return { yes, no: 0, total: mktTotal }
   }
   const yesOpt = options.find(o => o.id === `${outcome.slug}_yes`)
   const noOpt  = options.find(o => o.id === `${outcome.slug}_no`)
