@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
   }
 
   const wrap: CSSProperties = {
-    minHeight: '100vh', background: T.bg, display: 'flex',
+    minHeight: '100dvh', background: T.bg, display: 'flex',
     alignItems: 'center', justifyContent: 'center',
     padding: '24px 16px', fontFamily: 'system-ui, -apple-system, sans-serif',
   }

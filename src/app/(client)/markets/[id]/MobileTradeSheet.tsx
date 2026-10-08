@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import TradePanel from './TradePanel'
 import type { MarketData, MarketOutcome } from './types'
@@ -26,6 +27,15 @@ export default function MobileTradeSheet({
   balance, onBalanceUpdate,
   isLoggedIn, userBet, accessToken,
 }: Props) {
+  // Lock body scroll while sheet is open
+  useEffect(() => {
+    if (open) {
+      const prev = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = prev }
+    }
+  }, [open])
+
   return (
     <AnimatePresence>
       {open && (
@@ -37,7 +47,7 @@ export default function MobileTradeSheet({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+            className="fixed inset-0 z-sheet-backdrop bg-black/60 lg:hidden"
             onClick={onClose}
           />
 
@@ -48,12 +58,13 @@ export default function MobileTradeSheet({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 lg:hidden overflow-y-auto"
+            className="fixed bottom-0 left-0 right-0 z-sheet lg:hidden overflow-y-auto"
             style={{
-              background:    '#111111',
-              borderRadius:  '20px 20px 0 0',
-              maxHeight:     '90vh',
-              paddingBottom: 'env(safe-area-inset-bottom)',
+              background:             '#111111',
+              borderRadius:           '20px 20px 0 0',
+              maxHeight:              '90dvh',
+              paddingBottom:          'env(safe-area-inset-bottom)',
+              overscrollBehavior:     'contain',
             }}
             drag="y"
             dragConstraints={{ top: 0 }}

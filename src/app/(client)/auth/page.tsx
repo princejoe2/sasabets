@@ -315,7 +315,7 @@ export default function AuthPage() {
   // ─── Styles ────────────────────────────────────────────────────────────────
 
   const wrap: CSSProperties = {
-    minHeight: '100vh',
+    minHeight: '100dvh',
     background: T.bg,
     display: 'flex',
     alignItems: 'center',

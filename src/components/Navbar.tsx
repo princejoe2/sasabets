@@ -86,7 +86,7 @@ export default function Navbar() {
   const firstName = fullName.split(' ')[0] || ''
 
   return (
-    <nav className="sticky top-0 z-40 border-b border-emerald-200/70 bg-white/96 backdrop-blur-xl dark:border-white/[0.05] dark:bg-[#0d0d14]/92">
+    <nav className="sticky top-0 z-sticky-header border-b border-emerald-200/70 bg-white/96 backdrop-blur-xl dark:border-white/[0.05] dark:bg-[#0d0d14]/92">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2.5">
 
         {/* Logo */}

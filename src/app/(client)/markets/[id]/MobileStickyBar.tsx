@@ -25,7 +25,7 @@ export default function MobileStickyBar({
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-30 lg:hidden border-t border-mk-border bg-mk-bg/95 backdrop-blur-sm px-4 py-3"
+      className="fixed bottom-14 sm:bottom-0 left-0 right-0 z-buy-bar lg:hidden border-t border-mk-border bg-mk-bg/95 backdrop-blur-sm px-4 py-3"
       style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}
     >
       <div className="flex items-center gap-2">

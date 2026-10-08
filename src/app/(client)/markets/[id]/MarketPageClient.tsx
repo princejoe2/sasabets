@@ -69,7 +69,8 @@ export default function MarketPageClient({
 
   return (
     <div className="market-root">
-      <div className="mx-auto max-w-7xl px-4 py-6 pb-32 lg:pb-6">
+      {/* pb accounts for sticky bar (h-14) + bottom nav (h-14) + safe area on mobile */}
+      <div className="mx-auto max-w-7xl px-4 py-6 pb-[7rem] sm:pb-[4.5rem] lg:pb-6">
         <MarketHeader market={market} creatorInfo={creatorInfo} />
 
         <div className="mt-6 flex gap-6 items-start">

@@ -46,7 +46,7 @@ export default function GlobalMarketHeader({ isLoggedIn, balance }: Props) {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-mk-border bg-mk-bg/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-sticky-header border-b border-mk-border bg-mk-bg/95 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-4">
         {/* Top row */}
         <div className="flex h-14 items-center gap-3">

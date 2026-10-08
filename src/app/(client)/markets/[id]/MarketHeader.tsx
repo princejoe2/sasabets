@@ -97,7 +97,7 @@ export default function MarketHeader({ market, creatorInfo }: Props) {
             </>
           )}
         </p>
-        <h1 className="text-lg sm:text-2xl font-bold text-mk-text leading-tight">{market.title}</h1>
+        <h1 className="text-lg sm:text-2xl font-bold text-mk-text leading-tight line-clamp-2">{market.title}</h1>
         {market.description && (
           <p className="mt-1.5 text-sm text-mk-muted leading-relaxed max-w-2xl">{market.description}</p>
         )}

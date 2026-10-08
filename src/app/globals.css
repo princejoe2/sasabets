@@ -96,6 +96,22 @@ body {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   min-height: 100dvh;
+  /* Safety net: after root-cause overflow fixes this catches any remaining leak */
+  overflow-x: clip;
+}
+
+/* Prevent iOS zoom on input focus — all inputs must be ≥ 16px */
+input, textarea, select {
+  font-size: max(1rem, 16px);
+}
+
+/* Images never bust their container */
+img { max-width: 100%; height: auto; }
+
+/* User-generated content (comments, descriptions) wraps on any char boundary */
+.prose-user {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* ── Market page root ── */
@@ -373,4 +389,16 @@ body {
   0%   { opacity: 0; transform: translateX(-50%) translateY(-20px) scale(0.9); }
   60%  { transform: translateX(-50%) translateY(4px) scale(1.02); }
   100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* ── Reduced motion — disable all animations for users who prefer it ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+    scroll-behavior: auto;
+  }
 }
