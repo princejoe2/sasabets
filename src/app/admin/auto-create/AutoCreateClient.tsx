@@ -15,7 +15,7 @@ type Draft = {
   title: string
   description: string
   closes_at: string
-  options: [string, string]
+  options: string[]
   editing?: boolean
 }
 
@@ -28,6 +28,24 @@ const LEAGUES = [
   { id: '61',  name: 'Ligue 1 (France)' },
   { id: '2',   name: 'UEFA Champions League' },
 ]
+
+function buildOptionsJsonb(labels: string[]) {
+  const isBinary = labels.length === 2 &&
+    labels.every(l => ['yes', 'no'].includes(l.toLowerCase().trim()))
+  if (isBinary) {
+    return [
+      { id: 'yes', label: 'Yes', total_pool: 0 },
+      { id: 'no',  label: 'No',  total_pool: 0 },
+    ]
+  }
+  return labels.flatMap(label => {
+    const slug = label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+    return [
+      { id: `${slug}_yes`, label: `${label} YES`, total_pool: 0 },
+      { id: `${slug}_no`,  label: `${label} NO`,  total_pool: 0 },
+    ]
+  })
+}
 
 export default function AutoCreateClient() {
   const [leagueId,  setLeagueId]  = useState('')
@@ -71,13 +89,12 @@ export default function AutoCreateClient() {
     setDrafts(d => d.map((dr, idx) => idx !== i ? dr : { ...dr, [field]: value }))
   }
 
-  function updateOption(i: number, side: 0 | 1, value: string) {
-    setDrafts(d => d.map((dr, idx) => {
-      if (idx !== i) return dr
-      const opts: [string, string] = [...dr.options] as [string, string]
-      opts[side] = value
-      return { ...dr, options: opts }
-    }))
+  function updateOption(draftIdx: number, optIdx: number, value: string) {
+    setDrafts(ds => ds.map((x, xi) =>
+      xi === draftIdx
+        ? { ...x, options: x.options.map((o, oi) => oi === optIdx ? value : o) }
+        : x
+    ))
   }
 
   async function createAll() {
@@ -90,7 +107,7 @@ export default function AutoCreateClient() {
         title: d.title,
         description: d.description,
         closes_at: new Date(d.closes_at).toISOString(),
-        options: d.options,
+        options: buildOptionsJsonb(d.options),
         sport_event_id: d.event.id,
         home_team: d.event.home,
         away_team: d.event.away,
@@ -175,18 +192,37 @@ export default function AutoCreateClient() {
                 </div>
                 <input value={d.description} onChange={e => updateDraft(i, 'description', e.target.value)}
                   className="w-full rounded-lg border border-[#1e1e2e] bg-[#111118] px-3 py-2 text-sm text-slate-400 outline-none focus:border-violet-600 transition-colors" />
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <p className="mb-1 text-[10px] uppercase tracking-wider text-slate-600">Side A</p>
-                    <input value={d.options[0]} onChange={e => updateOption(i, 0, e.target.value)}
-                      className="w-full rounded-lg border border-[#1e1e2e] bg-[#111118] px-3 py-2 text-sm text-violet-300 outline-none focus:border-violet-600" />
-                  </div>
-                  <div>
-                    <p className="mb-1 text-[10px] uppercase tracking-wider text-slate-600">Side B</p>
-                    <input value={d.options[1]} onChange={e => updateOption(i, 1, e.target.value)}
-                      className="w-full rounded-lg border border-[#1e1e2e] bg-[#111118] px-3 py-2 text-sm text-amber-300 outline-none focus:border-amber-600" />
-                  </div>
+
+                {/* Dynamic outcome list */}
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-600">Outcomes ({d.options.length})</p>
+                  {d.options.map((opt, oi) => (
+                    <div key={oi} className="flex gap-1">
+                      <input
+                        value={opt}
+                        onChange={e => updateOption(i, oi, e.target.value)}
+                        className="flex-1 rounded-lg border border-[#1e1e2e] bg-[#111118] px-2 py-1.5 text-xs text-white outline-none focus:border-violet-600"
+                      />
+                      {d.options.length > 2 && (
+                        <button
+                          onClick={() => setDrafts(ds => ds.map((x, xi) =>
+                            xi === i ? { ...x, options: x.options.filter((_, fi) => fi !== oi) } : x
+                          ))}
+                          className="text-red-400 hover:text-red-300 text-xs px-2 rounded"
+                        >✕</button>
+                      )}
+                    </div>
+                  ))}
+                  {d.options.length < 16 && (
+                    <button
+                      onClick={() => setDrafts(ds => ds.map((x, xi) =>
+                        xi === i ? { ...x, options: [...x.options, ''] } : x
+                      ))}
+                      className="text-xs text-slate-500 hover:text-slate-300 mt-1"
+                    >+ Add outcome</button>
+                  )}
                 </div>
+
                 <div>
                   <p className="mb-1 text-[10px] uppercase tracking-wider text-slate-600">Closes at</p>
                   <input type="datetime-local" value={d.closes_at} onChange={e => updateDraft(i, 'closes_at', e.target.value)}
