@@ -6,6 +6,7 @@ import SettleMarketForm from '@/components/SettleMarketForm'
 import PolymarketImport from '@/components/admin/PolymarketImport'
 import KalshiImport from '@/components/admin/KalshiImport'
 import PoolDepthSparkline from '@/components/admin/PoolDepthSparkline'
+import OutcomesEditor from '@/components/admin/OutcomesEditor'
 
 interface Market {
   id: string; title: string; status: string; total_pool: number;
@@ -92,6 +93,7 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
   const [settleMarket,   setSettleMarket]   = useState<Market | null>(null)
   const [editingMarket,  setEditingMarket]  = useState<EditMarket | null>(null)
   const [filter,         setFilter]         = useState<'all' | 'open' | 'closed' | 'settled' | 'suspended'>('all')
+  const [outcomesMarket, setOutcomesMarket] = useState<{ id: string; isBinary: boolean } | null>(null)
 
   // Auto-settle state
   const [autoRunning,  setAutoRunning]  = useState(false)
@@ -292,6 +294,16 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
         </div>
       )}
 
+      {outcomesMarket && (
+        <div id="outcomes-editor" className="mb-6">
+          <OutcomesEditor
+            marketId={outcomesMarket.id}
+            isBinary={outcomesMarket.isBinary}
+            onClose={() => setOutcomesMarket(null)}
+          />
+        </div>
+      )}
+
       {/* Markets list */}
       <div className="rounded-2xl border border-[#1a1a28] bg-[#0d0d18] overflow-hidden">
         <div className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-4 px-5 py-3 border-b border-[#1a1a28] text-[10px] font-bold uppercase tracking-wider text-slate-600">
@@ -354,6 +366,23 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
                   }`}
                 >
                   Edit
+                </button>
+                <button
+                  onClick={() => {
+                    const isBinary = m.options.every(o => ['yes','no','up','down'].includes(o.id))
+                    const next = outcomesMarket?.id === m.id ? null : { id: m.id, isBinary }
+                    setOutcomesMarket(next)
+                    setEditingMarket(null)
+                    setSettleMarket(null)
+                    if (next) setTimeout(() => document.getElementById('outcomes-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+                  }}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
+                    outcomesMarket?.id === m.id
+                      ? 'border-sky-700 bg-sky-900/30 text-sky-300'
+                      : 'border-sky-900/50 text-sky-500 hover:bg-sky-900/20'
+                  }`}
+                >
+                  Outcomes
                 </button>
                 {(m.status === 'open' || m.status === 'closed') && (
                   <button

@@ -4,9 +4,14 @@ export type MarketOutcome = {
   slug: string
   name: string
   image_url: string | null
+  image_source: string | null
+  image_credit: string | null
+  image_override: boolean
+  image_needs_review: boolean
   sort_order: number
   status: 'active' | 'resolved_yes' | 'resolved_no' | 'eliminated'
   color_index: number
+  probability: number | null
 }
 
 export type OptionRow = {

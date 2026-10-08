@@ -111,14 +111,19 @@ export default async function MarketPage({
     outcomes = rawOpts
       .filter(o => !o.id.endsWith('_no'))
       .map((o, i) => ({
-        id:          `synthetic-${o.id}`,
-        market_id:   id,
-        slug:        o.id.replace(/_yes$/, ''),
-        name:        o.label.replace(/\s+(YES|Yes)$/, '').trim(),
-        image_url:   null,
-        sort_order:  i,
-        status:      'active' as const,
-        color_index: i % 8,
+        id:                 `synthetic-${o.id}`,
+        market_id:          id,
+        slug:               o.id.replace(/_yes$/, ''),
+        name:               o.label.replace(/\s+(YES|Yes)$/, '').trim(),
+        image_url:          null,
+        image_source:       null,
+        image_credit:       null,
+        image_override:     false,
+        image_needs_review: false,
+        sort_order:         i,
+        status:             'active' as const,
+        color_index:        i % 8,
+        probability:        null,
       }))
   }
 

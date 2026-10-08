@@ -91,6 +91,74 @@ export async function settleMarket(
     }
   }
 
+  // For multi-candidate markets: pay NO bettors on every losing outcome first,
+  // then mark all remaining active bets lost. Binary markets (yes/no/up/down)
+  // have no NO sub-pool winners — their NO bettors simply lose.
+  const isBinary = opts.every(o => ['yes', 'no', 'up', 'down'].includes(o.id))
+  if (!isBinary) {
+    const wSlug = winningOptionId.replace(/_yes$/, '').replace(/_no$/, '')
+    const allSlugs = [...new Set(opts.map(o => o.id.replace(/_yes$/, '').replace(/_no$/, '')))]
+    const losingSlugs = allSlugs.filter(s => s !== wSlug)
+
+    for (const slug of losingSlugs) {
+      const yesOpt   = opts.find(o => o.id === `${slug}_yes`)
+      const noOpt    = opts.find(o => o.id === `${slug}_no`)
+      const yesPool  = Number(yesOpt?.total_pool ?? 0)
+      const noPool   = Number(noOpt?.total_pool ?? 0)
+      const subTotal = yesPool + noPool
+      if (noPool <= 0 || subTotal <= 0) continue
+
+      const subPrize = subTotal * (1 - rakePct)
+
+      const { data: noBets } = await admin
+        .from('bets')
+        .select('*')
+        .eq('market_id', marketId)
+        .eq('option_id', `${slug}_no`)
+        .eq('status', 'active')
+
+      if (!noBets?.length) continue
+
+      for (const bet of noBets) {
+        const betAmt = Number(bet.amount)
+        const payout = (betAmt / noPool) * subPrize
+
+        const { data: claimedBet } = await admin
+          .from('bets')
+          .update({ status: 'won', settled_payout: payout })
+          .eq('id', bet.id)
+          .eq('status', 'active')
+          .select('id')
+
+        if (!claimedBet || claimedBet.length === 0) continue
+
+        const { data: newBalance } = await admin.rpc('adjust_wallet_balance', {
+          p_user_id: bet.user_id,
+          p_delta: payout,
+        })
+        await admin.from('transactions').insert({
+          user_id:       bet.user_id,
+          type:          'payout',
+          amount:        payout,
+          balance_after: newBalance ?? undefined,
+          status:        'completed',
+          metadata: {
+            marketId,
+            winningOptionId,
+            betId:        bet.id,
+            market_title: claimed.title,
+            option_label: `${slug} NO`,
+            stake:        betAmt,
+            payout_type:  'no_loser_subpool',
+          },
+        })
+      }
+    }
+  }
+
+  // Mark all remaining active bets lost:
+  //   YES on every losing candidate, NO on the winning candidate, all binary losers.
+  // Already-paid NO winners are status='won'; .eq('status','active') protects them.
   await admin.from('bets')
     .update({ status: 'lost' })
     .eq('market_id', marketId)
@@ -179,8 +247,6 @@ export async function settleMarket(
         .eq('id', o.id)
     ))
   }
-  // TODO(multi-candidate): also pay out NO bettors on every non-winning outcome
-  // (requires a second settlement pass per losing outcome's NO sub-pool).
 
   // Fire settlement emails — non-blocking, never delay settlement
   sendSettlementEmails(admin, {
