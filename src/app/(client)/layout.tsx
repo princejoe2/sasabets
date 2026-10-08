@@ -25,10 +25,8 @@ export default async function ClientLayout({ children }: { children: React.React
       if (profile?.is_admin) redirect('/admin')
     }
   } catch (err: unknown) {
-    // Log the real error so it appears in Vercel runtime logs
-    // (digest is sent to the browser; full message only on server)
     if ((err as { digest?: string })?.digest?.startsWith('NEXT_REDIRECT')) throw err
-    console.error('[ClientLayout] Server component error:', err)
+    // Auth check failed — render without user session
   }
 
   return (

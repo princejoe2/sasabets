@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/server'
 import MarketsClient from '@/components/MarketsClient'
 import type { Metadata } from 'next'
 
@@ -58,7 +58,7 @@ const jsonLd = [
 ]
 
 export default async function HomePage() {
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
   const marketsResult = await supabase
     .from('markets')
@@ -68,9 +68,6 @@ export default async function HomePage() {
   const profilesResult = await supabase
     .from('profiles')
     .select('*', { count: 'exact', head: true })
-
-  if (marketsResult.error) console.error('[HomePage] markets query error:', marketsResult.error)
-  if (profilesResult.error) console.error('[HomePage] profiles query error:', profilesResult.error)
 
   const markets = marketsResult.data
   const userCount = profilesResult.count

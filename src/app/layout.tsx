@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next'
+﻿import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { supreme, chubbo } from '@/lib/fonts'
 import CursorEffects from '@/components/CursorEffects'
@@ -70,10 +70,13 @@ export const metadata: Metadata = {
     shortcut: '/icon-192.png',
     apple: '/apple-touch-icon.png',
   },
-  themeColor: '#00ff88',
   other: {
     'mobile-web-app-capable': 'yes',
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#00ff88',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

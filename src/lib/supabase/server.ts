@@ -36,6 +36,15 @@ export async function createClient() {
   })
 }
 
+// Cookie-free client using only the anon key — suitable for public read
+// queries (markets, counts) that don't need a user session and must work
+// during ISR prerendering (no request context → cookies() would throw).
+export function createPublicClient() {
+  return createSupabaseClient(SB_URL, SB_ANON, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+}
+
 export function createAdminClient() {
   // Read and strip at call time (not module load) to ensure BOM is removed
   // regardless of when/how webpack evaluates the module.
