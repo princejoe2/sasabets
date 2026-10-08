@@ -32,7 +32,7 @@ export default async function ClientLayout({ children }: { children: React.React
   return (
     <>
       <Navbar />
-      <main className="pb-16 sm:pb-0 bg-[#ecfdf5] dark:bg-[#040c06]">
+      <main className="pb-16 sm:pb-0 bg-mk-bg">
         <ClosingSoonBanner />
         {children}
       </main>

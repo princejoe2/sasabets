@@ -1,6 +1,6 @@
 ﻿import type { Metadata, Viewport } from 'next'
 import './globals.css'
-import { supreme, chubbo } from '@/lib/fonts'
+import { supreme, chubbo, inter } from '@/lib/fonts'
 import CursorEffects from '@/components/CursorEffects'
 import ThemeProvider from '@/components/ThemeProvider'
 import PushNotificationPrompt from '@/components/PushNotificationPrompt'
@@ -76,13 +76,14 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#00ff88',
+  themeColor: '#000000',
+  colorScheme: 'dark',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${supreme.variable} ${chubbo.variable}`}>
-      <body className="min-h-screen bg-[#ecfdf5] text-[#052e16] dark:bg-[#040c06] dark:text-[#e8f5e9]">
+    <html lang="en" suppressHydrationWarning className={`dark ${supreme.variable} ${chubbo.variable} ${inter.variable}`}>
+      <body className="min-h-screen bg-black text-[#F5F5F5] antialiased">
         <ThemeProvider>
           <CursorEffects />
           {children}

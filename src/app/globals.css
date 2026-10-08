@@ -1,54 +1,226 @@
-/* @import must precede all other rules (incl. @tailwind, which expands into
-   base styles) — Turbopack enforces this strictly, unlike webpack. */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Syne:wght@700;800&family=Bebas+Neue&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Design tokens ── */
+/* ── Design tokens ──────────────────────────────────────────────────────────── */
 :root {
-  --sabula-green:  #00ff88;
-  --sabula-gold:   #f5c518;
-  --sabula-red:    #ff3366;
-  --sabula-cyan:   #00ccff;
-  --accent:        #059669;
+  /* Surfaces */
+  --mk-bg:          #000000;
+  --mk-surface:     #0A0A0A;
+  --mk-card:        #111111;
+  --mk-raised:      #1A1A1A;
 
-  /* Forecast Markets card theme — light mode (clean white) */
-  --fc-card-bg:        #ffffff;
-  --fc-card-border:    #e8eaed;
-  --fc-text-primary:   #0f172a;
-  --fc-text-secondary: #6b7280;
-  --fc-cat-bg:         rgba(255,255,255,0.97);
-  --fc-cat-border:     #e8eaed;
-  --fc-gauge-track:    #e5e7eb;
+  /* Borders */
+  --mk-border:      #222222;
+  --mk-card-border: rgba(255, 255, 255, 0.08);
+  --mk-divider:     #1A1A1A;
+
+  /* Text */
+  --mk-text:        #F5F5F5;
+  --mk-secondary:   #A1A1A1;
+  --mk-muted:       #6B6B6B;
+
+  /* YES */
+  --mk-yes:         #22C55E;
+  --mk-yes-bg:      rgba(34, 197, 94, 0.12);
+  --mk-yes-text:    #4ADE80;
+
+  /* NO */
+  --mk-no:          #EF4444;
+  --mk-no-bg:       rgba(239, 68, 68, 0.12);
+  --mk-no-text:     #F87171;
+
+  /* Accent — brand orange */
+  --mk-accent:      #FF9F43;
+  --mk-accent-bg:   rgba(255, 159, 67, 0.12);
+
+  /* Candidate palette (assigned permanently by color_index) */
+  --mk-c0: #F5B83D;
+  --mk-c1: #EC4899;
+  --mk-c2: #3B82F6;
+  --mk-c3: #22C55E;
+  --mk-c4: #A855F7;
+  --mk-c5: #F97316;
+  --mk-c6: #14B8A6;
+  --mk-c7: #EAB308;
+
+  /* Radii */
+  --r-card:  16px;
+  --r-btn:   12px;
+  --r-pill:  999px;
+  --r-input: 8px;
+
+  /* Motion */
+  --dur-fast:    150ms;
+  --dur-base:    250ms;
+  --dur-slow:    400ms;
+  --dur-draw:    800ms;
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Z-index layers */
+  --z-content:        1;
+  --z-sticky-header:  10;
+  --z-buy-bar:        20;
+  --z-bottom-nav:     30;
+  --z-sheet-backdrop: 40;
+  --z-sheet:          50;
+  --z-modal:          60;
+  --z-toast:          70;
+  --z-progress-bar:   80;
+
+  /* Legacy aliases — MarketsClient.tsx and page.tsx read these */
+  --fc-card-bg:     var(--mk-card);
+  --fc-card-border: var(--mk-card-border);
+  --fc-cat-bg:      var(--mk-surface);
+  --fc-cat-border:  var(--mk-border);
+  --fc-gauge-track: var(--mk-raised);
+  --fc-text-primary:   var(--mk-text);
+  --fc-text-secondary: var(--mk-muted);
+
+  /* Tailwind background/foreground shims */
+  --background: var(--mk-bg);
+  --foreground: var(--mk-text);
 }
-.dark {
-  --accent: #22c55e;
 
-  /* Forecast Markets card theme — dark mode (true monochrome) */
-  --fc-card-bg:        #111316;
-  --fc-card-border:    #1e2327;
-  --fc-text-primary:   #eceef0;
-  --fc-text-secondary: #5e6872;
-  --fc-cat-bg:         rgba(8,10,12,0.97);
-  --fc-cat-border:     #191c1f;
-  --fc-gauge-track:    #252930;
+/* ── Always-dark base ───────────────────────────────────────────────────────── */
+html {
+  color-scheme: dark;
+  background: #000000;
 }
 
 body {
-  /* background set per-layout — see (client)/layout.tsx and .market-root */
-  color: #052e16;
-  font-family: var(--font-supreme), 'Plus Jakarta Sans', system-ui, sans-serif;
+  background: var(--mk-bg);
+  color: var(--mk-text);
+  font-family: var(--font-inter), Inter, system-ui, sans-serif;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Syne', var(--font-chubbo), system-ui, sans-serif;
+/* ── Market page root ── */
+.market-root {
+  background: var(--mk-bg);
+  color: var(--mk-text);
+  font-family: var(--font-inter), Inter, system-ui, sans-serif;
+  min-height: 100dvh;
 }
 
-/* ── Gradient text ── */
+/* ── Tabular numbers — prevents digit-width jitter on prices/% ── */
+.tabular {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Scrollbar utilities ── */
+.scrollbar-none::-webkit-scrollbar,
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-none,
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Safe area bottom padding for pages with bottom nav ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); }
+}
+
+/* ── Card / button component tokens ── */
+.mcard {
+  background: var(--mk-surface);
+  border: 1px solid var(--mk-card-border);
+  border-radius: var(--r-card);
+  transition: border-color var(--dur-base), box-shadow var(--dur-base), transform var(--dur-base);
+}
+.mcard:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.yes-btn {
+  background: var(--mk-yes-bg);
+  border: 1.5px solid rgba(34, 197, 94, 0.4);
+  color: var(--mk-yes-text);
+  border-radius: var(--r-btn);
+  padding: 8px 12px;
+  font-weight: 800;
+  font-size: 12px;
+  transition: background var(--dur-fast), border-color var(--dur-fast), transform 100ms;
+}
+.yes-btn:hover {
+  background: rgba(34, 197, 94, 0.22);
+  border-color: rgba(34, 197, 94, 0.7);
+  transform: translateY(-1px);
+}
+
+.no-btn {
+  background: var(--mk-no-bg);
+  border: 1.5px solid rgba(239, 68, 68, 0.35);
+  color: var(--mk-no-text);
+  border-radius: var(--r-btn);
+  padding: 8px 12px;
+  font-weight: 800;
+  font-size: 12px;
+  transition: background var(--dur-fast), border-color var(--dur-fast), transform 100ms;
+}
+.no-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.65);
+  transform: translateY(-1px);
+}
+
+.cat-tab {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--mk-border);
+  color: var(--mk-secondary);
+  border-radius: var(--r-pill);
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
+}
+.cat-tab:hover,
+.cat-tab.active {
+  background: var(--mk-accent-bg);
+  border-color: rgba(255, 159, 67, 0.4);
+  color: var(--mk-accent);
+}
+
+/* ── Card image gradient (used by market cards) ── */
+.card-img-fade {
+  background: linear-gradient(to bottom, transparent 35%, rgba(0, 0, 0, 0.95) 100%);
+}
+
+/* ── Card shine hover effect ── */
+.card-shine {
+  position: relative;
+  overflow: hidden;
+}
+.card-shine::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -80%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.04) 50%, transparent 100%);
+  transform: skewX(-15deg);
+  transition: none;
+  pointer-events: none;
+}
+.card-shine:hover::after { animation: shine 0.55s ease; }
+
+/* ── Button glow (accent colour) ── */
+.btn-glow {
+  position: relative;
+  transition: box-shadow var(--dur-base), transform var(--dur-fast);
+}
+.btn-glow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 24px rgba(255, 159, 67, 0.4), 0 0 48px rgba(255, 159, 67, 0.15);
+}
+.btn-glow:active { transform: translateY(0); }
+
+/* ── Gradient text (landing / marketing sections) ── */
 .gradient-text {
   background: linear-gradient(135deg, #a78bfa 0%, #ec4899 40%, #f59e0b 70%, #34d399 100%);
   background-size: 300% 300%;
@@ -67,7 +239,20 @@ h1, h2, h3, h4, h5, h6 {
   animation: gradient-shift 4s linear infinite;
 }
 
-/* ── Keyframes ── */
+/* ── Mobile typography scale ── */
+@media (max-width: 640px) {
+  h1 { font-size: 1.75rem; line-height: 1.2; }
+  h2 { font-size: 1.375rem; line-height: 1.3; }
+}
+
+/* ── Page entrance / animation helpers ── */
+.page-enter { animation: fadeUp 0.25s ease both; }
+.animate-streak-bounce-in { animation: streak-bounce-in 0.4s var(--ease-spring) both; }
+
+/* ════════════════════════════════════════════════════════════
+   KEYFRAMES
+   ════════════════════════════════════════════════════════════ */
+
 @keyframes gradient-shift {
   0%   { background-position: 0%   50%; }
   50%  { background-position: 100% 50%; }
@@ -94,225 +279,11 @@ h1, h2, h3, h4, h5, h6 {
   100% { left: 120%; }
 }
 
-@keyframes cursor-ripple {
-  0%   { transform: translate(-50%, -50%) scale(0); opacity: 0.8; }
-  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
-}
-
-@keyframes cursor-burst {
-  0%   { transform: translate(-50%, -50%) scale(0); opacity: 1; }
-  60%  { opacity: 0.4; }
-  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
-}
-
 @keyframes ticker {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
 
-/* ── Card shine on hover ── */
-.card-shine {
-  position: relative;
-  overflow: hidden;
-}
-.card-shine::after {
-  content: '';
-  position: absolute;
-  top: 0; left: -80%;
-  width: 60%; height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255,255,255,0.04) 50%,
-    transparent 100%
-  );
-  transform: skewX(-15deg);
-  transition: none;
-  pointer-events: none;
-}
-.card-shine:hover::after {
-  animation: shine 0.55s ease;
-}
-
-/* ── Button glow ── */
-.btn-glow {
-  position: relative;
-  transition: box-shadow 0.2s, transform 0.15s;
-}
-.btn-glow:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 24px rgba(0,255,136,0.4), 0 0 48px rgba(0,255,136,0.15);
-}
-.btn-glow:active {
-  transform: translateY(0);
-}
-
-.btn-glow-emerald:hover {
-  box-shadow: 0 0 24px rgba(0,255,136,0.4), 0 0 48px rgba(0,255,136,0.15);
-}
-
-/* ── Hide scrollbar but keep scroll ── */
-.scrollbar-none::-webkit-scrollbar { display: none; }
-.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* ── Dark mode global body ── */
-.dark body {
-  background-color: #040c06;
-  color: #e8f5e9;
-}
-
-/* ── Market page root — always pure black regardless of system theme ── */
-.market-root {
-  background: #000000;
-  color: #F5F5F5;
-  font-family: Inter, system-ui, sans-serif;
-  min-height: 100vh;
-}
-
-/* ── Tabular numbers — prevents digit-width jitter ── */
-.tabular {
-  font-feature-settings: "tnum";
-  font-variant-numeric: tabular-nums;
-}
-
-/* ── Green grid background overlay (dark mode only) ── */
-.dark body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(0,255,136,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,255,136,0.025) 1px, transparent 1px);
-  background-size: 48px 48px;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* ── Custom scrollbar (dark mode) ── */
-.dark ::-webkit-scrollbar { width: 6px; }
-.dark ::-webkit-scrollbar-track { background: #040c06; }
-.dark ::-webkit-scrollbar-thumb { background: rgba(0,255,136,0.2); border-radius: 3px; }
-.dark ::-webkit-scrollbar-thumb:hover { background: rgba(0,255,136,0.4); }
-
-/* ── Dark mode overrides ── */
-
-/* Backgrounds */
-.dark .bg-white           { background-color: rgba(4,12,6,0.95) !important; }
-.dark .bg-slate-50        { background-color: #050e07 !important; }
-.dark .bg-slate-100       { background-color: #0a1a0d !important; }
-.dark .bg-slate-200       { background-color: #122016 !important; }
-
-/* Semi-transparent whites */
-.dark .bg-white\/95       { background-color: rgba(4,12,6,0.95) !important; }
-.dark .bg-white\/80       { background-color: rgba(4,12,6,0.80) !important; }
-.dark .bg-white\/60       { background-color: rgba(4,12,6,0.60) !important; }
-
-/* Text */
-.dark .text-slate-900     { color: #e8f5e9 !important; }
-.dark .text-slate-800     { color: #c8e6c9 !important; }
-.dark .text-slate-700     { color: #a5d6a7 !important; }
-.dark .text-slate-600     { color: rgba(255,255,255,0.55) !important; }
-.dark .text-slate-500     { color: rgba(255,255,255,0.4) !important; }
-.dark .text-slate-400     { color: rgba(255,255,255,0.28) !important; }
-.dark .text-slate-300     { color: rgba(255,255,255,0.18) !important; }
-
-/* Borders */
-.dark .border-slate-200   { border-color: rgba(0,255,136,0.12) !important; }
-.dark .border-slate-100   { border-color: rgba(0,255,136,0.07) !important; }
-.dark .border-slate-300   { border-color: rgba(0,255,136,0.18) !important; }
-
-/* Hover states */
-.dark .hover\:bg-slate-50:hover   { background-color: rgba(0,255,136,0.04) !important; }
-.dark .hover\:bg-slate-100:hover  { background-color: rgba(0,255,136,0.07) !important; }
-.dark .hover\:text-slate-900:hover { color: #00ff88 !important; }
-
-/* Focus */
-.dark .focus\:bg-white:focus { background-color: #0a1a0d !important; }
-
-/* Input fields */
-.dark input, .dark textarea, .dark select {
-  background-color: rgba(0,255,136,0.04);
-  color: #e8f5e9;
-  border-color: rgba(0,255,136,0.18);
-}
-.dark input::placeholder, .dark textarea::placeholder {
-  color: rgba(255,255,255,0.3);
-}
-
-/* MarketCard image fade */
-.card-img-fade {
-  background: linear-gradient(to bottom, transparent 35%, rgba(240,253,244,0.95) 100%);
-}
-.dark .card-img-fade {
-  background: linear-gradient(to bottom, transparent 35%, rgba(4,12,6,0.97) 100%) !important;
-}
-
-/* Hero section dark override */
-.dark [style*="linear-gradient(135deg, #f5f3ff"] {
-  background: linear-gradient(135deg, #040c06 0%, #061210 50%, #040c06 100%) !important;
-}
-
-/* ── Design card / button classes ── */
-.mcard {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(0,255,136,0.15);
-  border-radius: 16px;
-  backdrop-filter: blur(8px);
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
-}
-.mcard:hover {
-  border-color: rgba(0,255,136,0.35);
-  box-shadow: 0 0 24px rgba(0,255,136,0.06), 0 8px 24px rgba(0,0,0,0.4);
-  transform: translateY(-2px);
-}
-
-.yes-btn {
-  background: rgba(0,255,136,0.12);
-  border: 1.5px solid rgba(0,255,136,0.4);
-  color: #00ff88;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-weight: 800;
-  font-size: 12px;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
-}
-.yes-btn:hover { background: rgba(0,255,136,0.22); border-color: rgba(0,255,136,0.7); transform: translateY(-1px); }
-
-.no-btn {
-  background: rgba(255,51,102,0.1);
-  border: 1.5px solid rgba(255,51,102,0.35);
-  color: #ff3366;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-weight: 800;
-  font-size: 12px;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
-}
-.no-btn:hover { background: rgba(255,51,102,0.2); border-color: rgba(255,51,102,0.65); transform: translateY(-1px); }
-
-.cat-tab {
-  background: rgba(0,255,136,0.06);
-  border: 1px solid rgba(0,255,136,0.2);
-  color: rgba(0,255,136,0.7);
-  border-radius: 100px;
-  padding: 6px 16px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.cat-tab:hover, .cat-tab.active {
-  background: rgba(0,255,136,0.15);
-  border-color: rgba(0,255,136,0.5);
-  color: #00ff88;
-}
-
-/* ── Scrollbar hide utility ── */
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-
-/* ── Smooth page entrance ── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -322,39 +293,15 @@ h1, h2, h3, h4, h5, h6 {
   from { opacity: 0; transform: scale(0.96) translateY(-6px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
-.page-enter {
-  animation: fadeUp 0.25s ease both;
-}
 
-/* ── Design system keyframes ── */
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 8px rgba(0,255,136,0.3); }
-  50%       { box-shadow: 0 0 24px rgba(0,255,136,0.7), 0 0 48px rgba(0,255,136,0.3); }
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 159, 67, 0.3); }
+  50%       { box-shadow: 0 0 24px rgba(255, 159, 67, 0.7), 0 0 48px rgba(255, 159, 67, 0.3); }
 }
 
-@keyframes neonPulse {
-  0%, 100% { text-shadow: 0 0 8px rgba(0,255,136,0.7), 0 0 20px rgba(0,255,136,0.4); opacity: 0.95; }
-  50%       { text-shadow: 0 0 16px #00ff88, 0 0 40px rgba(0,255,136,0.6), 0 0 80px rgba(0,255,136,0.3); opacity: 1; }
-}
-
-@keyframes scanLine {
-  0%   { transform: translateY(-100%); opacity: 0; }
-  10%  { opacity: 0.4; }
-  90%  { opacity: 0.4; }
-  100% { transform: translateY(100vh); opacity: 0; }
-}
-
-@keyframes orbitCW  { from { transform: rotate(0deg);   } to { transform: rotate(360deg);  } }
-@keyframes orbitCCW { from { transform: rotate(360deg); } to { transform: rotate(0deg);    } }
-
-@keyframes ringPulse {
-  0%, 100% { transform: scale(1);   opacity: 0.4; }
-  50%       { transform: scale(1.1); opacity: 0.8; }
-}
-
-@keyframes barFlash {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.5; }
+@keyframes bounce-in {
+  from { opacity: 0; transform: scale(0.6); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 @keyframes cardPop {
@@ -362,127 +309,68 @@ h1, h2, h3, h4, h5, h6 {
   100% { transform: scale(1) translateY(0);      opacity: 1; }
 }
 
-@keyframes sabula-pulse {
-  0%, 100% { text-shadow: 0 0 16px rgba(245,197,24,0.9), 0 0 48px rgba(245,197,24,0.5), 0 0 100px rgba(245,197,24,0.2); }
-  50%       { text-shadow: 0 0 28px #f5c518, 0 0 80px rgba(245,197,24,0.7), 0 0 160px rgba(245,197,24,0.3); }
+@keyframes barFlash {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
 }
 
-@keyframes sabula-neon {
-  0%, 100% { text-shadow: 0 0 14px #00ff88, 0 0 40px rgba(0,255,136,0.7), 0 0 80px rgba(0,255,136,0.3); }
-  50%       { text-shadow: 0 0 24px #00ff88, 0 0 70px rgba(0,255,136,0.9), 0 0 140px rgba(0,255,136,0.4); }
-}
-
-@keyframes sabula-float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-10px); }
-}
-
-/* ── Win celebration bounce ── */
-@keyframes bounce-in {
-  from { opacity: 0; transform: scale(0.6); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-/* ── Safe area bottom padding for pages with bottom nav ── */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .pb-safe { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); }
-}
-
-/* ── Mobile typography scale ── */
-@media (max-width: 640px) {
-  h1 { font-size: 1.75rem; line-height: 1.2; }
-  h2 { font-size: 1.375rem; line-height: 1.3; }
-}
-
-/* ── Forecast Markets card animations ── */
+/* Market card gauge animations */
 @keyframes gaugeIn {
   from { stroke-dashoffset: 126; }
 }
 @keyframes fcGlowGreen {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(0,204,102,0); }
-  50%       { box-shadow: 0 0 14px 1px rgba(0,204,102,0.22); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 204, 102, 0); }
+  50%       { box-shadow: 0 0 14px 1px rgba(0, 204, 102, 0.22); }
 }
 @keyframes fcGlowRed {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
-  50%       { box-shadow: 0 0 14px 1px rgba(239,68,68,0.18); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  50%       { box-shadow: 0 0 14px 1px rgba(239, 68, 68, 0.18); }
 }
 @keyframes fcRipple {
   from { transform: scale(0); opacity: 0.5; }
   to   { transform: scale(2.6); opacity: 0; }
 }
 
-/* ── Streak toast slide-in ── */
+/* SabulaLogo animations */
+@keyframes sabula-pulse {
+  0%, 100% { text-shadow: 0 0 16px rgba(255, 159, 67, 0.9), 0 0 48px rgba(255, 159, 67, 0.5); }
+  50%       { text-shadow: 0 0 28px var(--mk-accent), 0 0 80px rgba(255, 159, 67, 0.7); }
+}
+@keyframes sabula-neon {
+  0%, 100% { text-shadow: 0 0 14px var(--mk-accent), 0 0 40px rgba(255, 159, 67, 0.7); }
+  50%       { text-shadow: 0 0 24px var(--mk-accent), 0 0 70px rgba(255, 159, 67, 0.9); }
+}
+@keyframes sabula-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+/* CursorEffects animations */
+@keyframes cursor-ripple {
+  0%   { transform: translate(-50%, -50%) scale(0); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+@keyframes cursor-burst {
+  0%   { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+  60%  { opacity: 0.4; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+@keyframes orbitCW  { from { transform: rotate(0deg);   } to { transform: rotate(360deg);  } }
+@keyframes orbitCCW { from { transform: rotate(360deg); } to { transform: rotate(0deg);    } }
+@keyframes ringPulse {
+  0%, 100% { transform: scale(1);   opacity: 0.4; }
+  50%       { transform: scale(1.1); opacity: 0.8; }
+}
+@keyframes scanLine {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  10%  { opacity: 0.4; }
+  90%  { opacity: 0.4; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* Toast / notification */
 @keyframes streak-bounce-in {
   0%   { opacity: 0; transform: translateX(-50%) translateY(-20px) scale(0.9); }
   60%  { transform: translateX(-50%) translateY(4px) scale(1.02); }
   100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-}
-.animate-streak-bounce-in { animation: streak-bounce-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-
-/* ══════════════════════════════════════════════════════════════
-   LIGHT MODE OVERRIDES
-   Pages were designed dark-first with hardcoded hex colors.
-   These rules force those elements into a clean light palette
-   when the .dark class is NOT on <html>.
-   ══════════════════════════════════════════════════════════════ */
-
-/* ── Body: slightly heavier weight so text pops in light mode ── */
-html:not(.dark) body {
-  font-weight: 500;
-  color: #052e16;
-}
-
-/* ── Page-level dark backgrounds → soft green-white ── */
-html:not(.dark) [class*="bg-[#0a0a0f]"],
-html:not(.dark) [class*="bg-[#040c06]"],
-html:not(.dark) [class*="bg-[#061610]"],
-html:not(.dark) [class*="bg-[#0a1a0d]"] {
-  background-color: #f0fdf4 !important;
-}
-
-/* ── Card / panel dark backgrounds → pure white ── */
-html:not(.dark) [class*="bg-[#0d0d14]"],
-html:not(.dark) [class*="bg-[#1e1e2e]"],
-html:not(.dark) [class*="bg-[#122016]"] {
-  background-color: #ffffff !important;
-}
-
-/* ── Dark borders → light emerald ── */
-html:not(.dark) [class*="border-[#1e1e2e]"],
-html:not(.dark) [class*="border-[#2a2a3e]"],
-html:not(.dark) [class*="border-[#1e293b]"] {
-  border-color: #bbf7d0 !important;
-}
-
-/* ── Slate shades designed for dark backgrounds → dark in light mode ── */
-html:not(.dark) .text-slate-100 { color: #0f172a !important; font-weight: 700; }
-html:not(.dark) .text-slate-200 { color: #1e293b !important; font-weight: 600; }
-html:not(.dark) .text-slate-300 { color: #374151 !important; font-weight: 600; }
-html:not(.dark) .text-slate-400 { color: #4b5563 !important; font-weight: 500; }
-html:not(.dark) .text-slate-500 { color: #374151 !important; }
-
-/* ── White text on formerly-dark containers → dark (skip elements with own bg) ── */
-html:not(.dark) [class*="bg-[#0a0a0f]"] .text-white:not([class*="bg-"]),
-html:not(.dark) [class*="bg-[#0d0d14]"] .text-white:not([class*="bg-"]),
-html:not(.dark) [class*="bg-[#0a1a0d]"] .text-white:not([class*="bg-"]) {
-  color: #052e16 !important;
-}
-
-/* ── bg-white and its variants stay bright white (not overridden by dark CSS) ── */
-html:not(.dark) .bg-white,
-html:not(.dark) .bg-white\/95,
-html:not(.dark) .bg-white\/80 {
-  background-color: rgba(255, 255, 255, 0.97) !important;
-}
-
-/* ── Subtle dark semi-transparent backgrounds → very light ── */
-html:not(.dark) [class*="bg-[rgba(255,255,255,0.04)"],
-html:not(.dark) [class*="bg-[rgba(255,255,255,0.03)"] {
-  background-color: rgba(0, 0, 0, 0.03) !important;
-}
-
-/* ── Loading skeleton / placeholder bg ── */
-html:not(.dark) .bg-\[\#0d0d14\].h-48,
-html:not(.dark) [class*="bg-[#0d0d14]"][class*="h-48"] {
-  background-color: #e6f4ea !important;
 }
