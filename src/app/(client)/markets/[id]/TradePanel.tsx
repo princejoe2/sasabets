@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { MarketData, MarketOutcome } from './types'
 import { resolveOptionId, oddsFor, OUTCOME_COLORS } from './types'
+import Confetti from '@/components/Confetti'
 
 type PreviewResult = {
   estimated_payout: number
@@ -129,6 +130,8 @@ export default function TradePanel({
   // Success state
   if (done) {
     return (
+      <>
+      <Confetti />
       <div className="rounded-r-card border border-mk-border bg-mk-card p-6 text-center space-y-4">
         <div className="text-5xl">🎯</div>
         <p className="text-lg font-black text-mk-text">Prediction placed!</p>
@@ -155,6 +158,7 @@ export default function TradePanel({
           </button>
         </div>
       </div>
+      </>
     )
   }
 
@@ -208,21 +212,18 @@ export default function TradePanel({
         <div className="grid grid-cols-2 gap-2">
           {(['yes', 'no'] as const).map(side => {
             const isSelected = selectedSide === side
-            const sideColor  = side === 'yes' ? '#22C55E' : '#EF4444'
-            const sideBg     = side === 'yes' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)'
             const odds       = side === 'yes' ? yesOdds : noOdds
+            const selClass   = side === 'yes'
+              ? 'bg-mk-yes-bg border-2 border-mk-yes text-mk-yes shadow-[0_0_12px_rgba(34,197,94,0.2)]'
+              : 'bg-mk-no-bg border-2 border-mk-no text-mk-no shadow-[0_0_12px_rgba(239,68,68,0.2)]'
             return (
               <button
                 key={side}
                 onClick={() => { onSelectSide(side); setError('') }}
                 aria-pressed={isSelected}
-                className="rounded-r-btn py-3 text-sm font-bold transition-all min-h-[44px]"
-                style={{
-                  background:  isSelected ? sideBg : '#1A1A1A',
-                  border:      `2px solid ${isSelected ? sideColor : '#222222'}`,
-                  color:       isSelected ? sideColor : '#6B6B6B',
-                  boxShadow:   isSelected ? `0 0 12px ${sideColor}30` : 'none',
-                }}
+                className={`rounded-r-btn py-3 text-sm font-bold transition-all min-h-[44px] ${
+                  isSelected ? selClass : 'bg-mk-raised border-2 border-mk-border text-mk-muted'
+                }`}
               >
                 {side.toUpperCase()} {odds !== '—' ? odds : ''}
               </button>
@@ -260,7 +261,7 @@ export default function TradePanel({
           </div>
           {/* Quick-add chips */}
           <div className="mt-2 flex gap-1.5">
-            {[1000, 5000, 10000].map(v => (
+            {[2000, 5000, 20000].map(v => (
               <button
                 key={v}
                 onClick={() => setQuickAmount(v)}
@@ -330,13 +331,11 @@ export default function TradePanel({
           <button
             onClick={placeBet}
             disabled={loading || !selectedOutcome || amtNum < 1000}
-            className="w-full rounded-r-btn py-3.5 text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{
-              background: selectedOutcome && amtNum >= 1000 ? '#22C55E' : '#1A1A1A',
-              color:      selectedOutcome && amtNum >= 1000 ? '#000000' : '#6B6B6B',
-              boxShadow:  selectedOutcome && amtNum >= 1000 ? '0 4px 0 #15803d' : 'none',
-              transform:  loading ? 'translateY(2px)' : 'none',
-            }}
+            className={`w-full rounded-r-btn py-3.5 text-sm font-bold transition-all active:translate-y-px disabled:opacity-40 disabled:cursor-not-allowed ${
+              selectedOutcome && amtNum >= 1000
+                ? 'bg-mk-accent text-black hover:brightness-110'
+                : 'bg-mk-raised text-mk-muted'
+            }`}
           >
             {loading ? 'Placing…' : !selectedOutcome ? 'Pick an outcome above' : amtNum < 1000 ? 'Enter amount (min 1K)' : 'Trade'}
           </button>
