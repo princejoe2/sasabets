@@ -28,6 +28,28 @@ user touches on day 1: Home/Markets feed, Auth page, Wallet, and Bets. Key decis
 
 ---
 
+## 2026-10-10 — Phase 6 implementation complete (Tasks 1–3)
+
+Executed all 3 tasks of the Phase 6 market detail polish plan inline.
+
+**Task 1 — TradePanel token migration (dc797be):** Replaced all hardcoded hex values in the
+YES/NO selector and trade button with `--mk-*` Tailwind token classes. Quick-amount chips
+updated from `[1K, 5K, 10K]` to `[2K, 5K, 20K]`. Added `<Confetti />` to the success state
+so a bet placement triggers the canvas confetti animation.
+
+**Task 2 — MarketHeader stat row (ef6b1d0):** Added a stat row below the market description
+with three chips: pool size (formatted as UGX 12K / 1.4M), predictor count, and a
+close-time countdown that turns red when under 24h. Countdown is SSR-safe — computed
+only inside a `useEffect`. Removed the duplicate bookmark button (FollowButton in page.tsx
+is the canonical affordance). `predictorCount` prop wired through from `MarketPageClient`.
+
+**Task 3 — MobileStickyBar outcome tabs (f990c7a):** For markets with 3+ active outcomes,
+the sticky bar now shows a horizontally scrollable tab row of outcome pills instead of
+a single name. Tapping a pill selects the outcome without opening the trade sheet; YES/NO
+buttons open the sheet with the selected outcome. Binary 2-outcome markets unchanged.
+
+---
+
 ## 2026-10-10 — Phase 5 implementation complete (Tasks 1–4)
 
 Executed all 4 tasks of the Phase 5 core journey polish plan inline.
