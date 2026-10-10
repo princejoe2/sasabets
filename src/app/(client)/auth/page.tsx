@@ -1,8 +1,8 @@
 'use client'
-import { useState, CSSProperties } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
-import AnimatedButton from '@/components/ui/animated-button'
+import { AnimatePresence, motion } from 'framer-motion'
 
 // Base64-decoded at runtime to bypass BOM injection from Vercel env vars at compile time
 const _d = (b: string) => Buffer.from(b, 'base64').toString('utf8')
@@ -12,30 +12,13 @@ const _SB_KEY = _d('ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01p
 type Mode = 'login' | 'register'
 type Step = 'form' | 'otp' | 'totp' | 'forgot' | 'forgot-sent'
 
-const T = {
-  bg: '#07090f',
-  card: '#0e1118',
-  border: '#1c1f2e',
-  text: '#e8eaf0',
-  muted: '#5a6080',
-  accent: '#4f8ef7',
-  accentHover: '#3a7bf5',
-  accentContrast: '#ffffff',
-  input: '#0a0d18',
-  inputBorder: '#1e2236',
-  error: '#ef4444',
-  success: '#22c55e',
-  shadow: '0 24px 48px -12px rgba(0,0,0,.8), 0 0 0 1px rgba(79,142,247,.06)',
-}
-
 export default function AuthPage() {
   const supabase = createBrowserClient(_SB_URL, _SB_KEY)
   const router   = useRouter()
 
-  const [mode, setMode]     = useState<Mode>('login')
-  const [step, setStep]     = useState<Step>('form')
+  const [mode, setMode] = useState<Mode>('login')
+  const [step, setStep] = useState<Step>('form')
 
-  // form fields
   const [email,       setEmail]       = useState('')
   const [name,        setName]        = useState('')
   const [phone,       setPhone]       = useState('')
@@ -47,12 +30,15 @@ export default function AuthPage() {
 
   const [normalizedPhone, setNormalizedPhone] = useState('')
 
-  const [username,      setUsername]      = useState('')
-  const [loading,       setLoading]       = useState(false)
-  const [error,         setError]         = useState('')
+  const [username,       setUsername]       = useState('')
+  const [loading,        setLoading]        = useState(false)
+  const [error,          setError]          = useState('')
   const [failedAttempts, setFailedAttempts] = useState(0)
-  const [lockedUntil,   setLockedUntil]   = useState(0)
-  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [lockedUntil,    setLockedUntil]    = useState(0)
+  const [termsAccepted,  setTermsAccepted]  = useState(false)
+
+  const [regStep, setRegStep] = useState<1 | 2>(1)
+  const [stepDir, setStepDir] = useState<1 | -1>(1)
 
   function switchMode(m: Mode) {
     setMode(m); setStep('form')
@@ -60,9 +46,26 @@ export default function AuthPage() {
     setPassword(''); setConfirm('')
     setUsername('')
     setTermsAccepted(false)
+    setRegStep(1)
   }
 
-  // ─── Registration ──────────────────────────────────────────────────────────
+  function handleNextStep() {
+    setError('')
+    if (!email.trim()) { setError('Email is required'); return }
+    if (!/\S+@\S+\.\S+/.test(email.trim())) { setError('Enter a valid email address'); return }
+    if (password.length < 8) { setError('Password must be at least 8 characters'); return }
+    if (password !== confirm) { setError('Passwords do not match'); return }
+    setStepDir(1)
+    setRegStep(2)
+  }
+
+  function handleBack() {
+    setError('')
+    setStepDir(-1)
+    setRegStep(1)
+  }
+
+  // ─── Registration ───────────────────────────────────────────────────────────
 
   async function handleRegister() {
     setError('')
@@ -75,13 +78,11 @@ export default function AuthPage() {
       setError('Username must be 3–20 characters: letters, numbers, _ or - only'); return
     }
 
-    // Basic Uganda phone format
     const raw = phone.replace(/[\s\-()]/g, '')
     if (!/^(\+256|256|0)(7\d{8}|39\d{7})$/.test(raw)) {
       setError('Enter a valid Ugandan mobile number (MTN or Airtel, e.g. 0771234567)')
       return
     }
-    // Normalise to international format (+256XXXXXXXXX) to avoid DB trigger mismatches
     const ph = raw.startsWith('+256') ? raw
               : raw.startsWith('256')  ? '+' + raw
               : '+256' + raw.slice(1)
@@ -89,7 +90,6 @@ export default function AuthPage() {
     setNormalizedPhone(ph)
     setLoading(true)
 
-    // Verify phone format and availability before creating the account
     try {
       const vRes = await fetch('/api/auth/verify-phone', {
         method: 'POST',
@@ -130,7 +130,6 @@ export default function AuthPage() {
       return
     }
 
-    // Confirmation email sent — show OTP entry screen
     setStep('otp')
     setLoading(false)
   }
@@ -159,9 +158,6 @@ export default function AuthPage() {
       setLoading(false)
       return
     }
-    // Persist phone + name to profile and credit referral if applicable.
-    // Use the already-normalised +256 number so the register API doesn't
-    // need to re-normalise and the duplicate check is format-consistent.
     try {
       const regRes = await fetch('/api/auth/register', {
         method: 'POST',
@@ -181,7 +177,7 @@ export default function AuthPage() {
     router.refresh()
   }
 
-  // ─── Forgot password ───────────────────────────────────────────────────────
+  // ─── Forgot password ────────────────────────────────────────────────────────
 
   async function handleForgotPassword() {
     setError('')
@@ -196,30 +192,26 @@ export default function AuthPage() {
     setLoading(false)
   }
 
-  // ─── Google OAuth ──────────────────────────────────────────────────────────
+  // ─── Google OAuth ───────────────────────────────────────────────────────────
 
   async function handleGoogleLogin() {
     setError(''); setLoading(true)
     const { error: oauthErr } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/markets`,
-      },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/markets` },
     })
     if (oauthErr) {
       setError(oauthErr.message || 'Google sign-in failed — please try again.')
       setLoading(false)
     }
-    // On success, browser redirects to Google — no need to do anything else
   }
 
-  // ─── Login ─────────────────────────────────────────────────────────────────
+  // ─── Login ──────────────────────────────────────────────────────────────────
 
   async function handleLogin() {
     setError('')
     if (!email || !password) { setError('Email and password are required'); return }
 
-    // Enforce client-side lockout after repeated failures
     const now = Date.now()
     if (lockedUntil > now) {
       const secs = Math.ceil((lockedUntil - now) / 1000)
@@ -237,7 +229,6 @@ export default function AuthPage() {
     if (loginErr) {
       const next = failedAttempts + 1
       setFailedAttempts(next)
-      // Progressive lockout: 30s after 3 fails, 120s after 6, 300s after 9
       const lockSecs = next >= 9 ? 300 : next >= 6 ? 120 : next >= 3 ? 30 : 0
       if (lockSecs > 0) setLockedUntil(Date.now() + lockSecs * 1000)
       setError('Email or password is incorrect.')
@@ -245,7 +236,6 @@ export default function AuthPage() {
       return
     }
 
-    // Check if admin or has 2FA
     const userId = data.user.id
     const res = await fetch('/api/auth/check-user', {
       method: 'POST',
@@ -263,7 +253,6 @@ export default function AuthPage() {
 
     const { isAdmin: admin, isStaff, has2fa } = userInfo
 
-    // Staff and admins both use the admin TOTP flow
     if (admin || isStaff || has2fa) {
       setIsAdmin(!!(admin || isStaff))
       setStep('totp')
@@ -289,14 +278,12 @@ export default function AuthPage() {
 
     setLoading(true)
 
-    // Admin and staff both verify via the admin endpoint (it sets the TOTP cookie the layout checks)
     const endpoint = isAdmin ? '/api/admin/2fa/verify' : '/api/auth/2fa/verify'
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: totp }),
     })
-    const data = await res.json()
 
     if (!res.ok) {
       const next = failedAttempts + 1
@@ -312,85 +299,27 @@ export default function AuthPage() {
     router.refresh()
   }
 
-  // ─── Styles ────────────────────────────────────────────────────────────────
+  // ─── Render ─────────────────────────────────────────────────────────────────
 
-  const wrap: CSSProperties = {
-    minHeight: '100dvh',
-    background: T.bg,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '24px 16px',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
-  }
-
-  const card: CSSProperties = {
-    width: '100%',
-    maxWidth: '420px',
-    background: T.card,
-    border: `1px solid ${T.border}`,
-    borderRadius: '16px',
-    padding: '32px',
-    boxShadow: T.shadow,
-  }
-
-  const label: CSSProperties = {
-    display: 'block',
-    fontSize: '13px',
-    fontWeight: 600,
-    color: T.muted,
-    marginBottom: '6px',
-    letterSpacing: '0.03em',
-  }
-
-  const inputStyle: CSSProperties = {
-    width: '100%',
-    background: T.input,
-    border: `1px solid ${T.inputBorder}`,
-    borderRadius: '10px',
-    padding: '11px 14px',
-    fontSize: '15px',
-    color: T.text,
-    outline: 'none',
-    boxSizing: 'border-box',
-  }
-
-  const btn: CSSProperties = {
-    width: '100%',
-    background: T.accent,
-    color: T.accentContrast,
-    border: 'none',
-    borderRadius: '10px',
-    padding: '13px',
-    fontSize: '15px',
-    fontWeight: 700,
-    cursor: 'pointer',
-    marginTop: '8px',
-  }
-
-  const fieldGap: CSSProperties = { marginBottom: '16px' }
-
-  // ─── Render ────────────────────────────────────────────────────────────────
-
-  // ── Email confirmation screen (after registration) ─────────────────────
   if (step === 'otp') {
     return (
-      <div style={wrap}>
-        <div style={card}>
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>📧</div>
-            <h1 style={{ color: T.text, fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>Check your email</h1>
-            <p style={{ color: T.muted, fontSize: '14px', margin: 0, lineHeight: 1.6 }}>
+      <div className="min-h-dvh bg-mk-bg flex items-center justify-center px-4 py-6">
+        <div className="w-full max-w-[420px] bg-mk-card border border-mk-card-border rounded-r-card shadow-2xl shadow-black/60 p-8">
+          <div className="text-center mb-6">
+            <div className="text-5xl mb-3">📧</div>
+            <h1 className="text-xl font-black text-mk-text mb-2">Check your email</h1>
+            <p className="text-sm text-mk-muted leading-relaxed">
               We sent a confirmation code to{' '}
-              <strong style={{ color: T.text }}>{email}</strong>.
-              <br />Enter the 6-digit code below to activate your account.
+              <strong className="text-mk-text">{email}</strong>.
+              <br />Enter the 6-digit code below.
             </p>
           </div>
 
-          <div style={fieldGap}>
-            <label style={label}>Confirmation code</label>
+          <div className="mb-4">
+            <label className="block text-[13px] font-semibold text-mk-muted mb-1.5">Confirmation code</label>
             <input
-              style={{ ...inputStyle, letterSpacing: '0.3em', textAlign: 'center', fontSize: '24px', padding: '14px' }}
+              style={{ letterSpacing: '0.3em', textAlign: 'center', fontSize: 24 }}
+              className="w-full bg-mk-raised border border-mk-border rounded-r-btn px-3.5 py-3.5 text-mk-text outline-none focus:border-mk-accent transition-colors placeholder:text-mk-muted"
               value={otpCode}
               onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="000000"
@@ -400,35 +329,34 @@ export default function AuthPage() {
             />
           </div>
 
-          {error && <p style={{ color: T.error, fontSize: '13px', margin: '0 0 12px' }}>{error}</p>}
+          {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
 
           <button
-            style={{ ...btn, opacity: loading || otpCode.length !== 6 ? 0.6 : 1 }}
+            className="w-full bg-mk-accent text-black font-bold rounded-r-btn py-3.5 text-[15px] hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 mt-2"
             disabled={loading || otpCode.length !== 6}
             onClick={handleVerifyOtp}
           >
             {loading ? 'Verifying…' : 'Verify code'}
           </button>
 
-          <div style={{ background: '#0a1628', border: '1px solid #1e3a5f', borderRadius: '10px', padding: '14px', margin: '16px 0' }}>
-            <p style={{ color: '#93c5fd', fontSize: '13px', margin: 0, lineHeight: 1.6 }}>
+          <div className="rounded-r-btn border border-blue-800/40 bg-blue-900/20 px-4 py-3 my-4">
+            <p className="text-blue-300 text-[13px] leading-relaxed">
               Can&apos;t find the email? Check your spam folder. The code expires in 1 hour.
-              You can also click the confirmation link in the email instead.
             </p>
           </div>
 
           <button
-            style={{ ...btn, background: T.card, border: `1px solid ${T.border}`, color: T.text, marginTop: 0, opacity: loading ? 0.6 : 1 }}
+            className="w-full bg-mk-card border border-mk-border text-mk-text font-bold rounded-r-btn py-3.5 text-[15px] hover:bg-mk-raised transition-colors disabled:opacity-50"
             disabled={loading}
             onClick={handleResendConfirmation}
           >
             {loading ? 'Sending…' : 'Resend confirmation email'}
           </button>
 
-          <div style={{ marginTop: '16px', textAlign: 'center' }}>
+          <div className="text-center mt-4">
             <button
               onClick={() => { setStep('form'); setError(''); setOtpCode('') }}
-              style={{ background: 'none', border: 'none', color: T.muted, fontSize: '13px', cursor: 'pointer' }}
+              className="text-[13px] text-mk-muted hover:text-mk-secondary transition-colors bg-transparent border-none cursor-pointer"
             >
               Back to sign in
             </button>
@@ -438,23 +366,21 @@ export default function AuthPage() {
     )
   }
 
-  // ── TOTP verification step (2FA during login) ───────────────────────────
   if (step === 'totp') {
     return (
-      <div style={wrap}>
-        <div style={card}>
-          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-            <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔐</div>
-            <h1 style={{ color: T.text, fontSize: '20px', fontWeight: 800, margin: '0 0 6px' }}>Two-factor authentication</h1>
-            <p style={{ color: T.muted, fontSize: '14px', margin: 0 }}>
-              Open your authenticator app and enter the 6-digit code
-            </p>
+      <div className="min-h-dvh bg-mk-bg flex items-center justify-center px-4 py-6">
+        <div className="w-full max-w-[420px] bg-mk-card border border-mk-card-border rounded-r-card shadow-2xl shadow-black/60 p-8">
+          <div className="text-center mb-7">
+            <div className="text-3xl mb-2">🔐</div>
+            <h1 className="text-xl font-black text-mk-text mb-1.5">Two-factor authentication</h1>
+            <p className="text-sm text-mk-muted">Open your authenticator app and enter the 6-digit code</p>
           </div>
 
-          <div style={fieldGap}>
-            <label style={label}>Authenticator code</label>
+          <div className="mb-4">
+            <label className="block text-[13px] font-semibold text-mk-muted mb-1.5">Authenticator code</label>
             <input
-              style={{ ...inputStyle, letterSpacing: '0.25em', textAlign: 'center', fontSize: '22px' }}
+              style={{ letterSpacing: '0.25em', textAlign: 'center', fontSize: 22 }}
+              className="w-full bg-mk-raised border border-mk-border rounded-r-btn px-3.5 py-3 text-mk-text outline-none focus:border-mk-accent transition-colors placeholder:text-mk-muted"
               value={totp}
               onChange={e => setTotp(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="000000"
@@ -463,18 +389,22 @@ export default function AuthPage() {
             />
           </div>
 
-          {error && <p style={{ color: T.error, fontSize: '13px', margin: '0 0 12px' }}>{error}</p>}
+          {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
 
-          <button style={{ ...btn, opacity: loading ? 0.6 : 1 }} disabled={loading} onClick={handleTotpVerify}>
+          <button
+            className="w-full bg-mk-accent text-black font-bold rounded-r-btn py-3.5 text-[15px] hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 mt-2"
+            disabled={loading}
+            onClick={handleTotpVerify}
+          >
             {loading ? 'Verifying…' : 'Verify'}
           </button>
 
-          <div style={{ marginTop: '16px', textAlign: 'center' }}>
+          <div className="text-center mt-4">
             <button
               onClick={async () => { await supabase.auth.signOut(); setStep('form'); setTotp(''); setError('') }}
-              style={{ background: 'none', border: 'none', color: T.muted, fontSize: '13px', cursor: 'pointer' }}
+              className="text-[13px] text-mk-muted hover:text-mk-secondary transition-colors bg-transparent border-none cursor-pointer"
             >
-              Cancel & sign out
+              Cancel &amp; sign out
             </button>
           </div>
         </div>
@@ -482,24 +412,23 @@ export default function AuthPage() {
     )
   }
 
-  // ── Forgot password form ───────────────────────────────────────────────
   if (step === 'forgot') {
     return (
-      <div style={wrap}>
-        <div style={card}>
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔑</div>
-            <h1 style={{ color: T.text, fontSize: '20px', fontWeight: 800, margin: '0 0 6px' }}>Reset your password</h1>
-            <p style={{ color: T.muted, fontSize: '14px', margin: 0, lineHeight: 1.6 }}>
+      <div className="min-h-dvh bg-mk-bg flex items-center justify-center px-4 py-6">
+        <div className="w-full max-w-[420px] bg-mk-card border border-mk-card-border rounded-r-card shadow-2xl shadow-black/60 p-8">
+          <div className="text-center mb-6">
+            <div className="text-3xl mb-2">🔑</div>
+            <h1 className="text-xl font-black text-mk-text mb-1.5">Reset your password</h1>
+            <p className="text-sm text-mk-muted leading-relaxed">
               Enter your email and we&apos;ll send you a link to reset your password.
             </p>
           </div>
 
-          <div style={fieldGap}>
-            <label style={label}>Email address</label>
+          <div className="mb-4">
+            <label className="block text-[13px] font-semibold text-mk-muted mb-1.5">Email address</label>
             <input
               type="email"
-              style={inputStyle}
+              className="w-full bg-mk-raised border border-mk-border rounded-r-btn px-3.5 py-3 text-[15px] text-mk-text outline-none focus:border-mk-accent transition-colors placeholder:text-mk-muted"
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="you@example.com"
@@ -508,20 +437,20 @@ export default function AuthPage() {
             />
           </div>
 
-          {error && <p style={{ color: T.error, fontSize: '13px', margin: '0 0 12px' }}>{error}</p>}
+          {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
 
           <button
-            style={{ ...btn, opacity: loading ? 0.6 : 1 }}
+            className="w-full bg-mk-accent text-black font-bold rounded-r-btn py-3.5 text-[15px] hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 mt-2"
             disabled={loading}
             onClick={handleForgotPassword}
           >
             {loading ? 'Sending…' : 'Send reset link'}
           </button>
 
-          <div style={{ marginTop: '16px', textAlign: 'center' }}>
+          <div className="text-center mt-4">
             <button
               onClick={() => { setStep('form'); setError('') }}
-              style={{ background: 'none', border: 'none', color: T.muted, fontSize: '13px', cursor: 'pointer' }}
+              className="text-[13px] text-mk-muted hover:text-mk-secondary transition-colors bg-transparent border-none cursor-pointer"
             >
               Back to sign in
             </button>
@@ -531,29 +460,28 @@ export default function AuthPage() {
     )
   }
 
-  // ── Forgot password sent ────────────────────────────────────────────────
   if (step === 'forgot-sent') {
     return (
-      <div style={wrap}>
-        <div style={card}>
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>📧</div>
-            <h1 style={{ color: T.text, fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>Check your email</h1>
-            <p style={{ color: T.muted, fontSize: '14px', margin: 0, lineHeight: 1.6 }}>
+      <div className="min-h-dvh bg-mk-bg flex items-center justify-center px-4 py-6">
+        <div className="w-full max-w-[420px] bg-mk-card border border-mk-card-border rounded-r-card shadow-2xl shadow-black/60 p-8">
+          <div className="text-center mb-6">
+            <div className="text-5xl mb-3">📧</div>
+            <h1 className="text-xl font-black text-mk-text mb-2">Check your email</h1>
+            <p className="text-sm text-mk-muted leading-relaxed">
               We sent a password reset link to{' '}
-              <strong style={{ color: T.text }}>{email}</strong>.
-              <br />Click the link in the email to set a new password.
+              <strong className="text-mk-text">{email}</strong>.
+              <br />Click the link to set a new password.
             </p>
           </div>
 
-          <div style={{ background: '#0a1628', border: '1px solid #1e3a5f', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
-            <p style={{ color: '#93c5fd', fontSize: '13px', margin: 0, lineHeight: 1.6 }}>
+          <div className="rounded-r-btn border border-blue-800/40 bg-blue-900/20 px-4 py-3 mb-4">
+            <p className="text-blue-300 text-[13px] leading-relaxed">
               Can&apos;t find the email? Check your spam folder. The link expires in 1 hour.
             </p>
           </div>
 
           <button
-            style={{ ...btn, background: T.card, border: `1px solid ${T.border}`, color: T.text, marginTop: 0 }}
+            className="w-full bg-mk-card border border-mk-border text-mk-text font-bold rounded-r-btn py-3.5 text-[15px] hover:bg-mk-raised transition-colors"
             onClick={() => { setStep('form'); setError('') }}
           >
             Back to sign in
@@ -563,36 +491,35 @@ export default function AuthPage() {
     )
   }
 
-  // ── Login / Register form ───────────────────────────────────────────────
+  // ── Login / Register ────────────────────────────────────────────────────────
   return (
-    <div style={wrap}>
-      <div style={card}>
-        {/* Logo / Brand */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <div style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '0.15em', color: T.accent, textTransform: 'uppercase', marginBottom: '4px' }}>
+    <div className="min-h-dvh bg-mk-bg flex items-center justify-center px-4 py-6">
+      <div className="w-full max-w-[420px] bg-mk-card border border-mk-card-border rounded-r-card shadow-2xl shadow-black/60 p-8">
+
+        {/* Brand */}
+        <div className="text-center mb-7">
+          <div className="text-[13px] font-black tracking-[0.15em] text-mk-accent uppercase mb-1">
             Sabula 256
           </div>
-          <h1 style={{ color: T.text, fontSize: '22px', fontWeight: 800, margin: '0 0 4px' }}>
+          <h1 className="text-[22px] font-black text-mk-text mb-1">
             {mode === 'login' ? 'Welcome back' : 'Create account'}
           </h1>
-          <p style={{ color: T.muted, fontSize: '13px', margin: 0 }}>
+          <p className="text-[13px] text-mk-muted">
             {mode === 'login' ? 'Sign in to your account' : 'Start predicting with Sabula 256'}
           </p>
         </div>
 
         {/* Mode tabs */}
-        <div style={{ display: 'flex', background: T.input, borderRadius: '10px', padding: '3px', marginBottom: '24px', gap: '2px' }}>
+        <div className="flex bg-mk-raised rounded-r-btn p-1 mb-6 gap-0.5">
           {(['login', 'register'] as Mode[]).map(m => (
             <button
               key={m}
               onClick={() => switchMode(m)}
-              style={{
-                flex: 1, border: 'none', borderRadius: '8px', padding: '9px',
-                fontSize: '14px', fontWeight: 700, cursor: 'pointer',
-                background: mode === m ? T.accent : 'transparent',
-                color: mode === m ? T.accentContrast : T.muted,
-                transition: 'all .15s',
-              }}
+              className={`flex-1 rounded-r-btn py-2.5 text-sm font-bold transition-all ${
+                mode === m
+                  ? 'bg-mk-accent text-black'
+                  : 'text-mk-muted hover:text-mk-secondary bg-transparent'
+              }`}
             >
               {m === 'login' ? 'Sign in' : 'Register'}
             </button>
@@ -603,29 +530,9 @@ export default function AuthPage() {
         <button
           onClick={handleGoogleLogin}
           disabled={loading}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px',
-            background: '#ffffff',
-            color: '#1f2937',
-            border: '1px solid #d1d5db',
-            borderRadius: '10px',
-            padding: '12px',
-            fontSize: '15px',
-            fontWeight: 700,
-            cursor: loading ? 'not-allowed' : 'pointer',
-            marginBottom: '20px',
-            opacity: loading ? 0.6 : 1,
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#f9fafb' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#ffffff' }}
+          className="w-full flex items-center justify-center gap-2.5 bg-white text-[#1f2937] border border-gray-300 rounded-r-btn py-3 text-[15px] font-bold mb-5 hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-60"
         >
-          {/* Google logo */}
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
             <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
             <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
@@ -635,166 +542,230 @@ export default function AuthPage() {
         </button>
 
         {/* Divider */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-          <div style={{ flex: 1, height: '1px', background: T.border }} />
-          <span style={{ fontSize: '12px', color: T.muted, fontWeight: 600 }}>or</span>
-          <div style={{ flex: 1, height: '1px', background: T.border }} />
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex-1 h-px bg-mk-border" />
+          <span className="text-[12px] text-mk-muted font-semibold">or</span>
+          <div className="flex-1 h-px bg-mk-border" />
         </div>
 
-        {/* Email */}
-        <div style={fieldGap}>
-          <label style={label}>Email address</label>
-          <input
-            type="email"
-            style={inputStyle}
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            autoComplete="email"
-            autoFocus
-          />
-        </div>
-
-        {/* Full name (register only) */}
-        {mode === 'register' && (
-          <div style={fieldGap}>
-            <label style={label}>Full name</label>
-            <input
-              type="text"
-              style={inputStyle}
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Your full name"
-              autoComplete="name"
-            />
-          </div>
-        )}
-
-        {/* Username (register only) */}
-        {mode === 'register' && (
-          <div style={fieldGap}>
-            <label style={label}>
-              Username <span style={{ color: T.muted, fontWeight: 400 }}>(optional, e.g. john_doe)</span>
-            </label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: T.muted, fontSize: '15px', pointerEvents: 'none' }}>@</span>
+        {/* ── Login form ── */}
+        {mode === 'login' && (
+          <>
+            <div className="mb-4">
+              <label className="block text-[13px] font-semibold text-mk-muted mb-1.5">Email address</label>
               <input
-                type="text"
-                style={{ ...inputStyle, paddingLeft: '28px' }}
-                value={username}
-                onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 20))}
-                placeholder="your_handle"
-                autoComplete="username"
-                maxLength={20}
+                type="email"
+                className="w-full bg-mk-raised border border-mk-border rounded-r-btn px-3.5 py-3 text-[15px] text-mk-text outline-none focus:border-mk-accent transition-colors placeholder:text-mk-muted"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
+                autoFocus
               />
             </div>
-            {username && username.length < 3 && (
-              <p style={{ color: T.muted, fontSize: '11px', marginTop: '4px' }}>At least 3 characters</p>
-            )}
-          </div>
+
+            <div className="mb-4">
+              <div className="flex justify-between items-baseline mb-1.5">
+                <label className="text-[13px] font-semibold text-mk-muted">Password</label>
+                <button
+                  type="button"
+                  onClick={() => { setStep('forgot'); setError('') }}
+                  className="text-[12px] text-mk-accent hover:opacity-80 transition-opacity bg-transparent border-none cursor-pointer"
+                >
+                  Forgot password?
+                </button>
+              </div>
+              <input
+                type="password"
+                className="w-full bg-mk-raised border border-mk-border rounded-r-btn px-3.5 py-3 text-[15px] text-mk-text outline-none focus:border-mk-accent transition-colors placeholder:text-mk-muted"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="current-password"
+              />
+            </div>
+
+            {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
+
+            <button
+              className="w-full bg-mk-accent text-black font-bold rounded-r-btn py-3.5 text-[15px] hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 mt-2"
+              disabled={loading}
+              onClick={handleLogin}
+            >
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+          </>
         )}
 
-        {/* Phone (register only) */}
+        {/* ── Register form — 2 steps ── */}
         {mode === 'register' && (
-          <div style={fieldGap}>
-            <label style={label}>Phone number <span style={{ color: T.muted, fontWeight: 400 }}>(for deposits &amp; withdrawals)</span></label>
-            <input
-              type="tel"
-              style={inputStyle}
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-              placeholder="0712 345 678"
-              autoComplete="tel"
-            />
-          </div>
+          <>
+            {/* Step indicator */}
+            <div className="flex items-center justify-center gap-2 mb-6">
+              {([1, 2] as const).map(n => (
+                <div
+                  key={n}
+                  className={`h-2 rounded-full transition-all duration-200 ${
+                    regStep === n ? 'w-6 bg-mk-accent' : 'w-2 bg-mk-border'
+                  }`}
+                />
+              ))}
+            </div>
+
+            <AnimatePresence mode="wait" custom={stepDir}>
+              {regStep === 1 ? (
+                <motion.div
+                  key="step1"
+                  custom={stepDir}
+                  initial={{ x: stepDir * 40, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: stepDir * -40, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                >
+                  <div className="mb-4">
+                    <label className="block text-[13px] font-semibold text-mk-muted mb-1.5">Email address</label>
+                    <input
+                      type="email"
+                      className="w-full bg-mk-raised border border-mk-border rounded-r-btn px-3.5 py-3 text-[15px] text-mk-text outline-none focus:border-mk-accent transition-colors placeholder:text-mk-muted"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-[13px] font-semibold text-mk-muted mb-1.5">Password</label>
+                    <input
+                      type="password"
+                      className="w-full bg-mk-raised border border-mk-border rounded-r-btn px-3.5 py-3 text-[15px] text-mk-text outline-none focus:border-mk-accent transition-colors placeholder:text-mk-muted"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="At least 8 characters"
+                      autoComplete="new-password"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-[13px] font-semibold text-mk-muted mb-1.5">Confirm password</label>
+                    <input
+                      type="password"
+                      className="w-full bg-mk-raised border border-mk-border rounded-r-btn px-3.5 py-3 text-[15px] text-mk-text outline-none focus:border-mk-accent transition-colors placeholder:text-mk-muted"
+                      value={confirm}
+                      onChange={e => setConfirm(e.target.value)}
+                      placeholder="••••••••"
+                      autoComplete="new-password"
+                    />
+                  </div>
+
+                  {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
+
+                  <button
+                    className="w-full bg-mk-accent text-black font-bold rounded-r-btn py-3.5 text-[15px] hover:brightness-110 active:scale-95 transition-all mt-2"
+                    onClick={handleNextStep}
+                  >
+                    Next →
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="step2"
+                  custom={stepDir}
+                  initial={{ x: stepDir * 40, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: stepDir * -40, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                >
+                  <div className="mb-4">
+                    <label className="block text-[13px] font-semibold text-mk-muted mb-1.5">Full name</label>
+                    <input
+                      type="text"
+                      className="w-full bg-mk-raised border border-mk-border rounded-r-btn px-3.5 py-3 text-[15px] text-mk-text outline-none focus:border-mk-accent transition-colors placeholder:text-mk-muted"
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      placeholder="Your full name"
+                      autoComplete="name"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-[13px] font-semibold text-mk-muted mb-1.5">
+                      Phone <span className="font-normal text-mk-muted">(for deposits &amp; withdrawals)</span>
+                    </label>
+                    <input
+                      type="tel"
+                      className="w-full bg-mk-raised border border-mk-border rounded-r-btn px-3.5 py-3 text-[15px] text-mk-text outline-none focus:border-mk-accent transition-colors placeholder:text-mk-muted"
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      placeholder="0712 345 678"
+                      autoComplete="tel"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-[13px] font-semibold text-mk-muted mb-1.5">
+                      Username <span className="font-normal text-mk-muted">(optional)</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-mk-muted text-[15px] pointer-events-none">@</span>
+                      <input
+                        type="text"
+                        className="w-full bg-mk-raised border border-mk-border rounded-r-btn pl-7 pr-3.5 py-3 text-[15px] text-mk-text outline-none focus:border-mk-accent transition-colors placeholder:text-mk-muted"
+                        value={username}
+                        onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 20))}
+                        placeholder="your_handle"
+                        autoComplete="username"
+                        maxLength={20}
+                      />
+                    </div>
+                    {username && username.length < 3 && (
+                      <p className="text-[11px] text-mk-muted mt-1">At least 3 characters</p>
+                    )}
+                  </div>
+
+                  <div className="flex items-start gap-2.5 mb-4">
+                    <input
+                      id="terms-cb"
+                      type="checkbox"
+                      checked={termsAccepted}
+                      onChange={e => { setTermsAccepted(e.target.checked); if (e.target.checked) setError('') }}
+                      className="mt-0.5 w-4 h-4 shrink-0 cursor-pointer"
+                      style={{ accentColor: 'var(--mk-accent)' }}
+                    />
+                    <label htmlFor="terms-cb" className="text-[13px] text-mk-muted leading-relaxed cursor-pointer">
+                      I agree to the{' '}
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-mk-accent underline" onClick={e => e.stopPropagation()}>Terms</a>
+                      ,{' '}
+                      <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-mk-accent underline" onClick={e => e.stopPropagation()}>Privacy Policy</a>
+                      {' & '}
+                      <a href="/responsible-gambling" target="_blank" rel="noopener noreferrer" className="text-mk-accent underline" onClick={e => e.stopPropagation()}>Responsible Gambling Policy</a>
+                      . I am 18+.
+                    </label>
+                  </div>
+
+                  {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
+
+                  <button
+                    className="w-full bg-mk-accent text-black font-bold rounded-r-btn py-3.5 text-[15px] hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 mt-2"
+                    disabled={loading || !termsAccepted}
+                    onClick={handleRegister}
+                  >
+                    {loading ? 'Creating account…' : 'Create account'}
+                  </button>
+
+                  <button
+                    onClick={handleBack}
+                    className="w-full mt-3 text-[13px] text-mk-muted hover:text-mk-secondary transition-colors bg-transparent border-none cursor-pointer py-2"
+                  >
+                    ← Back
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
         )}
-
-        {/* Password */}
-        <div style={fieldGap}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
-            <label style={{ ...label, margin: 0 }}>Password</label>
-            {mode === 'login' && (
-              <button
-                type="button"
-                onClick={() => { setStep('forgot'); setError('') }}
-                style={{ background: 'none', border: 'none', color: T.accent, fontSize: '12px', cursor: 'pointer', padding: 0 }}
-              >
-                Forgot password?
-              </button>
-            )}
-          </div>
-          <input
-            type="password"
-            style={inputStyle}
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder={mode === 'register' ? 'At least 8 characters' : '••••••••'}
-            autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-          />
-        </div>
-
-        {/* Confirm password (register only) */}
-        {mode === 'register' && (
-          <div style={fieldGap}>
-            <label style={label}>Confirm password</label>
-            <input
-              type="password"
-              style={inputStyle}
-              value={confirm}
-              onChange={e => setConfirm(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="new-password"
-            />
-          </div>
-        )}
-
-        {mode === 'register' && (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', margin: '0 0 16px' }}>
-            <input
-              id="terms-checkbox"
-              type="checkbox"
-              checked={termsAccepted}
-              onChange={e => { setTermsAccepted(e.target.checked); if (e.target.checked) setError('') }}
-              style={{
-                marginTop: '2px',
-                width: '16px',
-                height: '16px',
-                minWidth: '16px',
-                accentColor: T.accent,
-                cursor: 'pointer',
-              }}
-            />
-            <label htmlFor="terms-checkbox" style={{ fontSize: '13px', color: T.muted, lineHeight: 1.55, cursor: 'pointer' }}>
-              I have read and agree to the{' '}
-              <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: T.accent, textDecoration: 'underline' }} onClick={e => e.stopPropagation()}>
-                Terms of Service
-              </a>
-              ,{' '}
-              <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: T.accent, textDecoration: 'underline' }} onClick={e => e.stopPropagation()}>
-                Privacy Policy
-              </a>
-              {', and '}
-              <a href="/responsible-gambling" target="_blank" rel="noopener noreferrer" style={{ color: T.accent, textDecoration: 'underline' }} onClick={e => e.stopPropagation()}>
-                Responsible Gambling Policy
-              </a>
-              . I confirm I am 18 years of age or older.
-            </label>
-          </div>
-        )}
-
-        {error && <p style={{ color: T.error, fontSize: '13px', margin: '0 0 12px' }}>{error}</p>}
-
-        <AnimatedButton
-          disabled={loading || (mode === 'register' && !termsAccepted)}
-          onClick={mode === 'login' ? handleLogin : handleRegister}
-          style={{ marginTop: '8px', opacity: loading || (mode === 'register' && !termsAccepted) ? 0.6 : 1 }}
-          className="w-full rounded-[10px] py-[13px] text-[15px] font-bold !bg-[#4f8ef7] dark:!bg-[#4f8ef7] !border-[#3a7bf5] !text-white [--shine:rgba(255,255,255,0.6)] dark:[--shine:rgba(255,255,255,0.6)]"
-        >
-          {loading
-            ? (mode === 'login' ? 'Signing in…' : 'Creating account…')
-            : (mode === 'login' ? 'Sign in' : 'Create account')
-          }
-        </AnimatedButton>
       </div>
     </div>
   )
