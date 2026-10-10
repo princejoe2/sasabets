@@ -25,3 +25,31 @@ user touches on day 1: Home/Markets feed, Auth page, Wallet, and Bets. Key decis
 **Set up weekly dev summary email** via Vercel cron → Resend → joelukwago1@gmail.com.
 
 **Up next:** Phase 5 implementation plan + build.
+
+---
+
+## 2026-10-10 — Phase 5 implementation complete (Tasks 1–4)
+
+Executed all 4 tasks of the Phase 5 core journey polish plan inline.
+
+**Task 1 — Bets tab bar (254ba83):** Converted wrapping tab row to `overflow-x-auto scrollbar-hide`
+container with `shrink-0` buttons — no more broken layout on 5 or more filters. Header top
+padding tightened on mobile (`py-6 sm:py-10`).
+
+**Task 2 — Wallet hero stats (3c74f86):** Deleted the `lg:hidden` 3-column stat tile block
+(duplicate of hero card stats). Mini-stats changed from `hidden lg:flex` to always visible
+`flex flex-wrap` — logged-in users see their balance info on any viewport. Deposit processing
+banner gets a Framer Motion scale-in entrance animation.
+
+**Task 3 — MarketsClient mobile cards + hero strip (61f4d44):** Added `MobileCard` component
+with category emoji bubble, title (2-line clamp), status, pool size, and 64px probability
+bar. Desktop keeps `ForecastCard` grid; mobile uses the new compact card. Added logged-out
+hero strip ("Uganda's prediction market" + Sign up CTA) that only shows when session is null
+— checked server-side in both Home and Markets pages via `auth.getSession()` to avoid
+client-side flash.
+
+**Task 4 — Auth page rewrite (ba1867e):** Full rewrite from inline `T.*` CSS object tokens
+to Tailwind `--mk-*` design system classes. Register form split into 2 steps with
+`AnimatePresence` slide transition (step 1: email + password + confirm; step 2: name +
+phone + username + terms checkbox). All 7 handlers and the `_d()` base64 Supabase key
+decode pattern preserved verbatim. `AnimatedButton` and `CSSProperties` imports removed.
