@@ -120,6 +120,7 @@ export default function MarketPageClient({
             selectedOutcome={selectedOutcome}
             selectedSide={selectedSide}
             onOpen={openSheet}
+            onSelectOutcome={setSelectedOutcome}
           />
           <MobileTradeSheet
             open={sheetOpen}
