@@ -378,6 +378,91 @@ function ForecastCard({ market }: { market: Mkt }) {
   )
 }
 
+/* ─── MobileCard (shown on screens < md) ────────────────────── */
+const CAT_ICONS: Record<string, string> = {
+  football: '⚽', politics: '🏛️', economy: '💰', entertainment: '🎵',
+  tech: '📱', infrastructure: '🏗️', agriculture: '🌿', updown: '📈', default: '🔮',
+}
+
+function MobileCard({ market }: { market: Mkt }) {
+  const opts    = market.options ?? []
+  const total   = Number(market.total_pool)
+  const pool1   = Number(opts[0]?.total_pool ?? 0)
+  const prob1   = total > 0 ? Math.round((pool1 / total) * 100) : 50
+  const cat     = detectCat(market.title, market.description ?? '', market.metadata)
+  const gc      = gaugeColor(prob1)
+  const timeStr = getTimeLeft(market.closes_at)
+  const isOpen  = market.status === 'open'
+  const endToday = isEndingToday(market.closes_at) && isOpen
+  const catIcon  = CAT_ICONS[cat] ?? '🔮'
+  const avatarBg = CAT_AVATAR_BG[cat] ?? '#1d1525'
+  const isFeatured = market.is_featured === true
+
+  const statusText = !isOpen
+    ? (market.status === 'settled' ? 'Settled' : 'Closed')
+    : endToday ? 'Ends today'
+    : timeStr
+
+  return (
+    <Link
+      href={`/markets/${market.id}`}
+      className="flex items-center gap-3 px-4 py-3 active:opacity-70 transition-opacity"
+      style={{
+        borderBottom: '1px solid var(--fc-card-border)',
+        borderTop: isFeatured ? '2px solid var(--mk-accent)' : undefined,
+      }}
+    >
+      {/* Category bubble */}
+      <div
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg"
+        style={{ background: avatarBg }}
+      >
+        {catIcon}
+      </div>
+
+      {/* Title + status */}
+      <div className="flex-1 min-w-0">
+        <p
+          className="text-sm font-bold leading-snug"
+          style={{
+            color: 'var(--fc-text-primary)',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical' as const,
+            overflow: 'hidden',
+          }}
+        >
+          {market.title}
+        </p>
+        <p
+          className="mt-0.5 text-[11px]"
+          style={{ color: endToday ? '#ef4444' : 'var(--fc-text-secondary)' }}
+        >
+          {statusText}
+        </p>
+      </div>
+
+      {/* Pool + probability bar */}
+      <div className="shrink-0 flex flex-col items-end gap-1.5">
+        <span className="text-[11px] font-bold" style={{ color: 'var(--fc-text-secondary)' }}>
+          UGX {fmtVol(total)}
+        </span>
+        {total > 0 && (
+          <div
+            className="h-1 w-16 overflow-hidden rounded-full"
+            style={{ background: 'var(--fc-card-border)' }}
+          >
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${prob1}%`, background: gc }}
+            />
+          </div>
+        )}
+      </div>
+    </Link>
+  )
+}
+
 /* ─── Main MarketsClient ─────────────────────────────────────── */
 export default function MarketsClient({
   markets,
@@ -385,12 +470,14 @@ export default function MarketsClient({
   initialCat = 'all',
   totalPool: _tp = 0,
   userCount: _uc = 0,
+  isLoggedIn = true,
 }: {
   markets: Mkt[]
   openCount: number
   initialCat?: string
   totalPool?: number
   userCount?: number
+  isLoggedIn?: boolean
 }) {
   const router   = useRouter()
   const supabase = createClient()
@@ -665,6 +752,33 @@ export default function MarketsClient({
         </div>
       </div>
 
+      {/* ══ Logged-out hero strip ══ */}
+      {!isLoggedIn && (
+        <div
+          className="mx-6 mt-3 mb-0 flex items-center justify-between gap-3 rounded-xl px-4 py-3"
+          style={{
+            background: 'var(--mk-raised)',
+            border: '1px solid var(--mk-border)',
+          }}
+        >
+          <div>
+            <p className="text-sm font-bold" style={{ color: 'var(--mk-text)' }}>
+              Uganda&apos;s prediction market
+            </p>
+            <p className="text-[12px] mt-0.5" style={{ color: 'var(--mk-muted)' }}>
+              Predict politics, football &amp; more. Win via MTN / Airtel.
+            </p>
+          </div>
+          <Link
+            href="/auth"
+            className="shrink-0 rounded-r-btn px-4 py-2 text-xs font-bold text-black transition-all hover:brightness-110 active:scale-95"
+            style={{ background: 'var(--mk-accent)' }}
+          >
+            Sign up free →
+          </Link>
+        </div>
+      )}
+
       {/* ══ Create-your-market hero banner ══ */}
       <div style={{
         margin: '12px 24px 0',
@@ -722,11 +836,20 @@ export default function MarketsClient({
       </div>
 
       {/* ══ Market grid ══ */}
-      <div style={{ padding: '8px 24px 96px' }}>
+      <div style={{ paddingBottom: 96 }}>
         {filtered.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(264px, 1fr))', gap: 14 }}>
-            {filtered.map(m => <ForecastCard key={m.id} market={m} />)}
-          </div>
+          <>
+            {/* Mobile list — shown on screens narrower than md (768px) */}
+            <div className="md:hidden">
+              {filtered.map(m => <MobileCard key={m.id} market={m} />)}
+            </div>
+            {/* Desktop grid — shown on md+ */}
+            <div className="hidden md:block" style={{ padding: '8px 24px 0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(264px, 1fr))', gap: 14 }}>
+                {filtered.map(m => <ForecastCard key={m.id} market={m} />)}
+              </div>
+            </div>
+          </>
         ) : (
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',

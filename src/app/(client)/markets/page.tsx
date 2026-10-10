@@ -27,6 +27,7 @@ export default async function MarketsPage({
 }) {
   const resolvedSearchParams = await searchParams
   const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
   const { data: markets } = await supabase
     .from('markets')
     .select('id, title, description, total_pool, options, closes_at, status, rake_pct, created_at, metadata, is_featured')
@@ -63,7 +64,7 @@ export default async function MarketsPage({
         </div>
       </div>
 
-      <MarketsClient markets={all.map(normalise)} openCount={openCount} initialCat={initialCat} />
+      <MarketsClient markets={all.map(normalise)} openCount={openCount} initialCat={initialCat} isLoggedIn={!!session} />
     </div>
   )
 }

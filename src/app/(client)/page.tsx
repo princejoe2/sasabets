@@ -1,4 +1,4 @@
-import { createPublicClient } from '@/lib/supabase/server'
+import { createPublicClient, createClient } from '@/lib/supabase/server'
 import MarketsClient from '@/components/MarketsClient'
 import type { Metadata } from 'next'
 
@@ -58,7 +58,9 @@ const jsonLd = [
 ]
 
 export default async function HomePage() {
-  const supabase = createPublicClient()
+  const supabase     = createPublicClient()
+  const authClient   = await createClient()
+  const { data: { session } } = await authClient.auth.getSession()
 
   const marketsResult = await supabase
     .from('markets')
@@ -85,6 +87,7 @@ export default async function HomePage() {
         initialCat="all"
         totalPool={totalPool}
         userCount={userCount ?? 0}
+        isLoggedIn={!!session}
       />
     </div>
   )
