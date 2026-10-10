@@ -1,6 +1,7 @@
 'use client'
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import KYCBanner from '@/components/KYCBanner'
 
@@ -318,13 +319,18 @@ function WalletPageContent() {
 
       {/* Processing banner */}
       {processing && (
-        <div className="flex items-center gap-3 rounded-xl border border-yellow-700/50 bg-yellow-900/20 px-4 py-3 text-sm text-yellow-300">
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.25, ease: 'easeOut' }}
+          className="flex items-center gap-3 rounded-xl border border-yellow-700/50 bg-yellow-900/20 px-4 py-3 text-sm text-yellow-300"
+        >
           <span className="animate-spin inline-block text-base">↻</span>
           <span>
             Check your phone — enter your Mobile Money PIN to confirm.
             <span className="ml-1 text-yellow-500">Waiting for confirmation…</span>
           </span>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Balance Hero ── */}
@@ -339,8 +345,8 @@ function WalletPageContent() {
             {locked > 0 && (
               <p className="mt-1.5 text-xs" style={{ color: '#d8c9f5' }}>🔒 UGX {fmt(locked)} bonus · betting only</p>
             )}
-            {/* Mini-stats: desktop only */}
-            <div className="mt-4 hidden lg:flex gap-6 text-sm">
+            {/* Mini-stats */}
+            <div className="mt-4 flex flex-wrap gap-4 text-sm">
               <div>
                 <p className="text-[11px] uppercase tracking-wider" style={{ color: '#d8c9f5' }}>Deposited</p>
                 <p className="font-semibold">UGX {fmt(totalDeposited)}</p>
@@ -372,25 +378,6 @@ function WalletPageContent() {
               🏦 Withdraw
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* ── Stat tiles — always below hero, above form on mobile ── */}
-      <div className="grid grid-cols-3 gap-2 lg:hidden">
-        <div className="rounded-2xl border border-[#1c2622] bg-[#0e1311] p-3 text-center">
-          <p className="text-[10px] font-black uppercase tracking-widest text-[#7c8783]">Deposited</p>
-          <p className="mt-1.5 font-bold text-[#22c55e]" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 24 }}>{fmtK(totalDeposited)}</p>
-          <p className="text-[10px] font-semibold text-[#5b655f]">UGX</p>
-        </div>
-        <div className="rounded-2xl border border-[#1c2622] bg-[#0e1311] p-3 text-center">
-          <p className="text-[10px] font-black uppercase tracking-widest text-[#7c8783]">Won</p>
-          <p className="mt-1.5 font-bold text-violet-400" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 24 }}>{fmtK(totalWon)}</p>
-          <p className="text-[10px] font-semibold text-[#5b655f]">UGX</p>
-        </div>
-        <div className="rounded-2xl border border-[#1c2622] bg-[#0e1311] p-3 text-center">
-          <p className="text-[10px] font-black uppercase tracking-widest text-[#7c8783]">Active</p>
-          <p className="mt-1.5 font-bold text-amber-400" style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 24 }}>{activeBets}</p>
-          <p className="text-[10px] font-semibold text-[#5b655f]">bets</p>
         </div>
       </div>
 
