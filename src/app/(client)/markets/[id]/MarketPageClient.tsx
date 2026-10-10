@@ -31,6 +31,7 @@ export default function MarketPageClient({
   userBet,
   accessToken,
   creatorInfo,
+  predictorCount,
 }: Props) {
   const router = useRouter()
 
@@ -71,7 +72,7 @@ export default function MarketPageClient({
     <div className="market-root">
       {/* pb accounts for sticky bar (h-14) + bottom nav (h-14) + safe area on mobile */}
       <div className="mx-auto max-w-7xl px-4 py-6 pb-[7rem] sm:pb-[4.5rem] lg:pb-6">
-        <MarketHeader market={market} creatorInfo={creatorInfo} />
+        <MarketHeader market={market} creatorInfo={creatorInfo} predictorCount={predictorCount} />
 
         <div className="mt-6 flex gap-6 items-start">
           {/* Main column */}

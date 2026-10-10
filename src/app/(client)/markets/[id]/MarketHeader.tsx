@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { MarketData } from './types'
 
 const CAT_IMAGES: Record<string, string> = {
@@ -25,14 +25,22 @@ function detectCategory(title: string, desc = '') {
   return 'default'
 }
 
+function fmtPool(n: number) {
+  if (n >= 1_000_000) return `UGX ${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000)     return `UGX ${Math.round(n / 1_000)}K`
+  return `UGX ${n.toLocaleString()}`
+}
+
 type Props = {
   market: MarketData
   creatorInfo?: { name: string; username: string | null; verified: boolean } | null
+  predictorCount: number
 }
 
-export default function MarketHeader({ market, creatorInfo }: Props) {
-  const [copied, setCopied] = useState(false)
-  const [bookmarked, setBookmarked] = useState(false)
+export default function MarketHeader({ market, creatorInfo, predictorCount }: Props) {
+  const [copied,     setCopied]     = useState(false)
+  const [closeLabel, setCloseLabel] = useState<string | null>(null)
+  const [closeSoon,  setCloseSoon]  = useState(false)
 
   const cat    = detectCategory(market.title, market.description ?? '')
   const imgSrc = CAT_IMAGES[cat]
@@ -40,6 +48,21 @@ export default function MarketHeader({ market, creatorInfo }: Props) {
   const resolutionSource = typeof meta.resolution_source === 'string' ? meta.resolution_source : null
   const marketUrl  = `https://sabula256.com/markets/${market.id}`
   const shareText  = encodeURIComponent(`"${market.title}" — Predict on Sabula 256 🔮 ${marketUrl}`)
+
+  useEffect(() => {
+    if (!market.closes_at || market.status !== 'open') return
+    function update() {
+      const ms = new Date(market.closes_at!).getTime() - Date.now()
+      if (ms <= 0) { setCloseLabel('Closed'); setCloseSoon(true); return }
+      const h = Math.floor(ms / 3600000)
+      const m = Math.floor((ms % 3600000) / 60000)
+      setCloseSoon(ms < 86400000)
+      setCloseLabel(h > 0 ? `Closes in ${h}h ${m}m` : `Closes in ${m}m`)
+    }
+    update()
+    const id = setInterval(update, 60000)
+    return () => clearInterval(id)
+  }, [market.closes_at, market.status])
 
   function copyLink() {
     navigator.clipboard?.writeText(marketUrl)
@@ -101,6 +124,24 @@ export default function MarketHeader({ market, creatorInfo }: Props) {
         {market.description && (
           <p className="mt-1.5 text-sm text-mk-muted leading-relaxed max-w-2xl">{market.description}</p>
         )}
+        {/* Stat row */}
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          <span className="inline-flex items-center gap-1 rounded-r-pill border border-mk-border bg-mk-raised px-2.5 py-1 text-[12px] text-mk-muted">
+            💰 {fmtPool(Number(market.total_pool))}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-r-pill border border-mk-border bg-mk-raised px-2.5 py-1 text-[12px] text-mk-muted">
+            👥 {predictorCount} predictor{predictorCount !== 1 ? 's' : ''}
+          </span>
+          {closeLabel && (
+            <span className={`inline-flex items-center gap-1 rounded-r-pill border px-2.5 py-1 text-[12px] ${
+              closeSoon
+                ? 'border-red-800/40 bg-red-900/20 text-red-400'
+                : 'border-mk-border bg-mk-raised text-mk-muted'
+            }`}>
+              ⏱ {closeLabel}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Action buttons */}
@@ -130,25 +171,6 @@ export default function MarketHeader({ market, creatorInfo }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
             </svg>
           )}
-        </button>
-        <button
-          onClick={() => setBookmarked(b => !b)}
-          aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark'}
-          className={`flex h-9 w-9 items-center justify-center rounded-r-btn border transition-colors ${
-            bookmarked
-              ? 'border-mk-accent/50 bg-mk-accent/10 text-mk-accent'
-              : 'border-mk-border bg-mk-card text-mk-muted hover:text-mk-text'
-          }`}
-        >
-          <svg
-            className="h-4 w-4"
-            fill={bookmarked ? 'currentColor' : 'none'}
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-          </svg>
         </button>
       </div>
     </div>
