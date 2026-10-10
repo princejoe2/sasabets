@@ -371,7 +371,7 @@ export default function BetsPage() {
         />
       )}
       {/* Page header */}
-      <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-10">
+      <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-6 sm:py-10">
         <div className="mx-auto max-w-4xl">
           <h1 className="text-4xl font-black tracking-tight">
             <span className="text-white">My </span>
@@ -419,36 +419,38 @@ export default function BetsPage() {
         </div>
 
         {/* Filter tabs */}
-        <div className="mb-6 flex flex-wrap gap-1 rounded-xl border border-[#1e1e2e] bg-[#13131a] p-1 w-fit">
-          {(['all', 'active', 'won', 'lost'] as const).map(t => {
-            const count = bets.filter(TAB_FILTERS[t]).length
-            return (
-              <button
-                key={t}
-                onClick={() => switchTab(t)}
-                className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
-                  tab === t ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-                {t !== 'all' && count > 0 && (
-                  <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                    tab === t ? 'bg-white/20 text-white' : 'bg-[#1e1e2e] text-slate-400'
-                  }`}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-          <button
-            onClick={() => switchTab('mymarkets')}
-            className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
-              tab === 'mymarkets' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            My Markets
-          </button>
+        <div className="mb-6 w-full overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 rounded-xl border border-[#1e1e2e] bg-[#13131a] p-1 w-max min-w-full">
+            {(['all', 'active', 'won', 'lost'] as const).map(t => {
+              const count = bets.filter(TAB_FILTERS[t]).length
+              return (
+                <button
+                  key={t}
+                  onClick={() => switchTab(t)}
+                  className={`shrink-0 rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+                    tab === t ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                  {t !== 'all' && count > 0 && (
+                    <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                      tab === t ? 'bg-white/20 text-white' : 'bg-[#1e1e2e] text-slate-400'
+                    }`}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+            <button
+              onClick={() => switchTab('mymarkets')}
+              className={`shrink-0 rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+                tab === 'mymarkets' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              My Markets
+            </button>
+          </div>
         </div>
 
         {/* Error */}
