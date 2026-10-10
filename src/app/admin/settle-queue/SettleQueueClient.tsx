@@ -98,7 +98,7 @@ export default function SettleQueueClient({ markets }: { markets: QueueMarket[] 
 
                   <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-500">
                     <span className="font-semibold text-slate-300">UGX {m.total_pool.toLocaleString()}</span>
-                    <span>{m.bettors} bettor{m.bettors !== 1 ? 's' : ''}</span>
+                    <span>{m.bettors} predictor{m.bettors !== 1 ? 's' : ''}</span>
                     {daysAgo !== null && (
                       <span className={urgency}>
                         Closed {daysAgo === 0 ? 'today' : `${daysAgo}d ago`}

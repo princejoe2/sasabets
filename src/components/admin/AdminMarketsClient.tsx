@@ -348,11 +348,25 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
                 </div>
               </div>
               <span className="text-xs text-slate-400 font-semibold">
-                <span className="text-violet-400">{m.options[0]?.label ?? '—'}</span>
-                <span className="mx-1 text-slate-600">vs</span>
-                <span className="text-amber-400">{m.options[1]?.label ?? '—'}</span>
+                {m.options.every(o => ['yes','no','up','down'].includes(o.id)) ? (
+                  <>
+                    <span className="text-violet-400">{m.options[0]?.label ?? '—'}</span>
+                    <span className="mx-1 text-slate-600">vs</span>
+                    <span className="text-amber-400">{m.options[1]?.label ?? '—'}</span>
+                  </>
+                ) : (
+                  <span className="text-sky-400">
+                    {m.options.filter(o => o.id.endsWith('_yes')).length || Math.ceil(m.options.length / 2)} candidates
+                  </span>
+                )}
               </span>
-              <span className="text-sm font-bold text-slate-300">UGX {Number(m.total_pool).toLocaleString()}</span>
+              <span className="text-sm font-bold text-slate-300">
+                {Number(m.total_pool) >= 1_000_000
+                  ? `UGX ${(Number(m.total_pool) / 1_000_000).toFixed(1)}M`
+                  : Number(m.total_pool) >= 1_000
+                    ? `UGX ${Math.round(Number(m.total_pool) / 1_000)}K`
+                    : `UGX ${Number(m.total_pool).toLocaleString()}`}
+              </span>
               <span className="text-xs text-slate-600">
                 {m.closes_at ? new Date(m.closes_at).toLocaleDateString('en-UG', { day:'numeric', month:'short' }) : '—'}
               </span>
