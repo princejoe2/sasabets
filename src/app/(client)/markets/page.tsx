@@ -51,14 +51,14 @@ export default async function MarketsPage({
   const initialCat = (resolvedSearchParams?.cat ?? 'all') as string
 
   return (
-    <div className="min-h-screen bg-slate-50 page-enter">
-      <div className="border-b border-slate-200 bg-white px-4 pt-8 pb-6">
+    <div className="min-h-screen bg-mk-bg page-enter">
+      <div className="border-b border-mk-border bg-mk-card px-4 pt-8 pb-6">
         <div className="mx-auto max-w-6xl">
           <h1 className="text-4xl font-black tracking-tight">
-            <span className="text-slate-900">Prediction </span>
-            <span className="text-violet-600">Markets</span>
+            <span className="text-white">Prediction </span>
+            <span className="text-violet-400">Markets</span>
           </h1>
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-mk-muted">
             {openCount} open now · Pick your outcome · Collect your winnings
           </p>
         </div>
