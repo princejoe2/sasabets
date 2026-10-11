@@ -236,8 +236,8 @@ function CardPreview({ title, category, marketType, party1Preview, team1Preview,
         {/* Probability bar placeholder */}
         <div className="mb-3">
           <div className="flex justify-between text-[10px] font-bold mb-1">
-            <span style={{ color: '#a78bfa' }}>—%</span>
-            <span style={{ color: '#fbbf24' }}>—%</span>
+            <span style={{ color: '#a78bfa' }}>50%</span>
+            <span style={{ color: '#fbbf24' }}>50%</span>
           </div>
           <div className="flex h-1.5 overflow-hidden rounded-full" style={{ background: '#1a1a2e' }}>
             <div className="h-full w-1/2" style={{ background: 'linear-gradient(90deg,#6d28d9,#a78bfa)' }} />

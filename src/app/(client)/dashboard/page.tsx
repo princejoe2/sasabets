@@ -67,16 +67,16 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f]">
+      <div className="flex min-h-screen items-center justify-center bg-mk-bg">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-600 border-t-transparent" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-mk-bg">
       {/* Header */}
-      <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-10">
+      <div className="border-b border-mk-border bg-mk-card px-4 py-10">
         <div className="mx-auto max-w-4xl">
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-violet-400">Creator</p>
           <h1 className="text-4xl font-black text-white">My Dashboard</h1>
@@ -103,9 +103,9 @@ export default function DashboardPage() {
             { label: 'Pool Attracted', value: fmt(totalPool), color: '#fbbf24' },
             { label: 'Total Earned', value: fmt(totalEarnings), color: '#34d399' },
           ].map(s => (
-            <div key={s.label} className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-4 text-center">
+            <div key={s.label} className="rounded-xl border border-mk-border bg-mk-raised p-4 text-center">
               <p className="text-xl font-black" style={{ color: s.color }}>{s.value}</p>
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{s.label}</p>
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-mk-muted">{s.label}</p>
             </div>
           ))}
         </div>
@@ -114,7 +114,7 @@ export default function DashboardPage() {
         {earnings.length > 0 && (
           <div>
             <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
-              <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500">Recent Earnings</h2>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-mk-muted">Recent Earnings</h2>
               <Link
                 href="/wallet"
                 className="rounded-lg border border-emerald-800/40 bg-emerald-900/20 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-900/40 transition-colors"
@@ -122,11 +122,11 @@ export default function DashboardPage() {
                 Withdraw earnings →
               </Link>
             </div>
-            <div className="overflow-hidden rounded-2xl border border-[#1e1e2e] bg-[#0d0d14]">
+            <div className="overflow-hidden rounded-2xl border border-mk-border bg-mk-card">
               {earnings.slice(0, 5).map((e, i) => {
                 const meta = (e.metadata ?? {}) as Record<string, unknown>
                 return (
-                  <div key={i} className={`flex items-center justify-between px-5 py-3.5 ${i < Math.min(earnings.length, 5) - 1 ? 'border-b border-[#131320]' : ''}`}>
+                  <div key={i} className={`flex items-center justify-between px-5 py-3.5 ${i < Math.min(earnings.length, 5) - 1 ? 'border-b border-mk-border' : ''}`}>
                     <div>
                       <p className="text-sm font-semibold text-slate-200">{(meta.market_title as string) ?? 'Market'}</p>
                       <p className="text-xs text-slate-600">{new Date(e.created_at).toLocaleDateString('en-UG', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
@@ -151,14 +151,14 @@ export default function DashboardPage() {
         {/* Markets list */}
         <div>
           <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500">Your Markets</h2>
+            <h2 className="text-sm font-bold uppercase tracking-widest text-mk-muted">Your Markets</h2>
             <div className="flex gap-1">
               {(['all', 'open', 'settled'] as const).map(f => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-bold capitalize transition-colors ${
-                    filter === f ? 'bg-violet-600 text-white' : 'border border-[#1e1e2e] text-slate-500 hover:text-white'
+                    filter === f ? 'bg-violet-600 text-white' : 'border border-mk-border text-mk-muted hover:text-white'
                   }`}
                 >
                   {f} {f !== 'all' && `(${f === 'open' ? openCount : settledCount})`}
@@ -168,7 +168,7 @@ export default function DashboardPage() {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[#2a2a3e] bg-[#0d0d14] py-16 text-center">
+            <div className="rounded-2xl border border-dashed border-mk-border bg-mk-card py-16 text-center">
               <p className="text-4xl">🏗️</p>
               <p className="mt-3 font-medium text-slate-400">No markets here yet.</p>
               <Link href="/create" className="mt-4 inline-block text-sm text-violet-400 hover:text-violet-300 transition-colors">
@@ -182,11 +182,11 @@ export default function DashboardPage() {
                 const isPrivate = meta.private === true
                 const statusColor =
                   m.status === 'open' ? 'text-emerald-400 bg-emerald-900/30 border-emerald-800/40' :
-                  m.status === 'settled' ? 'text-slate-400 bg-[#1e1e2e] border-[#2a2a3e]' :
+                  m.status === 'settled' ? 'text-slate-400 bg-mk-raised border-mk-border' :
                   'text-amber-400 bg-amber-900/20 border-amber-800/30'
 
                 return (
-                  <div key={m.id} className="overflow-hidden rounded-xl border border-[#1e1e2e] bg-[#0d0d14]">
+                  <div key={m.id} className="overflow-hidden rounded-xl border border-mk-border bg-mk-card">
                     <div className="flex items-start gap-3 p-4">
                       <div className="flex-1 min-w-0">
                         <div className="mb-1.5 flex flex-wrap items-center gap-2">
@@ -207,7 +207,7 @@ export default function DashboardPage() {
                       </div>
                       <Link
                         href={`/markets/${m.id}`}
-                        className="shrink-0 rounded-lg border border-[#2a2a3e] px-3 py-1.5 text-xs text-slate-400 hover:text-white hover:border-violet-600 transition-colors"
+                        className="shrink-0 rounded-lg border border-mk-border px-3 py-1.5 text-xs text-mk-muted hover:text-white hover:border-violet-600 transition-colors"
                       >
                         View →
                       </Link>
@@ -227,7 +227,7 @@ export default function DashboardPage() {
           >
             + Create a new market
           </Link>
-          <p className="mt-2 text-xs text-slate-600">
+          <p className="mt-2 text-xs text-mk-muted">
             Earn 2% of the pool when your market settles with UGX 50,000+
           </p>
         </div>

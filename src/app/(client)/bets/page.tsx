@@ -352,17 +352,17 @@ export default function BetsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+      <div className="min-h-screen bg-mk-bg flex items-center justify-center">
         <div className="text-center">
           <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-violet-600 border-t-transparent" />
-          <p className="text-slate-500 text-sm">Loading your predictions…</p>
+          <p className="text-mk-muted text-sm">Loading your predictions…</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-mk-bg">
       {celebration && (
         <WinCelebration
           marketTitle={celebration.marketTitle}
@@ -371,13 +371,13 @@ export default function BetsPage() {
         />
       )}
       {/* Page header */}
-      <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-6 sm:py-10">
+      <div className="border-b border-mk-border bg-mk-card px-4 py-6 sm:py-10">
         <div className="mx-auto max-w-4xl">
           <h1 className="text-4xl font-black tracking-tight">
             <span className="text-white">My </span>
             <span className="text-violet-400">Predictions</span>
           </h1>
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-mk-muted">
             {bets.length} prediction{bets.length !== 1 ? 's' : ''} placed
           </p>
         </div>
@@ -387,15 +387,15 @@ export default function BetsPage() {
 
         {/* Summary stat cards */}
         <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-4 text-center">
+          <div className="rounded-xl border border-mk-border bg-mk-raised p-4 text-center">
             <p className="text-2xl font-black text-violet-400">{bets.length}</p>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Total</p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-mk-muted">Total</p>
           </div>
-          <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-4 text-center">
+          <div className="rounded-xl border border-mk-border bg-mk-raised p-4 text-center">
             <p className="text-2xl font-black text-sky-400">{activeCount}</p>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Active</p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-mk-muted">Active</p>
           </div>
-          <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-4 text-center">
+          <div className="rounded-xl border border-mk-border bg-mk-raised p-4 text-center">
             <p className="text-2xl font-black text-slate-300">
               {totalStaked >= 1_000_000
                 ? `${(totalStaked / 1_000_000).toFixed(1)}M`
@@ -403,9 +403,9 @@ export default function BetsPage() {
                 ? `${(totalStaked / 1_000).toFixed(1)}k`
                 : totalStaked.toLocaleString()}
             </p>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Staked (UGX)</p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-mk-muted">Staked (UGX)</p>
           </div>
-          <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-4 text-center">
+          <div className="rounded-xl border border-mk-border bg-mk-raised p-4 text-center">
             <p className={`text-2xl font-black ${netReturn > 0 ? 'text-emerald-400' : netReturn < 0 ? 'text-red-400' : 'text-slate-300'}`}>
               {netReturn >= 0 ? '+' : ''}
               {Math.abs(netReturn) >= 1_000_000
@@ -414,13 +414,13 @@ export default function BetsPage() {
                 ? `${(netReturn / 1_000).toFixed(1)}k`
                 : netReturn.toLocaleString()}
             </p>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Net P&L (UGX)</p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-mk-muted">Net P&L (UGX)</p>
           </div>
         </div>
 
         {/* Filter tabs */}
         <div className="mb-6 w-full overflow-x-auto scrollbar-hide">
-          <div className="flex gap-1 rounded-xl border border-[#1e1e2e] bg-[#13131a] p-1 w-max min-w-full">
+          <div className="flex gap-1 rounded-xl border border-mk-border bg-mk-raised p-1 w-max min-w-full">
             {(['all', 'active', 'won', 'lost'] as const).map(t => {
               const count = bets.filter(TAB_FILTERS[t]).length
               return (
@@ -434,7 +434,7 @@ export default function BetsPage() {
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                   {t !== 'all' && count > 0 && (
                     <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                      tab === t ? 'bg-white/20 text-white' : 'bg-[#1e1e2e] text-slate-400'
+                      tab === t ? 'bg-white/20 text-white' : 'bg-mk-raised text-mk-muted'
                     }`}>
                       {count}
                     </span>
@@ -468,7 +468,7 @@ export default function BetsPage() {
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
               </div>
             ) : myMarkets.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[#2a2a3e] bg-[#0d0d14] p-16 text-center">
+              <div className="rounded-xl border border-dashed border-mk-border bg-mk-card p-16 text-center">
                 <p className="mb-2 text-4xl">💡</p>
                 <p className="font-medium text-slate-400">You haven&apos;t created any markets yet.</p>
                 <Link href="/create" className="mt-4 inline-block text-sm text-violet-400 hover:text-violet-300 transition-colors">
@@ -485,7 +485,7 @@ export default function BetsPage() {
 
                 const statusColor =
                   market.status === 'open'               ? 'text-emerald-400 bg-emerald-900/30 border-emerald-800/40' :
-                  market.status === 'settled'            ? 'text-slate-400 bg-[#1e1e2e] border-[#2a2a3e]' :
+                  market.status === 'settled'            ? 'text-slate-400 bg-[#1e1e2e] border-mk-border' :
                   market.status === 'pending_approval'   ? 'text-amber-300 bg-amber-900/30 border-amber-700/50' :
                   'text-amber-400 bg-amber-900/20 border-amber-800/30'
 
@@ -493,7 +493,7 @@ export default function BetsPage() {
                   market.status === 'pending_approval' ? '🕐 Under Review' : market.status
 
                 return (
-                  <div key={market.id} className="rounded-xl border border-[#1e1e2e] bg-[#0d0d14] overflow-hidden">
+                  <div key={market.id} className="rounded-xl border border-mk-border bg-mk-card overflow-hidden">
                     {/* Header row */}
                     <div className="flex items-start justify-between gap-3 p-5 pb-3">
                       <div className="flex-1 min-w-0">
@@ -504,7 +504,7 @@ export default function BetsPage() {
                           <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
                             isPriv
                               ? 'border-amber-700/40 bg-amber-900/20 text-amber-400'
-                              : 'border-[#2a2a3e] text-slate-500'
+                              : 'border-mk-border text-slate-500'
                           }`}>
                             {isPriv ? '🔒 Private' : '🌍 Public'}
                           </span>
@@ -514,16 +514,16 @@ export default function BetsPage() {
                       </div>
                       <Link
                         href={isPriv && token ? `/markets/${market.id}?t=${token}` : `/markets/${market.id}`}
-                        className="shrink-0 rounded-lg border border-[#2a2a3e] px-3 py-1.5 text-xs text-slate-400 hover:text-white hover:border-violet-600 transition-colors"
+                        className="shrink-0 rounded-lg border border-mk-border px-3 py-1.5 text-xs text-slate-400 hover:text-white hover:border-violet-600 transition-colors"
                       >
                         View →
                       </Link>
                     </div>
 
                     {/* Link + actions */}
-                    <div className="border-t border-[#1a1a2a] px-5 py-3 space-y-2">
+                    <div className="border-t border-mk-border px-5 py-3 space-y-2">
                       {/* Link row */}
-                      <div className="flex items-center gap-2 rounded-lg border border-[#1e1e2e] bg-[#0a0a0f] px-3 py-2">
+                      <div className="flex items-center gap-2 rounded-lg border border-mk-border bg-mk-bg px-3 py-2">
                         <span className="flex-1 truncate font-mono text-[11px] text-slate-500">
                           {isPriv
                             ? token
@@ -595,7 +595,7 @@ export default function BetsPage() {
                               value={extendDate}
                               min={new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)}
                               onChange={e => setExtendDate(e.target.value)}
-                              className="flex-1 rounded-lg border border-[#2a2a3e] bg-[#0a0a0f] px-3 py-1.5 text-xs text-white outline-none focus:border-sky-600"
+                              className="flex-1 rounded-r-input border border-mk-border bg-mk-bg px-3 py-1.5 text-xs text-mk-text outline-none focus:border-sky-600"
                             />
                             <button
                               onClick={() => handleExtendDate(market.id)}
@@ -606,7 +606,7 @@ export default function BetsPage() {
                             </button>
                             <button
                               onClick={() => setExtendingId(null)}
-                              className="rounded-lg border border-[#2a2a3e] px-3 py-1.5 text-[11px] text-slate-500 hover:text-white transition-colors"
+                              className="rounded-lg border border-mk-border px-3 py-1.5 text-[11px] text-mk-muted hover:text-white transition-colors"
                             >
                               Cancel
                             </button>
@@ -626,7 +626,7 @@ export default function BetsPage() {
 
         {/* Bet list */}
         {tab !== 'mymarkets' && (filtered.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[#2a2a3e] bg-[#0d0d14] p-16 text-center">
+          <div className="rounded-xl border border-dashed border-mk-border bg-mk-card p-16 text-center">
             <p className="mb-2 text-4xl">🔮</p>
             <p className="font-medium text-slate-400">
               {tab === 'all' ? 'No predictions yet.' : `No ${tab} predictions.`}
@@ -735,7 +735,7 @@ export default function BetsPage() {
                       </div>
 
                       {/* Amount / payout */}
-                      <div className="shrink-0 text-right sm:border-l sm:border-[#1e1e2e] sm:pl-5">
+                      <div className="shrink-0 text-right sm:border-l sm:border-mk-border sm:pl-5">
                         <p className="text-base font-black text-slate-200">
                           UGX {Number(bet.amount).toLocaleString()}
                         </p>
@@ -796,7 +796,7 @@ export default function BetsPage() {
                             </button>
                             <button
                               onClick={() => setExitingBet(null)}
-                              className="rounded-lg border border-[#2a2a3e] px-3 py-1.5 text-xs text-slate-500 hover:text-white transition-colors"
+                              className="rounded-lg border border-mk-border px-3 py-1.5 text-xs text-slate-500 hover:text-white transition-colors"
                             >
                               Cancel
                             </button>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import type { AmlFlag } from '@/lib/aml-flags'
 
 const FLAG_TYPE_LABEL: Record<string, string> = {
@@ -23,6 +24,9 @@ export default function AdminAmlPage() {
   const [error, setError] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+  const [freezeLoading, setFreezeLoading] = useState<string | null>(null)
+  const [freezeMsg, setFreezeMsg] = useState<{ userId: string; text: string; ok: boolean } | null>(null)
 
   useEffect(() => {
     async function loadFlags() {
@@ -56,13 +60,43 @@ export default function AdminAmlPage() {
     return flagDate >= weekAgo
   })
 
-  // Filter by search
-  const filtered = flags.filter(f =>
-    !search ||
-    f.phone?.includes(search) ||
-    f.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    f.flag_type.toLowerCase().includes(search.toLowerCase())
-  )
+  function dismissFlag(key: string) {
+    setDismissed(prev => new Set(prev).add(key))
+    setExpanded(null)
+  }
+
+  async function freezeUser(userId: string) {
+    setFreezeLoading(userId)
+    try {
+      const res = await fetch('/api/admin/user', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, suspended: true, suspend_reason: 'Frozen via AML review' }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setFreezeMsg({ userId, text: 'Account frozen.', ok: true })
+      } else {
+        setFreezeMsg({ userId, text: data.error ?? 'Freeze failed', ok: false })
+      }
+    } catch {
+      setFreezeMsg({ userId, text: 'Network error', ok: false })
+    } finally {
+      setFreezeLoading(null)
+    }
+  }
+
+  // Filter by search and dismissed
+  const filtered = flags.filter(f => {
+    const key = f.user_id + f.flag_type
+    if (dismissed.has(key)) return false
+    return (
+      !search ||
+      f.phone?.includes(search) ||
+      f.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+      f.flag_type.toLowerCase().includes(search.toLowerCase())
+    )
+  })
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white space-y-6">
@@ -227,11 +261,35 @@ export default function AdminAmlPage() {
                         </div>
                       </div>
 
-                      {/* Placeholder for future actions */}
-                      <div className="pt-3 border-t border-[#1e1e2e]">
-                        <p className="text-xs text-slate-600">
-                          ℹ️ Review and action buttons coming soon
-                        </p>
+                      {/* Actions */}
+                      <div className="pt-3 border-t border-[#1e1e2e] space-y-3">
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Actions</p>
+                        {freezeMsg?.userId === flag.user_id && (
+                          <p className={`text-xs font-semibold ${freezeMsg.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {freezeMsg.text}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            onClick={() => dismissFlag(flag.user_id + flag.flag_type)}
+                            className="rounded-lg border border-slate-700/40 bg-slate-800/30 px-3 py-1.5 text-xs font-bold text-slate-400 hover:border-slate-500 hover:text-white transition-colors"
+                          >
+                            ✓ Dismiss flag
+                          </button>
+                          <Link
+                            href={`/admin/users`}
+                            className="rounded-lg border border-sky-800/40 bg-sky-900/20 px-3 py-1.5 text-xs font-bold text-sky-400 hover:bg-sky-900/40 transition-colors"
+                          >
+                            👤 View in Users
+                          </Link>
+                          <button
+                            onClick={() => freezeUser(flag.user_id)}
+                            disabled={freezeLoading === flag.user_id || freezeMsg?.userId === flag.user_id && freezeMsg.ok}
+                            className="rounded-lg border border-red-800/40 bg-red-900/20 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-900/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {freezeLoading === flag.user_id ? '…' : '🔒 Freeze account'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
