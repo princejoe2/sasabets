@@ -5,6 +5,33 @@ Each entry below is a session narrative — the WHY behind the commits.
 
 ---
 
+## 2026-10-11 — Codebase audit gap fixes (e585d63)
+
+Cleared 5 leftover issues identified during the post-Phase-6 audit.
+
+**CreateMarketForm probability bar:** The preview card showed `—%` / `—%` on new
+market creation because the placeholder was never wired to real data. New markets
+always start 50/50, so replaced the em-dashes with `50%`. Simple but visible.
+
+**Dashboard + Bets token migration:** Both pages were using raw hex values
+(`#0a0a0f`, `#0d0d14`, `#1e1e2e`, etc.) that predated the design-system token
+pass. Migrated all structural bg/border/text to `mk-*` Tailwind tokens — now any
+future theme tweak propagates automatically. Per-category accent colors on the
+Bets page were intentionally left as-is.
+
+**Admin AML actions:** The expanded flag row previously showed "Review and action
+buttons coming soon." Replaced with three real actions: Dismiss (client-side
+removes from list), View in Users (links to /admin/users), and Freeze Account
+(PATCH /api/admin/user → sets `suspended: true, suspend_reason: 'Frozen via AML
+review'`). Freeze gives inline feedback and disables itself after success.
+
+**Updown page:** `/updown` was a bare redirect to `/markets`. Now a proper server
+component that queries open `updown` and `price_level` markets from Supabase,
+renders them as browseable cards with asset icon, entry/target price, window label,
+pool size, countdown, and a "Predict →" link into the normal market detail flow.
+
+---
+
 ## 2026-10-10 — Phase 4 review + Phase 5 design
 
 **Session recovery:** PC shut off mid-session. Confirmed no work was lost — working tree
