@@ -45,7 +45,7 @@ export default async function SettleQueuePage() {
     title:             m.title,
     total_pool:        Number(m.total_pool),
     closes_at:         m.closes_at,
-    options:           (m.options as QueueMarket['options']) ?? [],
+    options:           ((m.options as Array<QueueMarket['options'][0] | null>) ?? []).filter((o): o is QueueMarket['options'][0] => o !== null),
     metadata:          (m.metadata ?? {}) as Record<string, unknown>,
     description:       (m as { description?: string | null }).description ?? null,
     bettors:           bettorMap[m.id]?.size ?? 0,

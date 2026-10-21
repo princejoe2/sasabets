@@ -18,9 +18,10 @@ type EvidenceImg = {
 }
 
 function groupOptions(options: Array<{ id: string; label: string; total_pool: number }>) {
-  const isBinary = options.length <= 2 || options.every(o => ['yes', 'no', 'up', 'down'].includes(o.id))
-  if (isBinary) return options.map(o => ({ id: o.id, display: o.label, pool: o.total_pool }))
-  return options.map(o => {
+  const safe = options.filter(o => o !== null && o !== undefined)
+  const isBinary = safe.length <= 2 || safe.every(o => ['yes', 'no', 'up', 'down'].includes(o.id))
+  if (isBinary) return safe.map(o => ({ id: o.id, display: o.label, pool: o.total_pool }))
+  return safe.map(o => {
     const isYes = o.id.endsWith('_yes')
     const slug  = isYes ? o.id.slice(0, -4) : o.id.slice(0, -3)
     const side  = isYes ? 'YES ✓' : 'NO ✗'

@@ -112,7 +112,7 @@ export default function SettleQueueClient({ markets }: { markets: QueueMarket[] 
                   </div>
 
                   <div className="mt-2.5 flex flex-wrap gap-2">
-                    {m.options.map(opt => (
+                    {m.options.filter(o => o !== null).map(opt => (
                       <span
                         key={opt.id}
                         className="rounded-full border border-[#1a1a28] bg-[#111120] px-2.5 py-1 text-[11px] font-medium text-slate-400"

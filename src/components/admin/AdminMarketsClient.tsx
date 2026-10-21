@@ -310,6 +310,7 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
           <span>Market</span><span>Sides</span><span>Pool</span><span>Closes</span><span>Action</span>
         </div>
         {filtered.map((m, i) => {
+          const opts     = m.options.filter(o => o !== null)
           const verBadge = m.verification_type && m.verification_type !== 'manual'
             ? VER_BADGE[m.verification_type] : null
           return (
@@ -348,15 +349,15 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
                 </div>
               </div>
               <span className="text-xs text-slate-400 font-semibold">
-                {m.options.every(o => ['yes','no','up','down'].includes(o.id)) ? (
+                {opts.every(o => ['yes','no','up','down'].includes(o.id)) ? (
                   <>
-                    <span className="text-violet-400">{m.options[0]?.label ?? '—'}</span>
+                    <span className="text-violet-400">{opts[0]?.label ?? '—'}</span>
                     <span className="mx-1 text-slate-600">vs</span>
-                    <span className="text-amber-400">{m.options[1]?.label ?? '—'}</span>
+                    <span className="text-amber-400">{opts[1]?.label ?? '—'}</span>
                   </>
                 ) : (
                   <span className="text-sky-400">
-                    {m.options.filter(o => o.id.endsWith('_yes')).length || Math.ceil(m.options.length / 2)} candidates
+                    {opts.filter(o => o.id.endsWith('_yes')).length || Math.ceil(opts.length / 2)} candidates
                   </span>
                 )}
               </span>
@@ -383,7 +384,7 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
                 </button>
                 <button
                   onClick={() => {
-                    const isBinary = m.options.every(o => ['yes','no','up','down'].includes(o.id))
+                    const isBinary = opts.every(o => ['yes','no','up','down'].includes(o.id))
                     const next = outcomesMarket?.id === m.id ? null : { id: m.id, isBinary }
                     setOutcomesMarket(next)
                     setEditingMarket(null)
