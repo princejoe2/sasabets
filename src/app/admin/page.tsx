@@ -17,13 +17,13 @@ export default async function AdminDashboard() {
     { data: rakeTxns },
     { count: dauBets },
   ] = await Promise.all([
-    admin.from('profiles').select('*', { count: 'exact', head: true }),
+    admin.from('profiles').select('*', { count: 'exact', head: true }).eq('is_demo', false),
     admin.from('markets').select('id, status, total_pool').limit(500),
-    admin.from('bets').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+    admin.from('bets').select('*', { count: 'exact', head: true }).eq('status', 'active').eq('is_demo', false),
     admin.from('transactions').select('id, type, amount, status, created_at').order('created_at', { ascending: false }).limit(50),
     admin.from('wallets').select('balance').limit(2000),
     admin.from('transactions').select('amount').eq('type', 'rake').eq('status', 'completed'),
-    admin.from('bets').select('*', { count: 'exact', head: true }).gte('placed_at', todayStart.toISOString()),
+    admin.from('bets').select('*', { count: 'exact', head: true }).gte('placed_at', todayStart.toISOString()).eq('is_demo', false),
   ])
 
   const openMarkets    = markets?.filter(m => m.status === 'open').length ?? 0

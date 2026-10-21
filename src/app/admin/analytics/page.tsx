@@ -53,16 +53,16 @@ export default async function AdminAnalyticsPage() {
     { data: recentTxnsWithUser },
     { data: dauBets },
   ] = await Promise.all([
-    admin.from('bets').select('id, amount, status, placed_at, user_id').gte('placed_at', thirtyDaysAgo).limit(500),
+    admin.from('bets').select('id, amount, status, placed_at, user_id').eq('is_demo', false).gte('placed_at', thirtyDaysAgo).limit(500),
     admin.from('transactions').select('id, type, amount, status, created_at').gte('created_at', sevenDaysAgo).limit(500),
     admin.from('transactions').select('id, type, amount, status').limit(2000),
     admin.from('markets').select('id, title, total_pool, status, created_at').order('total_pool', { ascending: false }).limit(20),
-    admin.from('profiles').select('id, created_at').gte('created_at', thirtyDaysAgo).limit(200),
-    admin.from('profiles').select('*', { count: 'exact', head: true }),
-    admin.from('bets').select('*', { count: 'exact', head: true }),
+    admin.from('profiles').select('id, created_at').eq('is_demo', false).gte('created_at', thirtyDaysAgo).limit(200),
+    admin.from('profiles').select('*', { count: 'exact', head: true }).eq('is_demo', false),
+    admin.from('bets').select('*', { count: 'exact', head: true }).eq('is_demo', false),
     admin.from('markets').select('status, total_pool'),
     admin.from('transactions').select('id, type, amount, status, created_at, user_id').order('created_at', { ascending: false }).limit(20),
-    admin.from('bets').select('user_id').gte('placed_at', todayStart),
+    admin.from('bets').select('user_id').eq('is_demo', false).gte('placed_at', todayStart),
   ])
 
   const transactions = recentTxns

@@ -8,6 +8,7 @@ export default async function AdminBetsPage() {
   const { data: bets } = await admin
     .from('bets')
     .select('*, profiles(phone, full_name), markets(id, title, options, status, winning_option_id)')
+    .eq('is_demo', false)
     .order('placed_at', { ascending: false })
 
   const active  = bets?.filter(b => b.status === 'active') ?? []

@@ -7,9 +7,9 @@ export default async function AdminUsersPage() {
   const admin = createAdminClient()
 
   const [{ data: profiles }, { data: wallets }, { data: betStats }] = await Promise.all([
-    admin.from('profiles').select('id, phone, full_name, is_admin, suspended, suspend_reason, kyc_status, created_at, verified_creator').order('created_at', { ascending: false }),
+    admin.from('profiles').select('id, phone, full_name, is_admin, suspended, suspend_reason, kyc_status, created_at, verified_creator').eq('is_demo', false).order('created_at', { ascending: false }),
     admin.from('wallets').select('user_id, balance'),
-    admin.from('bets').select('user_id, amount, status'),
+    admin.from('bets').select('user_id, amount, status').eq('is_demo', false),
   ])
 
   const walletMap = Object.fromEntries((wallets ?? []).map(w => [w.user_id, Number(w.balance)]))
