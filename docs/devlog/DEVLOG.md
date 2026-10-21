@@ -5,6 +5,14 @@ Each entry below is a session narrative — the WHY behind the commits.
 
 ---
 
+## 2026-10-21 — Fix null-options crash on admin pages (59a1b74)
+
+Admin pages (`/admin/markets`, `/admin/settle-queue`) were throwing a runtime `TypeError: Cannot read properties of null (reading 'label')`. Six markets in the DB had `[null, {…}]` in their `options` JSONB array — the YES option entry was missing, leaving a null placeholder. Any `.map(opt => opt.label)` call crashed.
+
+Fixed by filtering nulls server-side in both admin page fetches (settle-queue/page.tsx, admin/markets/page.tsx) and adding defensive `.filter(o => o !== null)` guards in SettleQueueClient, AdminMarketsClient, and SettleMarketForm. Also patched all 6 affected market rows directly in the prod DB. Deployed to production.
+
+---
+
 ## 2026-10-11 — Codebase audit gap fixes (e585d63)
 
 Cleared 5 leftover issues identified during the post-Phase-6 audit.
