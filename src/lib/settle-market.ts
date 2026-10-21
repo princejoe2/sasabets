@@ -47,7 +47,8 @@ export async function settleMarket(
   // Only apply rake on markets that reached UGX 50,000+ in total pool
   const rakePct     = totalPool >= 50_000 ? configRake : 0
   const prizePool   = totalPool * (1 - rakePct)
-  const winningPool = Number(winningOption.total_pool)
+  // winningPool is computed from real bets after the query below; placeholder here
+  let winningPool = Number(winningOption.total_pool)
 
   const { data: winningBets } = await admin
     .from('bets')
@@ -55,7 +56,12 @@ export async function settleMarket(
     .eq('market_id', marketId)
     .eq('option_id', winningOptionId)
     .eq('status', 'active')
+    .eq('is_demo', false)
 
+  // Recompute winningPool from real bets only so demo amounts don't dilute real payouts
+  if (winningBets && winningBets.length > 0) {
+    winningPool = winningBets.reduce((s, b) => s + Number(b.amount), 0)
+  }
   if (winningBets && winningBets.length > 0 && winningPool > 0) {
     for (const bet of winningBets) {
       const betAmt = Number(bet.amount)
@@ -116,6 +122,7 @@ export async function settleMarket(
         .eq('market_id', marketId)
         .eq('option_id', `${slug}_no`)
         .eq('status', 'active')
+        .eq('is_demo', false)
 
       if (!noBets?.length) continue
 
@@ -156,13 +163,12 @@ export async function settleMarket(
     }
   }
 
-  // Mark all remaining active bets lost:
-  //   YES on every losing candidate, NO on the winning candidate, all binary losers.
-  // Already-paid NO winners are status='won'; .eq('status','active') protects them.
+  // Mark all remaining real active bets lost (demo bets are left active — never paid out).
   await admin.from('bets')
     .update({ status: 'lost' })
     .eq('market_id', marketId)
     .eq('status', 'active')
+    .eq('is_demo', false)
     .neq('option_id', winningOptionId)
 
   // Record rake as a platform transaction so admin funds page shows exact accumulated rake

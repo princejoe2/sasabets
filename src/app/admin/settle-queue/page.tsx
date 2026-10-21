@@ -27,6 +27,7 @@ export default async function SettleQueuePage() {
       .select('market_id, user_id')
       .in('market_id', ids)
       .eq('status', 'active')
+      .eq('is_demo', false)
 
     const createdByMap: Record<string, string | null> = {}
     for (const m of list) createdByMap[m.id] = m.created_by ?? null
