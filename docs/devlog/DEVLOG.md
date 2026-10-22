@@ -5,6 +5,14 @@ Each entry below is a session narrative — the WHY behind the commits.
 
 ---
 
+## 2026-10-21 — Demo social-proof seed + admin-invisible ghost data (c8dcdfa)
+
+Platform had zero users and zero bets since the July DB wipe, making it look dead to visitors. Added a social-proof seeding system: 28 ghost Ugandan user accounts + 179 bets across 13 markets (Bitcoin, Uganda Cranes AFCON, Besigye, Ballon d'Or multi-market, petrol, Azawi, Nyege Nyege, etc.) with pool boosts ranging UGX 76K–316K per market.
+
+The trick: `is_demo BOOLEAN DEFAULT FALSE` added to `profiles` and `bets` (migration 0020). Every admin page (dashboard counts, users list, bets list, analytics, settle-queue bettor counts) filters `is_demo = false`, so the admin panel stays fresh for real users. Settlement was also patched to skip demo bets and compute the real winning pool from real bets only — so demo amounts don't dilute real payouts. Public pages show everything.
+
+---
+
 ## 2026-10-21 — Fix null-options crash on admin pages (59a1b74)
 
 Admin pages (`/admin/markets`, `/admin/settle-queue`) were throwing a runtime `TypeError: Cannot read properties of null (reading 'label')`. Six markets in the DB had `[null, {…}]` in their `options` JSONB array — the YES option entry was missing, leaving a null placeholder. Any `.map(opt => opt.label)` call crashed.
