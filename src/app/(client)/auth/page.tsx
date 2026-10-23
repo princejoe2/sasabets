@@ -255,6 +255,12 @@ export default function AuthPage() {
 
     if (admin || isStaff || has2fa) {
       setIsAdmin(!!(admin || isStaff))
+      // Staff with no 2FA yet: go straight to /admin — layout forces 2FA setup there
+      if (!admin && isStaff && !has2fa) {
+        router.push('/admin')
+        router.refresh()
+        return
+      }
       setStep('totp')
       setLoading(false)
       return

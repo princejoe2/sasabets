@@ -12,8 +12,8 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await admin.from('profiles').select('is_admin, totp_enabled').eq('id', user.id).single()
-  if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { data: profile } = await admin.from('profiles').select('is_admin, staff_role, totp_enabled').eq('id', user.id).single()
+  if (!profile?.is_admin && !profile?.staff_role) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   // If 2FA is already active, rotating the secret requires proving possession of the
   // CURRENT factor (valid TOTP session cookie). Otherwise a stolen admin password
