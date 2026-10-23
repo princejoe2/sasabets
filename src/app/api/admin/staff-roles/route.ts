@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { guardAdmin } from '@/lib/admin-guard'
+import { VALID_STAFF_PATHS } from '@/lib/admin-roles'
 
 const VALID_ROLES = ['moderator', 'settler', 'support', 'analyst', 'content'] as const
 
-// GET /api/admin/staff-roles — list all staff members with assigned roles
 export async function GET() {
   const g = await guardAdmin()
   if ('error' in g) return g.error
@@ -11,7 +11,7 @@ export async function GET() {
 
   const { data, error } = await g.admin
     .from('profiles')
-    .select('id, phone, full_name, staff_role, created_at')
+    .select('id, phone, full_name, staff_role, staff_permissions, created_at')
     .not('staff_role', 'is', null)
     .order('created_at', { ascending: false })
 
@@ -19,7 +19,7 @@ export async function GET() {
   return NextResponse.json(data ?? [])
 }
 
-// POST /api/admin/staff-roles — assign or update a role
+// POST — assign or update a role
 // body: { userId, role }
 export async function POST(req: NextRequest) {
   const g = await guardAdmin()
@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
   if (!VALID_ROLES.includes(role as never))
     return NextResponse.json({ error: `role must be one of: ${VALID_ROLES.join(', ')}` }, { status: 400 })
 
-  // Prevent assigning a role to another super-admin
   const { data: target } = await g.admin.from('profiles').select('is_admin').eq('id', userId).single()
   if (target?.is_admin)
     return NextResponse.json({ error: 'Cannot assign staff role to an admin account' }, { status: 400 })
@@ -44,7 +43,38 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ success: true })
 }
 
-// DELETE /api/admin/staff-roles — revoke a role (body: { userId })
+// PATCH — update custom page permissions for a staff member
+// body: { userId, permissions: string[] | null }  (null = reset to role defaults)
+export async function PATCH(req: NextRequest) {
+  const g = await guardAdmin()
+  if ('error' in g) return g.error
+  if (!g.isSuperAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const body = await req.json()
+  const userId: string = (body.userId ?? '').trim()
+  const permissions: string[] | null = body.permissions ?? null
+
+  if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
+
+  const { data: target } = await g.admin.from('profiles').select('is_admin').eq('id', userId).single()
+  if (target?.is_admin)
+    return NextResponse.json({ error: 'Cannot modify admin permissions' }, { status: 400 })
+
+  if (permissions !== null) {
+    const invalid = permissions.filter(p => !VALID_STAFF_PATHS.has(p))
+    if (invalid.length > 0)
+      return NextResponse.json({ error: `Invalid paths: ${invalid.join(', ')}` }, { status: 400 })
+  }
+
+  const { error } = await g.admin.from('profiles')
+    .update({ staff_permissions: permissions })
+    .eq('id', userId)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ success: true })
+}
+
+// DELETE — revoke a role (and clear custom permissions)
+// body: { userId }
 export async function DELETE(req: NextRequest) {
   const g = await guardAdmin()
   if ('error' in g) return g.error
@@ -54,7 +84,9 @@ export async function DELETE(req: NextRequest) {
   const userId: string = (body.userId ?? '').trim()
   if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
 
-  const { error } = await g.admin.from('profiles').update({ staff_role: null }).eq('id', userId)
+  const { error } = await g.admin.from('profiles')
+    .update({ staff_role: null, staff_permissions: null })
+    .eq('id', userId)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }

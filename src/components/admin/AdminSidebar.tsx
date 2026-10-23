@@ -74,10 +74,11 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ]
 
-function filterGroups(groups: NavGroup[], isSuperAdmin: boolean, role: StaffRole | null): NavGroup[] {
+function filterGroups(groups: NavGroup[], isSuperAdmin: boolean, role: StaffRole | null, staffPermissions: string[] | null): NavGroup[] {
   if (isSuperAdmin) return groups
-  if (!role) return []
-  const allowed = new Set(ROLE_ALLOWED_PATHS[role])
+  if (!role && !staffPermissions) return []
+  const base = staffPermissions ?? (role ? ROLE_ALLOWED_PATHS[role] : [])
+  const allowed = new Set(['/admin', ...base])
   return groups
     .map(g => ({ ...g, items: g.items.filter(i => allowed.has(i.href)) }))
     .filter(g => g.items.length > 0)
@@ -96,6 +97,7 @@ export default function AdminSidebar({
   floatBalance,
   isSuperAdmin,
   staffRole,
+  staffPermissions,
   userId,
   currentSessionId,
 }: {
@@ -103,6 +105,7 @@ export default function AdminSidebar({
   floatBalance: number
   isSuperAdmin: boolean
   staffRole: string | null
+  staffPermissions: string[] | null
   userId: string
   currentSessionId: string | null
 }) {
@@ -111,7 +114,7 @@ export default function AdminSidebar({
   const supabase = createClient()
 
   const role = (staffRole ?? null) as StaffRole | null
-  const visibleGroups = filterGroups(NAV_GROUPS, isSuperAdmin, role)
+  const visibleGroups = filterGroups(NAV_GROUPS, isSuperAdmin, role, staffPermissions)
 
   const [mobileOpen, setMobileOpen] = useState(false)
   const [badges, setBadges] = useState({ withdrawals: 0, kyc: 0, complaints: 0, settleQueue: 0, pendingApproval: 0 })

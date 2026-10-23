@@ -13,11 +13,11 @@ export async function POST(req: NextRequest) {
 
   const { data: profile } = await admin
     .from('profiles')
-    .select('is_admin, totp_secret, totp_enabled')
+    .select('is_admin, staff_role, totp_secret, totp_enabled')
     .eq('id', user.id)
     .single()
 
-  if (!profile?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!profile?.is_admin && !profile?.staff_role) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   if (!profile.totp_secret) return NextResponse.json({ error: 'Run setup first' }, { status: 400 })
 
   // If 2FA is already enabled, re-enrollment (binding a rotated secret) requires the

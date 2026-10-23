@@ -30,6 +30,8 @@ export async function POST(req: NextRequest) {
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     return NextResponse.json({ error: 'Valid email required' }, { status: 400 })
+  if (!email.endsWith('@sabula256.com'))
+    return NextResponse.json({ error: 'Staff accounts must use a @sabula256.com email address' }, { status: 400 })
   if (!fullName)
     return NextResponse.json({ error: 'Full name required' }, { status: 400 })
   if (!VALID_ROLES.includes(role as StaffRole))
