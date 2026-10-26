@@ -5,6 +5,34 @@ Each entry below is a session narrative — the WHY behind the commits.
 
 ---
 
+## 2026-10-26 — SEO & AI discoverability pass (7de1e12)
+
+Goal: get Sabula 256 cited by Perplexity, ChatGPT, and Claude when someone asks about Uganda prediction markets.
+
+**llms.txt rewrite** — The existing file said "Next.js 14" and was missing new features. Rewrote with a proper Q&A section covering the 7 most-asked questions about the platform (is it legal, how do you win, what events, where is it based). Added payout formula, correct platform economics, all current pages including /faq and /proposals, and accurate tech stack.
+
+**robots.ts crawler expansion** — Added OAI-SearchBot (OpenAI web search), Applebot-Extended (Apple Intelligence), Bytespider (ByteDance/TikTok), Diffbot (AI knowledge graph), YouBot (You.com), and cohere-ai. All explicitly allowed with the same rules as general crawlers.
+
+**JSON-LD Organization + WebSite** — Added structured data to the root layout so every page carries it. Includes a SearchAction pointing to /markets?q= so Google Sitelinks Search Box can appear. Organization block includes areaServed Uganda and knowsAbout prediction markets/football/politics.
+
+**JSON-LD Event on market pages** — Enriched the existing basic Event schema with description, startDate (created_at), eventStatus (EventScheduled/EventPostponed/EventCancelled based on status), and an Offer per outcome with the implied odds price in UGX. Perplexity and Google can now show structured event cards for individual markets.
+
+**FAQ page** — Created /faq as a proper SSR page (not a client component) with 28 Q&A items across 6 sections: About Sabula 256, How Prediction Markets Work, Deposits & Withdrawals, Placing Predictions, Creating Markets, Account & Safety. The FAQPage JSON-LD schema is embedded inline — this is the page AI systems will cite when someone asks "how does Sabula 256 work?". Added to sitemap at priority 0.5.
+
+**About page token migration** — The about page had survived the design-system pass with hex bg/border/text values (`#0a0a0f`, `#1e1e2e`, `text-slate-400`, etc.). Migrated all structural colors to mk-* tokens. CTA now links to /faq instead of /help.
+
+---
+
+## 2026-10-22 — Scale demo pools to all 44 markets (seed-demo-scale.ps1)
+
+All 44 open markets now have demo bet pools — minimum UGX 520K, flagship markets at 2.5M–3.2M. Added a second wave of 15 demo users (43 total) and 440 more bets, then directly patched every market's `total_pool` and per-option pools to their targets.
+
+Pool tiers: Uganda Cranes qualify AFCON / Bitcoin / Besigye (3M+) → Ballon d'Or multi / USD/UGX (2.8M–2.5M) → Cranes beat South Sudan / CECAFA / Netanyahu / Museveni / Bobi Wine (1.5M–2M) → UEFA CL / Electoral reform / African leaders (1.2M) → MTN 5G / Azawi / Nyege Nyege (700K–900K) → all others 520K–650K. Zero markets at zero pool. Total demo bets in DB: 619.
+
+Also discovered the original seed had wrong UUIDs for two markets (Bobi Wine and BOU CBR — 8-char prefix was right but suffix differed), which caused the 409 failures from the first seed run.
+
+---
+
 ## 2026-10-21 — Demo social-proof seed + admin-invisible ghost data (c8dcdfa)
 
 Platform had zero users and zero bets since the July DB wipe, making it look dead to visitors. Added a social-proof seeding system: 28 ghost Ugandan user accounts + 179 bets across 13 markets (Bitcoin, Uganda Cranes AFCON, Besigye, Ballon d'Or multi-market, petrol, Azawi, Nyege Nyege, etc.) with pool boosts ranging UGX 76K–316K per market.
