@@ -81,9 +81,48 @@ export const viewport: Viewport = {
   colorScheme: 'dark',
 }
 
+const ORG_JSONLD = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://sabula256.com/#organization',
+      name: 'Sabula 256',
+      url: 'https://sabula256.com',
+      logo: 'https://sabula256.com/icon-512.png',
+      description: "Uganda's community prediction market. Create or join markets on politics, football, economy and more. Win via MTN or Airtel Mobile Money.",
+      contactPoint: {
+        '@type': 'ContactPoint',
+        email: 'support@sabula256.com',
+        contactType: 'customer support',
+      },
+      areaServed: { '@type': 'Country', name: 'Uganda' },
+      knowsAbout: ['prediction markets', 'Uganda football', 'Uganda politics', 'Mobile Money', 'parimutuel betting'],
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://sabula256.com/#website',
+      url: 'https://sabula256.com',
+      name: 'Sabula 256',
+      publisher: { '@id': 'https://sabula256.com/#organization' },
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: { '@type': 'EntryPoint', urlTemplate: 'https://sabula256.com/markets?q={search_term_string}' },
+        'query-input': 'required name=search_term_string',
+      },
+    },
+  ],
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={`dark ${supreme.variable} ${chubbo.variable} ${inter.variable}`}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSONLD) }}
+        />
+      </head>
       <body className="min-h-screen bg-black text-[#F5F5F5] antialiased">
         <ThemeProvider>
           <RouteProgressBar />

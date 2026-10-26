@@ -166,13 +166,34 @@ export default async function MarketPage({
     .neq('status', 'cancelled')
   const predictorCount = new Set((bettorRows ?? []).map((b: { user_id: string }) => b.user_id)).size
 
+  const pool = Number(market.total_pool)
+  const rawOptsForLd = Array.isArray(market.options)
+    ? (market.options as Array<{ id: string; label: string; total_pool: number }>).filter(Boolean)
+    : []
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Event',
     name: market.title,
+    description: market.description ?? undefined,
     url: `https://sabula256.com/markets/${market.id}`,
     organizer: { '@type': 'Organization', name: 'Sabula 256', url: 'https://sabula256.com' },
+    location: { '@type': 'VirtualLocation', url: `https://sabula256.com/markets/${market.id}` },
+    ...(market.created_at ? { startDate: market.created_at } : {}),
     ...(market.closes_at ? { endDate: market.closes_at } : {}),
+    eventStatus: market.status === 'settled'
+      ? 'https://schema.org/EventCancelled'
+      : market.status === 'closed'
+      ? 'https://schema.org/EventPostponed'
+      : 'https://schema.org/EventScheduled',
+    offers: rawOptsForLd.map(opt => ({
+      '@type': 'Offer',
+      name: opt.label,
+      price: pool > 0 && opt.total_pool > 0
+        ? Math.round((pool / opt.total_pool) * 100) / 100
+        : undefined,
+      priceCurrency: 'UGX',
+      url: `https://sabula256.com/markets/${market.id}`,
+    })),
   }
 
   return (

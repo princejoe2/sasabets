@@ -1,61 +1,122 @@
 # Sabula 256
 
-> Uganda's community prediction market — create your own market, invite friends, win real money via Mobile Money.
+> Uganda's community prediction market — predict politics, football, economy, and more. Win real money via MTN or Airtel Mobile Money.
 
-Sabula 256 (sabula256.com) is a parimutuel prediction market platform built for Uganda. Anyone can create a prediction market on any topic, share the link, and win money when the market settles. Payouts go via MTN or Airtel Mobile Money.
+Sabula 256 (sabula256.com) is a parimutuel prediction market platform built for Uganda. Users predict the outcome of real-world events — football matches, elections, economic indicators — and winners split the entire prize pool. Payouts go via MTN or Airtel Mobile Money instantly.
 
 ## What is Sabula 256?
 
-Sabula 256 is NOT a sports betting site. It is a prediction market — a platform where users put real money on the outcome of future events, and winners split the pool. The platform takes an 8% rake on qualifying markets (pools of UGX 50,000 or more). There is no house edge in the traditional sense — the platform does not take the opposite side of any bet.
+Sabula 256 is NOT a sports betting site. It is a prediction market — a platform where users put real money on the outcome of future events, and winners split the pool proportionally to their stake. The platform takes an 8% rake on qualifying markets (pools of UGX 50,000 or more). There is no house edge — Sabula 256 does not take the opposite side of any bet.
+
+Prediction markets are different from traditional betting shops because the odds are set by the crowd, not by a bookmaker. The more money on one side, the lower the payout if that side wins. Early predictors who back the winning outcome get better returns.
 
 ## How it works
 
-1. **Create a market** — Any user can create a binary prediction market (Yes/No, Team A/Team B, etc.) on any topic by staking UGX 5,000 as a launch bet.
-2. **Share the link** — The creator shares the market URL. Others join by placing bets on their preferred outcome.
-3. **Settlement** — When the event resolves, admin settles the market by declaring the winning outcome. Winners split the entire prize pool proportionally to their stake.
-4. **Payout** — Winnings are credited to the user's in-app wallet and can be withdrawn to MTN or Airtel Mobile Money instantly.
+1. **Browse markets** — Open markets on football, politics, economy, entertainment, tech, infrastructure, agriculture, and more at sabula256.com/markets
+2. **Deposit** — Top up your wallet via MTN or Airtel Mobile Money (minimum UGX 2,000)
+3. **Predict** — Pick an outcome and stake any amount (minimum UGX 1,000)
+4. **Wait for settlement** — When the event resolves, the admin settles the market by declaring the winning outcome
+5. **Collect** — Winners get their share of the full pool automatically. Withdraw to Mobile Money in minutes.
+
+## Who can use Sabula 256?
+
+Anyone in Uganda aged 18 and above with an MTN or Airtel Mobile Money number. No bank account required. Registration takes under 2 minutes: name, email, phone number, email verification.
 
 ## Platform economics
 
-- **Rake**: 8% of total pool, only on markets with pool >= UGX 50,000
-- **Creator share**: 2% of total pool credited to market creator on qualifying markets
+- **Rake**: 8% of total pool, only charged on markets with pool ≥ UGX 50,000
+- **Creator share**: 2% of total pool credited to the market creator on qualifying markets
 - **Minimum bet**: UGX 1,000
+- **Minimum deposit**: UGX 2,000
+- **Minimum withdrawal**: UGX 5,000
 - **Maximum withdrawal**: UGX 1,000,000 per transaction
-- **KYC required** for withdrawals above UGX 5,000,000
+- **KYC gate**: Required for cumulative 30-day withdrawals above UGX 5,000,000
+- **Early exit fee**: 25% of stake (users can exit a bet before market closes)
+- **Rake threshold**: Markets with total pool below UGX 50,000 pay out 100% to winners (no rake)
+
+## Payout formula
+
+Your payout = (your stake ÷ winning side pool) × (total pool × 0.92)
+
+Where 0.92 accounts for the 8% rake. Creator gets 2% of total pool if pool ≥ UGX 50,000.
+
+Example: You stake UGX 10,000 on YES. YES pool = UGX 100,000. Total pool = UGX 200,000.
+Your payout = (10,000 ÷ 100,000) × (200,000 × 0.92) = UGX 18,400.
 
 ## Market categories
 
-- **Football** — FUFA Premier League, Uganda Cranes, Premier League, Champions League
-- **Politics** — Uganda elections, parliament, government policy
-- **Economy** — UGX exchange rate, fuel prices, inflation
-- **Entertainment** — Music, TV, film, celebrity
-- **Tech** — Startup funding, product launches, crypto
-- **Infrastructure** — Roads, power, construction
-- **Agriculture** — Harvest prices, seasonal events
-- **Other** — Anything else
+- **Football** — Uganda Cranes, FUFA Premier League, AFCON qualifiers, CAF Champions League, Premier League, Champions League, Ballon d'Or
+- **Politics** — Uganda presidential elections, parliamentary debates, government policy, regional politics
+- **Economy** — UGX/USD exchange rate, fuel prices, inflation, Bank of Uganda CBR, commodity prices
+- **Entertainment** — Ugandan music (Eddy Kenzo, Azawi), Nyege Nyege festival, films, TV
+- **Tech** — MTN 5G rollout, startup funding, crypto (Bitcoin, Ethereum)
+- **Infrastructure** — EACOP pipeline, Kampala-Jinja Expressway, power projects
+- **Agriculture** — Coffee farmgate prices, seasonal harvest events
+- **Sports** — CECAFA tournament, athletics, boxing
+
+## User-created markets
+
+Any registered user can create a prediction market:
+- UGX 5,000 launch stake required
+- Maximum 5 markets per user per day
+- Markets can be public (visible to all) or private (access via invite link)
+- Community markets require admin to settle and at least 2 non-creator bettors
+- Creator earns 2% of the qualifying pool when their market settles
 
 ## Key pages
 
 - Homepage: https://sabula256.com
 - Browse markets: https://sabula256.com/markets
+- Up/Down game: https://sabula256.com/updown (quick binary predictions on price levels)
 - Create a market: https://sabula256.com/create
-- Leaderboard: https://sabula256.com/leaderboard
-- Up/Down game: https://sabula256.com/updown (quick binary prediction game)
+- FAQ: https://sabula256.com/faq
 - About: https://sabula256.com/about
-- Help: https://sabula256.com/help
+- Leaderboard: https://sabula256.com/leaderboard
+- Proposals: https://sabula256.com/proposals (vote on community-proposed markets)
+- Help centre: https://sabula256.com/help
+- Responsible gambling: https://sabula256.com/responsible-gambling
 - Terms: https://sabula256.com/terms
+- Privacy: https://sabula256.com/privacy
+
+## Frequently asked questions
+
+**Q: Is Sabula 256 a betting site or a prediction market?**
+A: It is a prediction market, not a traditional betting shop. In a prediction market, users bet against each other — not against the house. Sabula 256 facilitates the market and takes a small rake. The odds are set by the crowd's money, not by a bookmaker.
+
+**Q: Is Sabula 256 legal in Uganda?**
+A: Sabula 256 operates as a prediction market platform in Uganda. We follow responsible gambling guidelines and restrict access to users aged 18 and above. KYC verification is required for large withdrawals to comply with local financial regulations.
+
+**Q: How do I win on Sabula 256?**
+A: Pick the correct outcome before the market closes and you automatically receive your share of the full pool when the market settles. The earlier you back the winning outcome, the better your return (because odds shift as more money comes in).
+
+**Q: Can I withdraw my money anytime?**
+A: Yes. Go to Wallet → Withdraw and enter your MTN or Airtel Mobile Money number. Withdrawals process within minutes. Minimum withdrawal is UGX 5,000.
+
+**Q: What events can I predict on?**
+A: Football matches (Uganda Cranes, FUFA Premier League, AFCON, Champions League), Uganda elections and politics, economic indicators (UGX exchange rate, fuel prices), entertainment events (music awards, festivals), tech developments (MTN 5G, crypto prices), infrastructure projects, and any topic a community creator opens a market on.
+
+**Q: Where is Sabula 256 based?**
+A: Sabula 256 is based in Uganda and built specifically for the East African market. Payments are exclusively via MTN and Airtel Mobile Money (Uganda). Currency is Uganda Shillings (UGX).
+
+**Q: How is Sabula 256 different from sports betting shops in Uganda?**
+A: (1) No bookmaker — odds are set by the crowd, not by the house. (2) Anyone can create a market on any topic, not just pre-selected sports events. (3) Payouts are via Mobile Money, no cash desk visit. (4) There is a real-time probability chart so you can see how the crowd is leaning before you commit.
+
+**Q: What is the Up/Down game?**
+A: Up/Down markets are quick binary predictions on whether a price (Bitcoin, USD/UGX, fuel price) will be higher or lower by a set time. They work exactly like regular markets — stake, predict, collect — but with a shorter window (hours to a day).
 
 ## Technical details
 
-- Built with Next.js 14, Supabase (Postgres), deployed on Vercel
-- Payments via Relworx and MarzPay (MTN/Airtel Mobile Money aggregators)
-- Real-time odds — live probability updates as bets come in
-- PWA — installable as a mobile app
-- Push notifications for market closings and settlement results
+- Built with Next.js 16, React 19, Supabase (PostgreSQL), deployed on Vercel
+- Payments via MarzPay (primary) and Relworx (fallback) — both MTN/Airtel Mobile Money aggregators
+- Real-time odds — live probability updates as bets come in via Supabase Realtime
+- Progressive Web App (PWA) — installable as a mobile app on Android and iOS
+- Push notifications for market closing reminders and settlement results
+- All amounts in Uganda Shillings (UGX)
 
 ## Contact
 
 - Website: https://sabula256.com
+- Support: https://sabula256.com/support
 - Support email: support@sabula256.com
-- Country: Uganda
+- Country: Uganda (East Africa)
 - Currency: Uganda Shillings (UGX)

@@ -59,10 +59,10 @@ export default async function AboutPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-mk-bg">
 
       {/* ── Hero ── */}
-      <div className="relative overflow-hidden border-b border-[#1e1e2e]">
+      <div className="relative overflow-hidden border-b border-mk-border">
         <div
           className="pointer-events-none absolute inset-0 opacity-40"
           style={{
@@ -89,11 +89,11 @@ export default async function AboutPage() {
               Browse Markets →
             </Link>
             {user ? (
-              <Link href="/create" className="rounded-xl border border-[#2a2a3e] bg-[#111118] px-7 py-3 text-sm font-semibold text-slate-300 transition-colors hover:border-violet-700/50 hover:text-white">
+              <Link href="/create" className="rounded-xl border border-mk-border bg-mk-card px-7 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-white">
                 Create a Market
               </Link>
             ) : (
-              <Link href="/auth" className="rounded-xl border border-[#2a2a3e] bg-[#111118] px-7 py-3 text-sm font-semibold text-slate-300 transition-colors hover:border-violet-700/50 hover:text-white">
+              <Link href="/auth" className="rounded-xl border border-mk-border bg-mk-card px-7 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-white">
                 Create Account
               </Link>
             )}
@@ -102,23 +102,23 @@ export default async function AboutPage() {
       </div>
 
       {/* ── Our story ── */}
-      <section className="border-b border-[#1e1e2e] bg-[#0d0d14]">
+      <section className="border-b border-mk-border bg-mk-card">
         <div className="mx-auto max-w-4xl px-4 py-20">
-          <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">Our story</p>
+          <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-mk-muted">Our story</p>
           <h2 className="mb-10 text-center text-4xl font-black text-white">
             Why we built <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">Sabula 256</span>
           </h2>
-          <div className="space-y-5 text-base leading-relaxed text-slate-400">
+          <div className="space-y-5 text-base leading-relaxed text-mk-muted">
             <p>
               Prediction markets have been one of the most accurate tools for forecasting real-world events for decades. Platforms like Polymarket have proven that when people put real money on outcomes, the collective wisdom of the crowd beats most expert predictions.
             </p>
             <p>
-              But those platforms required crypto wallets, dollar deposits, and VPNs — a wall most Ugandans couldn&apos;t climb. We built Sabula 256 to bring the same model home, powered by the infrastructure Ugandans already use every day: <strong className="text-slate-200">MTN and Airtel Mobile Money</strong>.
+              But those platforms required crypto wallets, dollar deposits, and VPNs — a wall most Ugandans couldn&apos;t climb. We built Sabula 256 to bring the same model home, powered by the infrastructure Ugandans already use every day: <strong className="text-mk-text">MTN and Airtel Mobile Money</strong>.
             </p>
             <p>
               We focus on markets that matter here. Uganda Cranes qualifiers. FUFA Premier League derbies. Presidential elections. Coffee farmgate prices. The UGX/USD exchange rate. Events that Ugandans have genuine insight into — not just global markets dominated by international traders.
             </p>
-            <p className="font-semibold text-slate-300">
+            <p className="font-semibold text-mk-text">
               Sabula 256 is built in Uganda, for Uganda, by people who want East Africa to have a seat at the prediction market table.
             </p>
           </div>
@@ -126,9 +126,9 @@ export default async function AboutPage() {
       </section>
 
       {/* ── How it works ── */}
-      <section className="border-b border-[#1e1e2e] bg-[#0a0a0f]">
+      <section className="border-b border-mk-border bg-mk-bg">
         <div className="mx-auto max-w-5xl px-4 py-20">
-          <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">The model</p>
+          <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-mk-muted">The model</p>
           <h2 className="mb-12 text-center text-4xl font-black text-white">
             How the <span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">parimutuel</span> model works
           </h2>
@@ -136,12 +136,12 @@ export default async function AboutPage() {
             {HOW.map(({ step, color, title, body }) => (
               <div
                 key={step}
-                className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-6"
+                className="rounded-2xl border border-mk-border bg-mk-card p-6"
                 style={{ borderColor: `${color}22` }}
               >
                 <p className="mb-3 font-mono text-4xl font-black" style={{ color, opacity: 0.4 }}>{step}</p>
                 <h3 className="mb-2 font-black text-white">{title}</h3>
-                <p className="text-sm leading-relaxed text-slate-500">{body}</p>
+                <p className="text-sm leading-relaxed text-mk-muted">{body}</p>
               </div>
             ))}
           </div>
@@ -157,9 +157,9 @@ export default async function AboutPage() {
       </section>
 
       {/* ── Values ── */}
-      <section className="border-b border-[#1e1e2e] bg-[#0d0d14]">
+      <section className="border-b border-mk-border bg-mk-card">
         <div className="mx-auto max-w-5xl px-4 py-20">
-          <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">What we stand for</p>
+          <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-mk-muted">What we stand for</p>
           <h2 className="mb-12 text-center text-4xl font-black text-white">
             Built on <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">principles</span>
           </h2>
@@ -178,7 +178,7 @@ export default async function AboutPage() {
                 </div>
                 <div>
                   <h3 className="mb-1.5 font-black" style={{ color }}>{title}</h3>
-                  <p className="text-sm leading-relaxed text-slate-400">{body}</p>
+                  <p className="text-sm leading-relaxed text-mk-muted">{body}</p>
                 </div>
               </div>
             ))}
@@ -187,17 +187,17 @@ export default async function AboutPage() {
       </section>
 
       {/* ── Responsible gambling ── */}
-      <section className="border-b border-[#1e1e2e] bg-[#0a0a0f]">
+      <section className="border-b border-mk-border bg-mk-bg">
         <div className="mx-auto max-w-4xl px-4 py-20">
-          <div className="rounded-2xl border border-[#2a2a3e] bg-[#0d0d14] p-8 text-center">
+          <div className="rounded-2xl border border-mk-border bg-mk-card p-8 text-center">
             <p className="mb-3 text-3xl">🛡️</p>
             <h2 className="mb-3 text-2xl font-black text-white">Responsible Gambling</h2>
-            <p className="mx-auto mb-6 max-w-xl text-sm leading-relaxed text-slate-400">
-              Prediction markets are exciting, but they carry real financial risk. We enforce responsible gambling tools including deposit limits, self-exclusion, and cooling-off periods. Sabula 256 is for users aged <strong className="text-slate-200">18 and above only</strong>.
+            <p className="mx-auto mb-6 max-w-xl text-sm leading-relaxed text-mk-muted">
+              Prediction markets are exciting, but they carry real financial risk. We enforce responsible gambling tools including deposit limits, self-exclusion, and cooling-off periods. Sabula 256 is for users aged <strong className="text-mk-text">18 and above only</strong>.
             </p>
             <Link
               href="/responsible-gambling"
-              className="inline-block rounded-xl border border-[#2a2a3e] bg-[#111118] px-6 py-3 text-sm font-semibold text-slate-300 transition-colors hover:border-violet-700/50 hover:text-white"
+              className="inline-block rounded-xl border border-mk-border bg-mk-raised px-6 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-white"
             >
               View Safe Play Tools →
             </Link>
@@ -206,11 +206,11 @@ export default async function AboutPage() {
       </section>
 
       {/* ── Contact ── */}
-      <section className="bg-[#0d0d14]">
+      <section className="bg-mk-card">
         <div className="mx-auto max-w-4xl px-4 py-20 text-center">
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">Get in touch</p>
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-mk-muted">Get in touch</p>
           <h2 className="mb-4 text-4xl font-black text-white">Questions or feedback?</h2>
-          <p className="mb-8 text-slate-400">
+          <p className="mb-8 text-mk-muted">
             We read every message. Reach out if you have questions, encounter a problem, or want to propose something.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
@@ -221,8 +221,8 @@ export default async function AboutPage() {
               Contact Support →
             </Link>
             <Link
-              href="/help"
-              className="rounded-xl border border-[#2a2a3e] bg-[#111118] px-7 py-3 text-sm font-semibold text-slate-300 transition-colors hover:border-violet-700/50 hover:text-white"
+              href="/faq"
+              className="rounded-xl border border-mk-border bg-mk-raised px-7 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-white"
             >
               Read the FAQ
             </Link>
