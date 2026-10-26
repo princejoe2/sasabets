@@ -55,15 +55,23 @@ export async function POST(req: NextRequest) {
   const otpUri      = authenticator.keyuri(email, 'Sabula 256 Admin', totpSecret)
   const qrImageUrl  = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(otpUri)}&margin=10`
 
-  // Insert profile with role + 2FA already enabled
-  await g.admin.from('profiles').upsert({
-    id:           userId,
-    full_name:    fullName,
-    staff_role:   role,
-    totp_secret:  totpSecret,
-    totp_enabled: true,
-    is_admin:     false,
-  }, { onConflict: 'id' })
+  // Update the profile created by the handle_new_user trigger.
+  // Must use UPDATE not upsert — the trigger always creates the row, but the
+  // profile.phone column is NOT NULL so an INSERT (upsert's insert path) fails
+  // the constraint before PostgreSQL even checks for a conflict.
+  const { error: profileErr } = await g.admin.from('profiles')
+    .update({
+      full_name:    fullName,
+      staff_role:   role,
+      totp_secret:  totpSecret,
+      totp_enabled: true,
+    })
+    .eq('id', userId)
+
+  if (profileErr) {
+    await g.admin.auth.admin.deleteUser(userId)
+    return NextResponse.json({ error: 'Failed to configure staff profile: ' + profileErr.message }, { status: 500 })
+  }
 
   // Send welcome email with credentials + QR code
   const adminUrl = 'https://sabula256.com/admin'

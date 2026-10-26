@@ -130,10 +130,15 @@ export default function AdminMarketsClient({ markets }: { markets: Market[] }) {
     setAutoRunning(true)
     setAutoResults(null)
     try {
-      const res  = await fetch('/api/admin/auto-settle', { method: 'POST' })
-      const data = await res.json()
-      setAutoResults(data)
-      if (data.settled > 0) router.refresh()
+      const res = await fetch('/api/admin/auto-settle', { method: 'POST' })
+      if (!res.ok) {
+        const errText = res.status === 403 ? 'Access denied — super-admin only' : `Failed (${res.status})`
+        setAutoResults({ settled: 0, pending: 0, results: [{ id: '', title: errText, status: 'error' }] })
+      } else {
+        const data = await res.json()
+        setAutoResults(data)
+        if (data.settled > 0) router.refresh()
+      }
     } catch {
       setAutoResults({ settled: 0, pending: 0, results: [{ id: '', title: 'Network error', status: 'error' }] })
     }
