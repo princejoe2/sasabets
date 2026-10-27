@@ -2,7 +2,9 @@
 # Creates 28 ghost users + ~180 bets across 15 markets
 # Run once: pwsh .\scripts\seed-demo-data.ps1
 
-$key     = "REMOVED_LEAKED_KEY"
+$envFile = Join-Path $PSScriptRoot "../.env.local"
+$key     = (Get-Content $envFile | Where-Object { $_ -match "^SUPABASE_SERVICE_ROLE_KEY=" }) -replace "^SUPABASE_SERVICE_ROLE_KEY=",""
+if (-not $key) { throw "SUPABASE_SERVICE_ROLE_KEY not found in .env.local" }
 $base    = "https://jsigphyrhgmpaydozjfa.supabase.co/rest/v1"
 $headers = @{ Authorization = "Bearer $key"; apikey = $key; "Content-Type" = "application/json"; Prefer = "return=representation" }
 
