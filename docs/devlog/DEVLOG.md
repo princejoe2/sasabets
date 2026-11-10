@@ -146,3 +146,31 @@ to Tailwind `--mk-*` design system classes. Register form split into 2 steps wit
 `AnimatePresence` slide transition (step 1: email + password + confirm; step 2: name +
 phone + username + terms checkbox). All 7 handlers and the `_d()` base64 Supabase key
 decode pattern preserved verbatim. `AnimatedButton` and `CSSProperties` imports removed.
+
+## 2026-11-10 — Mobile redesign: 4-tab bottom bar, popup every visit, no side-scroll
+
+Goal from the owner: phones should get the same homepage as PC, fit every screen perfectly
+(no sideways scrolling or overlap), and use a simple 4-icon bottom bar that keeps people
+coming back. The WhatsApp "Join the Community" popup should show on every visit.
+
+**WhatsApp popup:** No longer remembered as dismissed. It shows on every full page load,
+and closing it always routes to `/`, even from deep links. `/auth*` routes are skipped so
+login, OTP and OAuth flows are never interrupted.
+
+**Bottom bar:** Home · My Bets · Wallet · Me. Wallet shows the live balance (Realtime), and
+My Bets shows a red badge for settled bets you haven't seen yet. The count is stored per user
+in localStorage and cleared on `/bets`. "Me" opens a sheet: Profile, Leaderboard,
+Invite & Earn, Settings. Create became a floating orange + button, shown only on `/` and
+`/markets` so it never overlaps the market page trade bar.
+
+**Homepage:** Phones now use the same `ForecastCard` as PC (one column). The old
+`MobileCard` was removed. Side padding is 16px on mobile and 24px on md+.
+
+**Side-scroll root cause:** It wasn't the homepage. The nav logo (38px Bebas, fixed size)
+plus the Sign-in button, and the footer CONTACTS flip tiles (8 × 40px), pushed a 320px
+page to 380px. The logo now uses `clamp()` and the tiles shrink below `sm`. Verified with
+Playwright at 320/360/375/390/430: scrollWidth equals viewport width at every size.
+
+Not verified: the logged-in balance and badge (the test user is gone since the July wipe).
+ESLint config is broken (circular config error), which was already the case before this
+session. Next: check the logged-in bar on a real phone.

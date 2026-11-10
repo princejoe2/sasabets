@@ -22,6 +22,8 @@ export default function Footer() {
         <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">Contacts</p>
         <SocialFlipButton
           items={SOCIAL_ITEMS}
+          className="p-0 sm:p-4 max-w-full"
+          itemClassName="h-7 w-7 text-sm min-[360px]:h-8 min-[360px]:w-8 sm:h-10 sm:w-10"
           frontClassName="bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300"
           backClassName="bg-violet-600 text-white dark:bg-violet-500 dark:text-white"
         />

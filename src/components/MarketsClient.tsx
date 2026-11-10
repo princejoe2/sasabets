@@ -378,91 +378,6 @@ function ForecastCard({ market }: { market: Mkt }) {
   )
 }
 
-/* ─── MobileCard (shown on screens < md) ────────────────────── */
-const CAT_ICONS: Record<string, string> = {
-  football: '⚽', politics: '🏛️', economy: '💰', entertainment: '🎵',
-  tech: '📱', infrastructure: '🏗️', agriculture: '🌿', updown: '📈', default: '🔮',
-}
-
-function MobileCard({ market }: { market: Mkt }) {
-  const opts    = market.options ?? []
-  const total   = Number(market.total_pool)
-  const pool1   = Number(opts[0]?.total_pool ?? 0)
-  const prob1   = total > 0 ? Math.round((pool1 / total) * 100) : 50
-  const cat     = detectCat(market.title, market.description ?? '', market.metadata)
-  const gc      = gaugeColor(prob1)
-  const timeStr = getTimeLeft(market.closes_at)
-  const isOpen  = market.status === 'open'
-  const endToday = isEndingToday(market.closes_at) && isOpen
-  const catIcon  = CAT_ICONS[cat] ?? '🔮'
-  const avatarBg = CAT_AVATAR_BG[cat] ?? '#1d1525'
-  const isFeatured = market.is_featured === true
-
-  const statusText = !isOpen
-    ? (market.status === 'settled' ? 'Settled' : 'Closed')
-    : endToday ? 'Ends today'
-    : timeStr
-
-  return (
-    <Link
-      href={`/markets/${market.id}`}
-      className="flex items-center gap-3 px-4 py-3 active:opacity-70 transition-opacity"
-      style={{
-        borderBottom: '1px solid var(--fc-card-border)',
-        borderTop: isFeatured ? '2px solid var(--mk-accent)' : undefined,
-      }}
-    >
-      {/* Category bubble */}
-      <div
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg"
-        style={{ background: avatarBg }}
-      >
-        {catIcon}
-      </div>
-
-      {/* Title + status */}
-      <div className="flex-1 min-w-0">
-        <p
-          className="text-sm font-bold leading-snug"
-          style={{
-            color: 'var(--fc-text-primary)',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical' as const,
-            overflow: 'hidden',
-          }}
-        >
-          {market.title}
-        </p>
-        <p
-          className="mt-0.5 text-[11px]"
-          style={{ color: endToday ? '#ef4444' : 'var(--fc-text-secondary)' }}
-        >
-          {statusText}
-        </p>
-      </div>
-
-      {/* Pool + probability bar */}
-      <div className="shrink-0 flex flex-col items-end gap-1.5">
-        <span className="text-[11px] font-bold" style={{ color: 'var(--fc-text-secondary)' }}>
-          UGX {fmtVol(total)}
-        </span>
-        {total > 0 && (
-          <div
-            className="h-1 w-16 overflow-hidden rounded-full"
-            style={{ background: 'var(--fc-card-border)' }}
-          >
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${prob1}%`, background: gc }}
-            />
-          </div>
-        )}
-      </div>
-    </Link>
-  )
-}
-
 /* ─── Main MarketsClient ─────────────────────────────────────── */
 export default function MarketsClient({
   markets,
@@ -579,7 +494,7 @@ export default function MarketsClient({
   const hasFilters = !!(search.trim() || cat !== 'all')
 
   return (
-    <div style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div className="w-full max-w-full overflow-x-clip" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
 
       {/* ══ Sticky header ══ */}
       <div
@@ -592,8 +507,8 @@ export default function MarketsClient({
       >
         {/* Category tabs — text only, no emoji */}
         <div
-          className="scrollbar-hide"
-          style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '12px 24px', overflowX: 'auto', whiteSpace: 'nowrap' }}
+          className="scrollbar-hide px-4 md:px-6"
+          style={{ display: 'flex', alignItems: 'center', gap: 20, paddingTop: 12, paddingBottom: 12, overflowX: 'auto', whiteSpace: 'nowrap' }}
         >
           {CATS.map(c => {
             const active = cat === c.id && !showWatchlist
@@ -669,8 +584,8 @@ export default function MarketsClient({
 
         {/* Filter row */}
         <div
-          className="scrollbar-hide"
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 24px 11px', overflowX: 'auto', whiteSpace: 'nowrap' }}
+          className="scrollbar-hide px-4 md:px-6"
+          style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 11, overflowX: 'auto', whiteSpace: 'nowrap' }}
         >
           {/* Search */}
           <div style={{
@@ -755,7 +670,7 @@ export default function MarketsClient({
       {/* ══ Logged-out hero strip ══ */}
       {!isLoggedIn && (
         <div
-          className="mx-6 mt-3 mb-0 flex items-center justify-between gap-3 rounded-xl px-4 py-3"
+          className="mx-4 md:mx-6 mt-3 mb-0 flex items-center justify-between gap-3 rounded-xl px-4 py-3"
           style={{
             background: 'var(--mk-raised)',
             border: '1px solid var(--mk-border)',
@@ -780,8 +695,8 @@ export default function MarketsClient({
       )}
 
       {/* ══ Create-your-market hero banner ══ */}
-      <div style={{
-        margin: '12px 24px 0',
+      <div className="mx-4 md:mx-6" style={{
+        marginTop: 12,
         borderRadius: 14,
         background: 'linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(79,142,247,0.09) 100%)',
         border: '1px solid rgba(139,92,246,0.22)',
@@ -821,7 +736,7 @@ export default function MarketsClient({
       </div>
 
       {/* ══ Stats bar ══ */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 24px 2px' }}>
+      <div className="px-4 md:px-6" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, paddingBottom: 2 }}>
         <span style={{ fontSize: 11.5, color: 'var(--fc-text-secondary)' }}>
           <strong style={{ color: 'var(--fc-text-primary)', fontWeight: 700 }}>{filtered.length}</strong>
           {' '}market{filtered.length !== 1 ? 's' : ''}
@@ -839,13 +754,9 @@ export default function MarketsClient({
       <div style={{ paddingBottom: 96 }}>
         {filtered.length > 0 ? (
           <>
-            {/* Mobile list — shown on screens narrower than md (768px) */}
-            <div className="md:hidden">
-              {filtered.map(m => <MobileCard key={m.id} market={m} />)}
-            </div>
-            {/* Desktop grid — shown on md+ */}
-            <div className="hidden md:block" style={{ padding: '8px 24px 0' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(264px, 1fr))', gap: 14 }}>
+            {/* Same PC cards on every screen — 1 column on phones, auto-fill grid on wider screens */}
+            <div className="px-4 md:px-6" style={{ paddingTop: 8 }}>
+              <div className="grid grid-cols-1 gap-3 sm:gap-3.5 sm:[grid-template-columns:repeat(auto-fill,minmax(264px,1fr))]">
                 {filtered.map(m => <ForecastCard key={m.id} market={m} />)}
               </div>
             </div>

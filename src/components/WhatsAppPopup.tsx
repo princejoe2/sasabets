@@ -1,22 +1,29 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 
 const WA_LINK = 'https://chat.whatsapp.com/Lq3eAdbkIi9JA67HTvpX6s?s=cl&p=a&mlu=4'
-const STORAGE_KEY = 'wa-popup-dismissed'
 
+// Shown on EVERY site open (every full page load) — dismissal is never remembered.
+// Closing it always sends the visitor to the homepage.
+// Auth routes are skipped so login / OTP / OAuth flows are never interrupted;
+// the popup appears as soon as the visitor reaches a non-auth page instead.
 export default function WhatsAppPopup() {
+  const router   = useRouter()
+  const pathname = usePathname()
+  const shown    = useRef(false)
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (localStorage.getItem(STORAGE_KEY)) return
-    const t = setTimeout(() => setVisible(true), 2000)
+    if (shown.current) return
+    if (pathname?.startsWith('/auth')) return
+    const t = setTimeout(() => { shown.current = true; setVisible(true) }, 800)
     return () => clearTimeout(t)
-  }, [])
+  }, [pathname])
 
   function dismiss() {
     setVisible(false)
-    localStorage.setItem(STORAGE_KEY, '1')
+    if (pathname !== '/') router.push('/')
   }
 
   if (!visible) return null

@@ -1,14 +1,16 @@
 'use client'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import type { User } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/client'
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
 function HomeIcon({ active }: { active: boolean }) {
   return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'}
+    <svg className="h-[22px] w-[22px]" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'}
          stroke="currentColor" strokeWidth={1.75}>
       <path strokeLinecap="round" strokeLinejoin="round"
             d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -16,23 +18,34 @@ function HomeIcon({ active }: { active: boolean }) {
   )
 }
 
-function SearchIcon({ active }: { active: boolean }) {
+function BetsIcon({ active }: { active: boolean }) {
   return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" strokeWidth={active ? 2 : 1.75}>
-      <circle cx="11" cy="11" r="8" />
-      <path strokeLinecap="round" d="m21 21-4.35-4.35" />
+    <svg className="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" strokeWidth={active ? 2.1 : 1.75}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" />
     </svg>
   )
 }
 
-function MoreIcon({ active }: { active: boolean }) {
+function WalletIcon({ active }: { active: boolean }) {
   return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" strokeWidth={active ? 2 : 1.75}>
-      <circle cx="5"  cy="12" r="1" fill="currentColor" />
-      <circle cx="12" cy="12" r="1" fill="currentColor" />
-      <circle cx="19" cy="12" r="1" fill="currentColor" />
+    <svg className="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" strokeWidth={active ? 2.1 : 1.75}>
+      <rect x="3" y="6" width="18" height="13" rx="2.5" />
+      <path strokeLinecap="round" d="M3 10h18" />
+      <circle cx="16.5" cy="14.5" r="1.2" fill="currentColor" />
+    </svg>
+  )
+}
+
+function MeIcon({ active }: { active: boolean }) {
+  return (
+    <svg className="h-[22px] w-[22px]" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'}
+         stroke="currentColor" strokeWidth={1.75}>
+      <circle cx="12" cy="8" r="4" />
+      <path strokeLinecap="round" d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
     </svg>
   )
 }
@@ -40,13 +53,14 @@ function MoreIcon({ active }: { active: boolean }) {
 // ─── Tab button ───────────────────────────────────────────────────────────────
 
 function NavTab({
-  href, label, children, active, onClick,
+  href, label, children, active, onClick, badge, labelClass,
 }: {
-  href?: string; label: string; children: React.ReactNode; active: boolean; onClick?: () => void
+  href?: string; label: React.ReactNode; children: React.ReactNode; active: boolean
+  onClick?: () => void; badge?: number; labelClass?: string
 }) {
   const cls = [
-    'relative flex flex-1 flex-col items-center justify-center gap-0.5 transition-all duration-150 active:scale-90',
-    active ? 'text-white' : 'text-mk-muted hover:text-mk-secondary',
+    'relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 transition-all duration-150 active:scale-90',
+    active ? 'text-white' : 'text-mk-muted',
   ].join(' ')
 
   const inner = (
@@ -55,10 +69,17 @@ function NavTab({
         <span className="absolute top-0 left-1/2 h-[2px] w-8 -translate-x-1/2 rounded-full"
               style={{ background: 'var(--mk-accent)' }} />
       )}
-      <span className="relative z-10">{children}</span>
+      <span className="relative z-10">
+        {children}
+        {!!badge && badge > 0 && (
+          <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-mk-no text-white text-[9px] font-black leading-4 text-center">
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
+      </span>
       <span className={[
-        'relative z-10 text-[10px] font-bold transition-colors duration-150',
-        active ? 'text-white' : 'opacity-50',
+        'relative z-10 max-w-full truncate px-1 text-[10px] font-bold transition-colors duration-150',
+        labelClass ?? (active ? 'text-white' : 'opacity-60'),
       ].join(' ')}>
         {label}
       </span>
@@ -66,161 +87,187 @@ function NavTab({
   )
 
   if (href) return <Link href={href} className={cls}>{inner}</Link>
-  return <button className={cls} onClick={onClick}>{inner}</button>
+  return <button type="button" className={cls} onClick={onClick}>{inner}</button>
 }
 
-// ─── More sheet content ───────────────────────────────────────────────────────
+// ─── "Me" sheet content ───────────────────────────────────────────────────────
 
-const MORE_LINKS = [
-  { href: '/bets',        icon: '🎯', label: 'My Predictions' },
-  { href: '/wallet',      icon: '💳', label: 'Wallet'         },
+const ME_LINKS = [
+  { href: '/profile',     icon: '👤', label: 'Profile'        },
   { href: '/leaderboard', icon: '🏆', label: 'Leaderboard'    },
+  { href: '/invite',      icon: '🎁', label: 'Invite & Earn'  },
   { href: '/settings',    icon: '⚙️', label: 'Settings'       },
 ]
+
+function fmtBalance(n: number) {
+  if (n >= 1_000_000) return `UGX ${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`
+  if (n >= 10_000)    return `UGX ${Math.floor(n / 1000)}K`
+  return `UGX ${Math.floor(n).toLocaleString()}`
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function BottomNav() {
   const pathname = usePathname()
-  const router   = useRouter()
+  const supabase = createClient()
 
-  const [scrolledPast, setScrolledPast] = useState(false)
-  const [moreOpen,     setMoreOpen]     = useState(false)
+  const [user,     setUser]     = useState<User | null>(null)
+  const [balance,  setBalance]  = useState<number | null>(null)
+  const [settled,  setSettled]  = useState(0)     // total settled bets (won/lost/refunded)
+  const [seen,     setSeen]     = useState(0)     // settled count when user last opened /bets
+  const [meOpen,   setMeOpen]   = useState(false)
 
-  // Detect scroll past ~1 screen height → show back-to-top
+  // Auth
   useEffect(() => {
-    function onScroll() {
-      setScrolledPast(window.scrollY > window.innerHeight * 0.85)
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => subscription.unsubscribe()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Close "More" sheet on route change
-  useEffect(() => { setMoreOpen(false) }, [pathname])
-
-  // Lock body scroll when More sheet is open
+  // Balance + settled-bets count, kept live via Realtime
   useEffect(() => {
-    if (moreOpen) {
-      const prev = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
-      return () => { document.body.style.overflow = prev }
-    }
-  }, [moreOpen])
+    if (!user) { setBalance(null); setSettled(0); return }
+    const uid = user.id
 
-  function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+    try { setSeen(Number(localStorage.getItem(`bets-seen-${uid}`) ?? 0)) } catch {}
+
+    async function loadBalance() {
+      const { data } = await supabase.from('wallets').select('balance').eq('user_id', uid).single()
+      if (data) setBalance(Number(data.balance))
+    }
+    async function loadSettled() {
+      const { count } = await supabase
+        .from('bets')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', uid)
+        .in('status', ['won', 'lost', 'refunded'])
+      setSettled(count ?? 0)
+    }
+    loadBalance()
+    loadSettled()
+
+    const channel = supabase
+      .channel(`bottomnav-${uid}`)
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'wallets', filter: `user_id=eq.${uid}` },
+        (payload) => { if (payload.new?.balance !== undefined) setBalance(Number(payload.new.balance)) },
+      )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'bets', filter: `user_id=eq.${uid}` },
+        () => loadSettled(),
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
+  // Opening My Bets clears the badge
+  useEffect(() => {
+    if (!user || !pathname.startsWith('/bets')) return
+    setSeen(settled)
+    try { localStorage.setItem(`bets-seen-${user.id}`, String(settled)) } catch {}
+  }, [pathname, settled, user])
+
+  // Close sheet on route change
+  useEffect(() => { setMeOpen(false) }, [pathname])
+
+  // Lock body scroll when sheet is open
+  useEffect(() => {
+    if (!meOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [meOpen])
 
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href)
-  const createActive = isActive('/create')
-  const moreActive   = ['/bets', '/wallet', '/leaderboard', '/settings'].some(h => pathname.startsWith(h))
+  const meActive = ME_LINKS.some(l => pathname.startsWith(l.href))
+  const badge    = Math.max(0, settled - seen)
+  // Floating Create button only on browse pages — market pages have their own sticky trade bar
+  const showFab  = pathname === '/' || pathname === '/markets'
 
   return (
     <>
+      {/* ── Floating Create button ─────────────────────────────────────────── */}
+      {showFab && (
+        <Link
+          href="/create"
+          aria-label="Create a market"
+          className="fixed right-4 z-bottom-nav sm:hidden flex h-14 w-14 items-center justify-center rounded-full text-black shadow-[0_4px_18px_rgba(255,159,67,0.45)] transition-transform active:scale-90"
+          style={{ background: 'var(--mk-accent)', bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
+        >
+          <svg className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={2.6} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+        </Link>
+      )}
+
+      {/* ── Bottom bar ─────────────────────────────────────────────────────── */}
       <nav
         className="fixed bottom-0 left-0 right-0 z-bottom-nav sm:hidden border-t border-mk-border backdrop-blur-xl"
         style={{ background: 'rgba(0,0,0,0.96)', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="relative flex items-stretch h-14">
-
-          {/* Home */}
+        <div className="flex h-14 items-stretch">
           <NavTab href="/" label="Home" active={isActive('/')}>
             <HomeIcon active={isActive('/')} />
           </NavTab>
 
-          {/* Search */}
-          <NavTab href="/markets" label="Search" active={isActive('/markets')}>
-            <SearchIcon active={isActive('/markets')} />
+          <NavTab href="/bets" label="My Bets" active={isActive('/bets')} badge={badge}>
+            <BetsIcon active={isActive('/bets')} />
           </NavTab>
 
-          {/* Centre — Create / Back-to-top */}
-          <div className="relative flex flex-col items-center justify-center px-4">
-
-            {/* Create button — visible when NOT scrolled past threshold */}
-            <Link
-              href="/create"
-              aria-label="Create market"
-              className={[
-                'flex h-12 w-12 items-center justify-center rounded-full transition-all duration-250 active:scale-90',
-                createActive
-                  ? 'shadow-[0_0_22px_rgba(255,159,67,0.5)]'
-                  : 'shadow-[0_4px_16px_rgba(255,159,67,0.3)] hover:shadow-[0_0_22px_rgba(255,159,67,0.5)]',
-                scrolledPast ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 scale-100',
-              ].join(' ')}
-              style={{ background: 'var(--mk-accent)', marginTop: '-18px' }}
-            >
-              <svg className="h-6 w-6 text-black" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-            </Link>
-            <span className={[
-              'text-[10px] font-bold mt-1 transition-all duration-250',
-              createActive ? 'text-white' : 'text-mk-muted opacity-60',
-              scrolledPast ? 'opacity-0' : '',
-            ].join(' ')}>
-              Create
-            </span>
-
-            {/* Back-to-top — overlays Create when scrolled */}
-            <button
-              onClick={scrollToTop}
-              aria-label="Back to top"
-              className={[
-                'absolute flex items-center justify-center h-11 w-11 rounded-full text-black font-bold text-lg transition-all duration-250 active:scale-90',
-                scrolledPast ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-50 pointer-events-none',
-              ].join(' ')}
-              style={{ background: 'var(--mk-accent)', marginTop: '-18px', top: '50%', transform: scrolledPast ? 'translateY(-50%) scale(1)' : 'translateY(-50%) scale(0.5)' }}
-            >
-              ↑
-            </button>
-          </div>
-
-          {/* More */}
-          <NavTab label="More" active={moreActive || moreOpen} onClick={() => setMoreOpen(o => !o)}>
-            <MoreIcon active={moreActive || moreOpen} />
+          <NavTab
+            href="/wallet"
+            active={isActive('/wallet')}
+            label={user && balance !== null ? fmtBalance(balance) : 'Wallet'}
+            labelClass={user && balance !== null ? 'text-mk-yes' : undefined}
+          >
+            <WalletIcon active={isActive('/wallet')} />
           </NavTab>
 
+          <NavTab label="Me" active={meActive || meOpen} onClick={() => setMeOpen(o => !o)}>
+            <MeIcon active={meActive || meOpen} />
+          </NavTab>
         </div>
       </nav>
 
-      {/* ── More sheet ──────────────────────────────────────────────────────── */}
+      {/* ── "Me" sheet ─────────────────────────────────────────────────────── */}
       <AnimatePresence>
-        {moreOpen && (
+        {meOpen && (
           <>
             <motion.div
-              key="more-backdrop"
+              key="me-backdrop"
               className="fixed inset-0 z-sheet-backdrop sm:hidden"
               style={{ background: 'rgba(0,0,0,0.6)' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              onClick={() => setMoreOpen(false)}
+              onClick={() => setMeOpen(false)}
             />
             <motion.div
-              key="more-sheet"
+              key="me-sheet"
               className="fixed bottom-0 left-0 right-0 z-sheet sm:hidden"
               style={{
-                background:         'var(--mk-card)',
-                borderRadius:       '20px 20px 0 0',
-                paddingBottom:      'env(safe-area-inset-bottom)',
-                borderTop:          '1px solid var(--mk-card-border)',
+                background:    'var(--mk-card)',
+                borderRadius:  '20px 20px 0 0',
+                paddingBottom: 'env(safe-area-inset-bottom)',
+                borderTop:     '1px solid var(--mk-card-border)',
               }}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             >
-              {/* Drag handle */}
               <div className="flex justify-center pt-3 pb-1">
                 <div className="h-1 w-10 rounded-full bg-mk-border" />
               </div>
-              <p className="px-5 pt-1 pb-3 text-[10px] font-bold uppercase tracking-widest text-mk-muted">More</p>
+              <p className="px-5 pt-1 pb-3 text-[10px] font-bold uppercase tracking-widest text-mk-muted">Me</p>
 
               <div className="pb-4">
-                {MORE_LINKS.map(({ href, icon, label }) => (
-                  <Link key={href} href={href} onClick={() => setMoreOpen(false)}
+                {(user ? ME_LINKS : [{ href: '/auth', icon: '🔑', label: 'Sign in / Sign up' }, ...ME_LINKS.slice(1, 2)]).map(({ href, icon, label }) => (
+                  <Link key={href} href={href} onClick={() => setMeOpen(false)}
                     className={[
                       'flex items-center gap-4 px-5 py-4 text-sm font-semibold transition-colors',
                       pathname.startsWith(href)

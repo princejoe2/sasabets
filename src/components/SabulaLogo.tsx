@@ -12,8 +12,8 @@ export function SabulaNavLogo() {
       <span className="hidden dark:flex items-baseline gap-0.5 select-none">
         <span style={{
           fontFamily: "'Bebas Neue', sans-serif",
-          fontSize: 38,
-          letterSpacing: 5,
+          fontSize: 'clamp(26px, 8.5vw, 38px)',
+          letterSpacing: 'clamp(2px, 1.1vw, 5px)',
           lineHeight: 1,
           color: '#ffffff',
           textShadow: '0 0 12px rgba(245,197,24,0.9), 0 0 32px rgba(245,197,24,0.5), 0 0 64px rgba(245,197,24,0.2)',
@@ -22,7 +22,7 @@ export function SabulaNavLogo() {
         </span>
         <span style={{
           fontFamily: "'Orbitron', monospace",
-          fontSize: 22,
+          fontSize: 'clamp(15px, 5vw, 22px)',
           fontWeight: 900,
           color: '#00ff88',
           textShadow: '0 0 12px #00ff88, 0 0 32px rgba(0,255,136,0.7), 0 0 64px rgba(0,255,136,0.3)',
@@ -37,8 +37,8 @@ export function SabulaNavLogo() {
       <span className="flex dark:hidden items-baseline gap-0.5 select-none">
         <span style={{
           fontFamily: "'Bebas Neue', sans-serif",
-          fontSize: 38,
-          letterSpacing: 5,
+          fontSize: 'clamp(26px, 8.5vw, 38px)',
+          letterSpacing: 'clamp(2px, 1.1vw, 5px)',
           lineHeight: 1,
           color: '#0f0f1a',
           textShadow: '0 0 10px rgba(245,197,24,0.6), 0 2px 0 rgba(0,0,0,0.15)',
@@ -47,7 +47,7 @@ export function SabulaNavLogo() {
         </span>
         <span style={{
           fontFamily: "'Orbitron', monospace",
-          fontSize: 22,
+          fontSize: 'clamp(15px, 5vw, 22px)',
           fontWeight: 900,
           color: '#007a40',
           textShadow: '0 0 8px rgba(0,122,64,0.5), 0 0 20px rgba(0,122,64,0.25)',
