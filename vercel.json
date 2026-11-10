@@ -1,5 +1,6 @@
 {
   "alias": ["sabula256.com"],
+  "regions": ["dub1"],
   "crons": [
     {
       "path": "/api/cron/settle-updown",
