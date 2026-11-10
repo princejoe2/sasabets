@@ -65,7 +65,7 @@ export default async function UpDownPage() {
       <div className="border-b border-mk-border bg-mk-card px-4 py-10">
         <div className="mx-auto max-w-4xl">
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-violet-400">Price Action</p>
-          <h1 className="text-4xl font-black text-white">Up/Down Markets</h1>
+          <h1 className="text-4xl font-black text-mk-text">Up/Down Markets</h1>
           <p className="mt-2 text-mk-muted">
             Predict whether Bitcoin, Gold, or other assets will move up or down — or hit a target price.
           </p>
@@ -138,7 +138,7 @@ export default async function UpDownPage() {
                       </div>
 
                       {/* Title */}
-                      <p className="font-bold text-slate-100 leading-snug group-hover:text-white transition-colors">
+                      <p className="font-bold text-slate-100 leading-snug group-hover:text-mk-text transition-colors">
                         {m.title}
                       </p>
 

@@ -52,11 +52,11 @@ export default function ReferralCard() {
   )}`
 
   return (
-    <div id="referral" className="overflow-hidden rounded-2xl border border-[#1e1e2e] bg-[#13131a]">
+    <div id="referral" className="overflow-hidden rounded-2xl border border-[#1e1e2e] bg-mk-raised">
       {/* Header */}
       <div className="bg-gradient-to-r from-violet-600 to-purple-600 px-6 py-5">
         <p className="text-xs font-bold uppercase tracking-widest text-violet-200">Earn with referrals</p>
-        <h3 className="mt-0.5 text-lg font-black text-white">Invite friends, earn UGX</h3>
+        <h3 className="mt-0.5 text-lg font-black text-mk-text">Invite friends, earn UGX</h3>
         <p className="mt-1 text-sm text-violet-200">You earn a bonus every time your referral bets</p>
       </div>
 
@@ -77,7 +77,7 @@ export default function ReferralCard() {
       <div className="space-y-3 px-6 py-5">
         <div>
           <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Your Referral Link</p>
-          <div className="flex items-center gap-2 rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-3 py-2.5">
+          <div className="flex items-center gap-2 rounded-xl border border-[#1e1e2e] bg-mk-surface px-3 py-2.5">
             <span className="flex-1 truncate font-mono text-xs text-slate-400">{link}</span>
             <button
               onClick={copy}

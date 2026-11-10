@@ -334,8 +334,8 @@ function WalletPageContent() {
       )}
 
       {/* ── Balance Hero ── */}
-      <div className="relative overflow-hidden text-white" style={{ background: 'linear-gradient(140deg, #7c3aed, #5b21b6 65%, #4c1d95)', borderRadius: 22, padding: '22px 22px 20px', boxShadow: '0 18px 40px rgba(76,29,149,0.4)' }}>
-        <div className="pointer-events-none absolute -top-10 -right-8 h-40 w-40 rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.14), transparent 70%)' }} />
+      <div className="relative overflow-hidden text-mk-text" style={{ background: 'linear-gradient(140deg, #7c3aed, #5b21b6 65%, #4c1d95)', borderRadius: 22, padding: '22px 22px 20px', boxShadow: '0 18px 40px rgba(76,29,149,0.4)' }}>
+        <div className="pointer-events-none absolute -top-10 -right-8 h-40 w-40 rounded-full" style={{ background: 'radial-gradient(circle, rgb(var(--mk-text-rgb) / 0.14), transparent 70%)' }} />
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[1.6px]" style={{ color: '#d8c9f5' }}>Available Balance</p>
@@ -366,14 +366,14 @@ function WalletPageContent() {
             <button
               onClick={() => switchTab('deposit')}
               className="flex items-center justify-center gap-2 rounded-[14px] py-3 text-sm font-black transition-all"
-              style={{ background: tab === 'deposit' ? '#fff' : 'rgba(255,255,255,0.16)', color: tab === 'deposit' ? '#4c1d95' : '#fff', boxShadow: tab === 'deposit' ? '0 6px 16px rgba(0,0,0,0.2)' : 'none' }}
+              style={{ background: tab === 'deposit' ? '#fff' : 'rgb(var(--mk-text-rgb) / 0.16)', color: tab === 'deposit' ? '#4c1d95' : '#fff', boxShadow: tab === 'deposit' ? '0 6px 16px rgba(0,0,0,0.2)' : 'none' }}
             >
               💰 Deposit
             </button>
             <button
               onClick={() => switchTab('withdraw')}
               className="flex items-center justify-center gap-2 rounded-[14px] py-3 text-sm font-black transition-all"
-              style={{ background: tab === 'withdraw' ? '#fff' : 'rgba(255,255,255,0.16)', color: tab === 'withdraw' ? '#4c1d95' : '#fff', boxShadow: tab === 'withdraw' ? '0 6px 16px rgba(0,0,0,0.2)' : 'none' }}
+              style={{ background: tab === 'withdraw' ? '#fff' : 'rgb(var(--mk-text-rgb) / 0.16)', color: tab === 'withdraw' ? '#4c1d95' : '#fff', boxShadow: tab === 'withdraw' ? '0 6px 16px rgba(0,0,0,0.2)' : 'none' }}
             >
               🏦 Withdraw
             </button>
@@ -386,14 +386,14 @@ function WalletPageContent() {
 
         {/* Form — first in DOM so it appears immediately below stats on mobile */}
         <div ref={formRef} className="lg:col-span-2">
-          <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] overflow-hidden">
+          <div className="rounded-2xl border border-[#1e1e2e] bg-mk-raised overflow-hidden">
             <div className="flex border-b border-[#1e1e2e]">
               {(['deposit', 'withdraw'] as const).map(t => (
                 <button
                   key={t}
                   onClick={() => switchTab(t)}
                   className={`flex-1 py-3.5 text-sm font-semibold transition-colors ${
-                    tab === t ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white'
+                    tab === t ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-mk-text'
                   }`}
                 >
                   {t === 'deposit' ? '💰 Deposit' : '🏦 Withdraw'}
@@ -412,13 +412,13 @@ function WalletPageContent() {
                       onChange={e => setAmount(e.target.value)}
                       placeholder="e.g. 10000"
                       min="1000"
-                      className="w-full rounded-lg border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm outline-none focus:border-violet-600 transition-colors"
+                      className="w-full rounded-lg border border-[#1e1e2e] bg-mk-surface px-4 py-3 text-sm outline-none focus:border-violet-600 transition-colors"
                     />
                     {/* 2×2 on mobile, 4-col on desktop */}
                     <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {[5000, 10000, 50000, 100000].map(v => (
                         <button key={v} onClick={() => setAmount(String(v))}
-                          className="rounded-lg border border-[#1e1e2e] py-2.5 text-xs font-medium text-slate-400 hover:border-violet-600 hover:text-white transition-colors">
+                          className="rounded-lg border border-[#1e1e2e] py-2.5 text-xs font-medium text-slate-400 hover:border-violet-600 hover:text-mk-text transition-colors">
                           UGX {v >= 1000 ? `${v / 1000}k` : v}
                         </button>
                       ))}
@@ -431,7 +431,7 @@ function WalletPageContent() {
                       value={depositPhone}
                       onChange={e => setDepositPhone(e.target.value)}
                       placeholder="+256 700 000 000"
-                      className="w-full rounded-lg border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm outline-none focus:border-violet-600 transition-colors"
+                      className="w-full rounded-lg border border-[#1e1e2e] bg-mk-surface px-4 py-3 text-sm outline-none focus:border-violet-600 transition-colors"
                     />
                   </div>
                   {error   && <p className="text-sm text-red-400">{error}</p>}
@@ -452,14 +452,14 @@ function WalletPageContent() {
                       onChange={e => setAmount(e.target.value)}
                       placeholder="e.g. 10000"
                       min="5000"
-                      className="w-full rounded-lg border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm outline-none focus:border-violet-600 transition-colors"
+                      className="w-full rounded-lg border border-[#1e1e2e] bg-mk-surface px-4 py-3 text-sm outline-none focus:border-violet-600 transition-colors"
                     />
                     <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {[5000, 10000, 50000, 100000].map(v => (
                         <button key={v}
                           onClick={() => setAmount(String(Math.min(v, balance ?? v)))}
                           disabled={balance !== null && balance < v}
-                          className="rounded-lg border border-[#1e1e2e] py-2.5 text-xs font-medium text-slate-400 hover:border-violet-600 hover:text-white disabled:opacity-30 transition-colors">
+                          className="rounded-lg border border-[#1e1e2e] py-2.5 text-xs font-medium text-slate-400 hover:border-violet-600 hover:text-mk-text disabled:opacity-30 transition-colors">
                           UGX {v >= 1000 ? `${v / 1000}k` : v}
                         </button>
                       ))}
@@ -474,7 +474,7 @@ function WalletPageContent() {
                         value={phoneInput}
                         onChange={e => { setPhoneInput(e.target.value); setPhoneError('') }}
                         placeholder="0712 345 678"
-                        className="w-full rounded-lg border border-amber-700/30 bg-[#0a0a0f] px-4 py-3 text-sm outline-none focus:border-amber-600 transition-colors"
+                        className="w-full rounded-lg border border-amber-700/30 bg-mk-surface px-4 py-3 text-sm outline-none focus:border-amber-600 transition-colors"
                       />
                       {phoneError && <p className="text-xs text-red-400">{phoneError}</p>}
                       <button
@@ -494,7 +494,7 @@ function WalletPageContent() {
                         readOnly
                         disabled
                         placeholder="+256 700 000 000"
-                        className="w-full cursor-not-allowed rounded-lg border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm text-slate-400 outline-none"
+                        className="w-full cursor-not-allowed rounded-lg border border-[#1e1e2e] bg-mk-surface px-4 py-3 text-sm text-slate-400 outline-none"
                       />
                       <p className="mt-1 text-[11px] text-slate-600">
                         Withdrawals go to your verified profile number for security.
@@ -502,7 +502,7 @@ function WalletPageContent() {
                     </div>
                   )}
                   {amtNum > 0 && balance !== null && (
-                    <div className="rounded-lg bg-[#0a0a0f] px-4 py-3 text-xs space-y-1">
+                    <div className="rounded-lg bg-mk-surface px-4 py-3 text-xs space-y-1">
                       <div className="flex justify-between text-slate-400">
                         <span>You receive</span>
                         <span className="text-emerald-400 font-semibold">UGX {amtNum.toLocaleString()}</span>
@@ -557,7 +557,7 @@ function WalletPageContent() {
                   className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
                     active
                       ? 'bg-violet-600 text-white'
-                      : 'border border-[#1e1e2e] bg-[#13131a] text-slate-400 hover:text-white'
+                      : 'border border-[#1e1e2e] bg-mk-raised text-slate-400 hover:text-mk-text'
                   }`}
                 >
                   {label}
@@ -581,7 +581,7 @@ function WalletPageContent() {
 
           {/* Transaction list */}
           {filtered.length === 0 ? (
-            <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-8 text-center">
+            <div className="rounded-xl border border-[#1e1e2e] bg-mk-raised p-8 text-center">
               <p className="text-3xl mb-3">💳</p>
               <p className="text-sm font-medium text-slate-400">
                 {transactions.length === 0
@@ -601,7 +601,7 @@ function WalletPageContent() {
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     {label}
                   </p>
-                  <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] overflow-hidden">
+                  <div className="rounded-xl border border-[#1e1e2e] bg-mk-raised overflow-hidden">
                     {txns.map((txn, i) => {
                       const credit      = txn.amount > 0
                       const isPending   = txn.status === 'pending'
@@ -685,7 +685,7 @@ function WalletPageContent() {
 
 export default function WalletPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0a0a0f]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-mk-surface" />}>
       <WalletPageContent />
     </Suspense>
   )

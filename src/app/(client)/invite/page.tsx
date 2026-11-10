@@ -8,12 +8,12 @@ export const metadata: Metadata = {
 
 export default function InvitePage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-mk-surface">
       {/* Hero */}
       <div className="border-b border-[#1e1e2e] bg-gradient-to-b from-violet-950/40 to-transparent px-4 py-12">
         <div className="mx-auto max-w-lg text-center">
           <p className="mb-2 text-xs font-bold uppercase tracking-widest text-violet-400">Referral Programme</p>
-          <h1 className="text-4xl font-black text-white">Invite friends.<br/>Earn real UGX.</h1>
+          <h1 className="text-4xl font-black text-mk-text">Invite friends.<br/>Earn real UGX.</h1>
           <p className="mt-3 text-slate-400 leading-relaxed">
             Share your link. Every friend who signs up and deposits earns you a bonus — credited straight to your wallet.
           </p>
@@ -25,7 +25,7 @@ export default function InvitePage() {
         <ReferralCard />
 
         {/* How it works */}
-        <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-6">
+        <div className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-6">
           <h2 className="mb-5 text-sm font-bold uppercase tracking-widest text-slate-500">How it works</h2>
           <ol className="space-y-4">
             {[

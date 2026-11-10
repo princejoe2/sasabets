@@ -354,7 +354,7 @@ export default async function LeaderboardPage({
   const label = periodLabel(period)
 
   return (
-    <div className={`min-h-screen bg-[#0a0a0f] ${myRow ? 'pb-20 lg:pb-0' : ''}`}>
+    <div className={`min-h-screen bg-mk-surface ${myRow ? 'pb-20 lg:pb-0' : ''}`}>
       {/* Auto-refresh leaderboard data every 30 s without a full reload */}
       <LeaderboardRefresher />
 
@@ -364,7 +364,7 @@ export default async function LeaderboardPage({
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-amber-500/80">
             Hall of Fame
           </p>
-          <h1 className="text-4xl font-black text-white">🏆 Leaderboard</h1>
+          <h1 className="text-4xl font-black text-mk-text">🏆 Leaderboard</h1>
           <p className="mt-2 text-slate-500">
             Uganda&rsquo;s sharpest predictors &middot;{' '}
             <span className="text-amber-500/80">{label}</span>
@@ -475,7 +475,7 @@ export default async function LeaderboardPage({
         {view === 'creators' && (
           <>
             {creatorRows.length === 0 ? (
-              <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] py-20 text-center">
+              <div className="rounded-2xl border border-[#1e1e2e] bg-mk-card py-20 text-center">
                 <p className="text-5xl">🏗️</p>
                 <p className="mt-4 text-lg font-bold text-slate-400">No creator data yet</p>
                 <p className="mt-2 text-sm text-slate-600">Create a market and attract bettors to appear here.</p>
@@ -484,7 +484,7 @@ export default async function LeaderboardPage({
                 </Link>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-[#1e1e2e] bg-[#0d0d14]">
+              <div className="overflow-hidden rounded-2xl border border-[#1e1e2e] bg-mk-card">
                 <div className="grid grid-cols-[3rem_1fr_auto_auto_auto_auto] items-center gap-3 border-b border-[#1e1e2e] px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-slate-600">
                   <span className="text-center">#</span>
                   <span>Creator</span>
@@ -507,7 +507,7 @@ export default async function LeaderboardPage({
                     >
                       <span className="text-center text-sm font-black text-slate-600 tabular-nums">{i + 1}</span>
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[11px] font-black text-white ${isMe ? 'bg-gradient-to-br from-violet-500 to-purple-700 ring-2 ring-violet-400/60' : 'bg-gradient-to-br from-slate-600 to-slate-800'}`}>
+                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[11px] font-black text-mk-text ${isMe ? 'bg-gradient-to-br from-violet-500 to-purple-700 ring-2 ring-violet-400/60' : 'bg-gradient-to-br from-slate-600 to-slate-800'}`}>
                           {getInitials(r.name)}
                         </div>
                         <div className="min-w-0">
@@ -539,7 +539,7 @@ export default async function LeaderboardPage({
 
         {/* ── Predictors view ── */}
         {view === 'predictors' && (rows.length === 0 ? (
-          <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] py-20 text-center">
+          <div className="rounded-2xl border border-[#1e1e2e] bg-mk-card py-20 text-center">
             <p className="text-5xl">🎯</p>
             <p className="mt-4 text-lg font-bold text-slate-400">
               No data yet for {label.toLowerCase()}
@@ -558,7 +558,7 @@ export default async function LeaderboardPage({
           <>
             {/* ── Podium ── */}
             {top3.length >= 1 && (
-              <div className="mb-10 rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] px-4 py-8">
+              <div className="mb-10 rounded-2xl border border-[#1e1e2e] bg-mk-card px-4 py-8">
                 <div className="flex items-end justify-center gap-5 sm:gap-8">
                   {podiumSlots.map((slot, idx) =>
                     slot != null ? (
@@ -579,7 +579,7 @@ export default async function LeaderboardPage({
 
             {/* ── Table (ranks 4+) ── */}
             {rest.length > 0 && (
-              <div className="overflow-hidden rounded-2xl border border-[#1e1e2e] bg-[#0d0d14]">
+              <div className="overflow-hidden rounded-2xl border border-[#1e1e2e] bg-mk-card">
                 {/* Table header */}
                 <div className="grid grid-cols-[3rem_1fr_auto_auto_auto] items-center gap-3 border-b border-[#1e1e2e] px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-slate-600">
                   <span className="text-center">#</span>
@@ -616,7 +616,7 @@ export default async function LeaderboardPage({
                       <div className="flex min-w-0 items-center gap-3">
                         <div
                           className={[
-                            'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[11px] font-black text-white',
+                            'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[11px] font-black text-mk-text',
                             isMe
                               ? 'bg-gradient-to-br from-violet-500 to-purple-700 ring-2 ring-violet-400/60'
                               : 'bg-gradient-to-br from-slate-600 to-slate-800',
@@ -712,7 +712,7 @@ export default async function LeaderboardPage({
 
       {/* ── Fixed bottom bar on mobile (logged-in users only, predictors view) ── */}
       {view === 'predictors' && myRow && myRank > 3 && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-[#1e1e2e] bg-[#0a0a0f]/95 px-4 py-3 backdrop-blur-md">
+        <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-[#1e1e2e] bg-mk-surface/95 px-4 py-3 backdrop-blur-md">
           <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-violet-500">
             Your Standing &middot; {label}
           </p>

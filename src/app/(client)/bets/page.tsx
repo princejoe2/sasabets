@@ -374,7 +374,7 @@ export default function BetsPage() {
       <div className="border-b border-mk-border bg-mk-card px-4 py-6 sm:py-10">
         <div className="mx-auto max-w-4xl">
           <h1 className="text-4xl font-black tracking-tight">
-            <span className="text-white">My </span>
+            <span className="text-mk-text">My </span>
             <span className="text-violet-400">Predictions</span>
           </h1>
           <p className="mt-2 text-mk-muted">
@@ -428,13 +428,13 @@ export default function BetsPage() {
                   key={t}
                   onClick={() => switchTab(t)}
                   className={`shrink-0 rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
-                    tab === t ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white'
+                    tab === t ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-mk-text'
                   }`}
                 >
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                   {t !== 'all' && count > 0 && (
                     <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                      tab === t ? 'bg-white/20 text-white' : 'bg-mk-raised text-mk-muted'
+                      tab === t ? 'bg-white/20 text-mk-text' : 'bg-mk-raised text-mk-muted'
                     }`}>
                       {count}
                     </span>
@@ -445,7 +445,7 @@ export default function BetsPage() {
             <button
               onClick={() => switchTab('mymarkets')}
               className={`shrink-0 rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
-                tab === 'mymarkets' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
+                tab === 'mymarkets' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-mk-text'
               }`}
             >
               My Markets
@@ -514,7 +514,7 @@ export default function BetsPage() {
                       </div>
                       <Link
                         href={isPriv && token ? `/markets/${market.id}?t=${token}` : `/markets/${market.id}`}
-                        className="shrink-0 rounded-lg border border-mk-border px-3 py-1.5 text-xs text-slate-400 hover:text-white hover:border-violet-600 transition-colors"
+                        className="shrink-0 rounded-lg border border-mk-border px-3 py-1.5 text-xs text-slate-400 hover:text-mk-text hover:border-violet-600 transition-colors"
                       >
                         View →
                       </Link>
@@ -606,7 +606,7 @@ export default function BetsPage() {
                             </button>
                             <button
                               onClick={() => setExtendingId(null)}
-                              className="rounded-lg border border-mk-border px-3 py-1.5 text-[11px] text-mk-muted hover:text-white transition-colors"
+                              className="rounded-lg border border-mk-border px-3 py-1.5 text-[11px] text-mk-muted hover:text-mk-text transition-colors"
                             >
                               Cancel
                             </button>
@@ -666,7 +666,7 @@ export default function BetsPage() {
                     className="group block overflow-hidden rounded-xl border transition-all duration-150 hover:brightness-110"
                     style={{
                       borderColor: cat.border,
-                      background: `linear-gradient(135deg, ${cat.glow} 0%, #13131a 55%)`,
+                      background: `linear-gradient(135deg, ${cat.glow} 0%, var(--mk-raised) 55%)`,
                     }}
                   >
                     {/* Category colour top strip */}
@@ -705,7 +705,7 @@ export default function BetsPage() {
                         </div>
 
                         {/* Market title */}
-                        <p className="font-bold leading-snug text-slate-100 group-hover:text-white transition-colors"
+                        <p className="font-bold leading-snug text-slate-100 group-hover:text-mk-text transition-colors"
                            style={{ fontSize: '0.95rem' }}>
                           {market?.title ?? bet.market_id}
                         </p>
@@ -784,7 +784,7 @@ export default function BetsPage() {
                       ) : (
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-xs font-semibold text-amber-300">
-                            Confirm: receive <span className="text-white">UGX {cashoutPreview.toLocaleString()}</span> now?
+                            Confirm: receive <span className="text-mk-text">UGX {cashoutPreview.toLocaleString()}</span> now?
                           </p>
                           <div className="flex gap-2 shrink-0">
                             <button
@@ -796,7 +796,7 @@ export default function BetsPage() {
                             </button>
                             <button
                               onClick={() => setExitingBet(null)}
-                              className="rounded-lg border border-mk-border px-3 py-1.5 text-xs text-slate-500 hover:text-white transition-colors"
+                              className="rounded-lg border border-mk-border px-3 py-1.5 text-xs text-slate-500 hover:text-mk-text transition-colors"
                             >
                               Cancel
                             </button>

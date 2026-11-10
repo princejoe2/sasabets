@@ -221,7 +221,7 @@ export default function ProfilePage() {
     : '?'
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-mk-surface">
 
       {/* ── Profile hero ── */}
       <div className="border-b border-[#1e1e2e] bg-gradient-to-b from-violet-950/30 to-transparent px-4 py-10">
@@ -231,7 +231,7 @@ export default function ProfilePage() {
           </div>
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-violet-500">Your account</p>
-            <h1 className="text-3xl font-black text-white mt-0.5">
+            <h1 className="text-3xl font-black text-mk-text mt-0.5">
               {name || <span className="text-slate-500">Loading…</span>}
             </h1>
             {memberSince && (
@@ -272,11 +272,11 @@ export default function ProfilePage() {
         <div className="grid gap-5 sm:grid-cols-2">
 
           {/* ── Account card ── */}
-          <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-6 space-y-5">
+          <div className="rounded-2xl border border-[#1e1e2e] bg-mk-raised p-6 space-y-5">
             <h2 className="font-bold text-slate-200">Account Details</h2>
 
             {/* Balance */}
-            <div className="rounded-xl bg-[#0a0a0f] px-4 py-5 text-center">
+            <div className="rounded-xl bg-mk-surface px-4 py-5 text-center">
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-600 mb-1">Wallet Balance</p>
               <p className="text-3xl font-black text-violet-400">
                 {balance !== null ? `UGX ${balance.toLocaleString()}` : '—'}
@@ -292,7 +292,7 @@ export default function ProfilePage() {
             {/* Name */}
             <div>
               <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Full Name</p>
-              <div className="rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3">
+              <div className="rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-3">
                 <span className="text-sm font-semibold text-slate-200">{name || '—'}</span>
               </div>
             </div>
@@ -300,7 +300,7 @@ export default function ProfilePage() {
             {/* Email */}
             <div>
               <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Email</p>
-              <div className="rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3">
+              <div className="rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-3">
                 <span className="text-sm text-slate-300">{email || '—'}</span>
               </div>
             </div>
@@ -309,7 +309,7 @@ export default function ProfilePage() {
             <div>
               <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">Mobile Money Number</p>
               {phone ? (
-                <div className="rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3">
+                <div className="rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-3">
                   <span className="text-sm text-slate-300">+{phone}</span>
                 </div>
               ) : (
@@ -319,7 +319,7 @@ export default function ProfilePage() {
                     value={phoneInput}
                     onChange={e => { setPhoneInput(e.target.value); setPhoneMsg(null) }}
                     placeholder="0712 345 678"
-                    className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors"
+                    className="w-full rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-3 text-sm text-mk-text outline-none focus:border-violet-600 transition-colors"
                   />
                   {phoneMsg && (
                     <p className={`text-xs ${phoneMsg.ok ? 'text-emerald-400' : 'text-red-400'}`}>{phoneMsg.text}</p>
@@ -338,7 +338,7 @@ export default function ProfilePage() {
           </div>
 
           {/* ── Stats card ── */}
-          <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-6 space-y-4">
+          <div className="rounded-2xl border border-[#1e1e2e] bg-mk-raised p-6 space-y-4">
             <h2 className="font-bold text-slate-200">
               {name ? `${name.split(' ')[0]}'s Stats` : 'Prediction Stats'}
             </h2>
@@ -352,7 +352,7 @@ export default function ProfilePage() {
                     { value: stats.won,    label: 'Won',         color: 'text-emerald-400' },
                     { value: stats.lost,   label: 'Lost',        color: 'text-red-400'     },
                   ].map(({ value, label, color }) => (
-                    <div key={label} className="rounded-xl bg-[#0a0a0f] p-3 text-center">
+                    <div key={label} className="rounded-xl bg-mk-surface p-3 text-center">
                       <p className={`text-2xl font-black ${color}`}>{value}</p>
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 mt-0.5">{label}</p>
                     </div>
@@ -374,7 +374,7 @@ export default function ProfilePage() {
                   </div>
                 )}
 
-                <div className="rounded-xl bg-[#0a0a0f] p-4 space-y-2">
+                <div className="rounded-xl bg-mk-surface p-4 space-y-2">
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-500">Total staked</span>
                     <span className="text-slate-300 font-semibold">UGX {stats.staked.toLocaleString()}</span>
@@ -403,7 +403,7 @@ export default function ProfilePage() {
 
             <Link
               href="/bets"
-              className="block w-full rounded-xl border border-[#1e1e2e] py-2.5 text-center text-sm font-semibold text-slate-400 hover:border-violet-700/50 hover:text-white transition-colors"
+              className="block w-full rounded-xl border border-[#1e1e2e] py-2.5 text-center text-sm font-semibold text-slate-400 hover:border-violet-700/50 hover:text-mk-text transition-colors"
             >
               View all predictions →
             </Link>
@@ -412,7 +412,7 @@ export default function ProfilePage() {
         </div>
 
         {/* ── 2FA Security ── */}
-        <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-6">
+        <div className="rounded-2xl border border-[#1e1e2e] bg-mk-raised p-6">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
               <h2 className="font-bold text-slate-200">Two-Factor Authentication</h2>
@@ -456,7 +456,7 @@ export default function ProfilePage() {
                   Confirmation code
                 </label>
                 <input
-                  className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-center text-xl font-bold tracking-widest text-slate-200 outline-none focus:border-violet-600"
+                  className="w-full rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-3 text-center text-xl font-bold tracking-widest text-slate-200 outline-none focus:border-violet-600"
                   value={setupCode}
                   onChange={e => setSetupCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000"
@@ -474,7 +474,7 @@ export default function ProfilePage() {
                 </button>
                 <button
                   onClick={() => { setShow2faSetup(false); setSetupCode(''); setTwoFaMsg(null) }}
-                  className="flex-1 rounded-xl border border-[#1e1e2e] py-2.5 text-sm text-slate-400 hover:text-white transition-colors"
+                  className="flex-1 rounded-xl border border-[#1e1e2e] py-2.5 text-sm text-slate-400 hover:text-mk-text transition-colors"
                 >
                   Cancel
                 </button>
@@ -498,7 +498,7 @@ export default function ProfilePage() {
                 Enter your current authenticator code to disable 2FA.
               </p>
               <input
-                className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-center text-xl font-bold tracking-widest text-slate-200 outline-none focus:border-red-600"
+                className="w-full rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-3 text-center text-xl font-bold tracking-widest text-slate-200 outline-none focus:border-red-600"
                 value={disableCode}
                 onChange={e => setDisableCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="000000"
@@ -515,7 +515,7 @@ export default function ProfilePage() {
                 </button>
                 <button
                   onClick={() => { setShow2faDisable(false); setDisableCode(''); setTwoFaMsg(null) }}
-                  className="flex-1 rounded-xl border border-[#1e1e2e] py-2.5 text-sm text-slate-400 hover:text-white transition-colors"
+                  className="flex-1 rounded-xl border border-[#1e1e2e] py-2.5 text-sm text-slate-400 hover:text-mk-text transition-colors"
                 >
                   Cancel
                 </button>
@@ -525,13 +525,13 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Achievement Badges ── */}
-        <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-6">
+        <div className="rounded-2xl border border-[#1e1e2e] bg-mk-raised p-6">
           <AchievementBadges />
         </div>
 
         {/* ── Push Notifications ── */}
         {pushPermission !== null && pushPermission !== 'unsupported' && (
-          <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-6">
+          <div className="rounded-2xl border border-[#1e1e2e] bg-mk-raised p-6">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
                 <span className="text-xl">🔔</span>
@@ -575,7 +575,7 @@ export default function ProfilePage() {
         )}
 
         {/* ── WhatsApp alerts ── */}
-        <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-6">
+        <div className="rounded-2xl border border-[#1e1e2e] bg-mk-raised p-6">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
               <span className="text-xl">📲</span>
@@ -625,7 +625,7 @@ export default function ProfilePage() {
             <Link
               key={href}
               href={href}
-              className="flex flex-col items-center gap-2 rounded-2xl border border-[#1e1e2e] bg-[#13131a] p-4 text-center text-xs font-semibold text-slate-400 hover:border-violet-700/40 hover:text-white transition-colors"
+              className="flex flex-col items-center gap-2 rounded-2xl border border-[#1e1e2e] bg-mk-raised p-4 text-center text-xs font-semibold text-slate-400 hover:border-violet-700/40 hover:text-mk-text transition-colors"
             >
               <span className="text-2xl">{icon}</span>
               {label}

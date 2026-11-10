@@ -171,7 +171,7 @@ export default function CreateMarketPage() {
 
   if (authed === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f]">
+      <div className="flex min-h-screen items-center justify-center bg-mk-surface">
         <p className="text-slate-500 text-sm">Loading…</p>
       </div>
     )
@@ -180,11 +180,11 @@ export default function CreateMarketPage() {
   // ── Success ──────────────────────────────────────────────
   if (step === 'success') {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-mk-surface flex items-center justify-center px-4">
         <div className="w-full max-w-sm space-y-6 text-center">
           <div className="text-7xl animate-bounce-in">{pendingApproval ? '🕐' : '🚀'}</div>
           <div>
-            <h2 className="text-3xl font-black text-white">
+            <h2 className="text-3xl font-black text-mk-text">
               {pendingApproval ? 'Market submitted!' : 'Your market is live!'}
             </h2>
             {pendingApproval ? (
@@ -212,9 +212,9 @@ export default function CreateMarketPage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-[#2a2a3e] bg-[#0d0d14] p-4 text-left space-y-3">
+          <div className="rounded-2xl border border-[#2a2a3e] bg-mk-card p-4 text-left space-y-3">
             <p className="text-sm font-semibold text-slate-200 leading-snug">{title}</p>
-            <div className="flex items-center gap-2 rounded-xl bg-[#111118] border border-[#2a2a3e] px-3 py-2.5">
+            <div className="flex items-center gap-2 rounded-xl bg-mk-card border border-[#2a2a3e] px-3 py-2.5">
               <span className="flex-1 truncate text-xs text-slate-400 font-mono">
                 {accessToken
                   ? `sabula256.com/markets/${marketId}?t=${accessToken}`
@@ -256,7 +256,7 @@ export default function CreateMarketPage() {
                   Share on WhatsApp
                 </a>
                 <Link href={accessToken ? `/markets/${marketId}?t=${accessToken}` : `/markets/${marketId}`}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#2a2a3e] bg-[#0d0d14] py-3.5 text-sm font-bold text-slate-300 transition-colors hover:border-violet-600 hover:text-white">
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#2a2a3e] bg-mk-card py-3.5 text-sm font-bold text-slate-300 transition-colors hover:border-violet-600 hover:text-mk-text">
                   View my market →
                 </Link>
               </>
@@ -277,17 +277,17 @@ export default function CreateMarketPage() {
     const labelA = optionA.trim() || 'Side A'
     const labelB = optionB.trim() || 'Side B'
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-mk-surface flex items-center justify-center px-4">
         <div className="w-full max-w-sm space-y-5">
           <div className="text-center">
             <p className="text-xs font-black uppercase tracking-widest text-violet-500">Almost there</p>
-            <h2 className="mt-1 text-2xl font-black text-white">Back your opening side</h2>
+            <h2 className="mt-1 text-2xl font-black text-mk-text">Back your opening side</h2>
             <p className="mt-2 text-sm text-slate-400">
               Place UGX 5,000 as the first bet to launch your market. You can win it back if your side wins.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-4">
+          <div className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-4">
             <p className="text-xs text-slate-500 mb-3 text-center">"{title}"</p>
             <div className="grid grid-cols-2 gap-3">
               <button onClick={() => launch('a')} disabled={submitting}
@@ -323,15 +323,15 @@ export default function CreateMarketPage() {
 
   // ── Main form ─────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-mk-surface">
       {/* Header */}
-      <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-8">
+      <div className="border-b border-[#1e1e2e] bg-mk-card px-4 py-8">
         <div className="mx-auto max-w-lg">
           <Link href="/markets" className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-300 transition-colors">
             ← Markets
           </Link>
           <p className="mb-1 text-xs font-black uppercase tracking-widest text-violet-500">Community</p>
-          <h1 className="text-3xl font-black text-white">Create a Market</h1>
+          <h1 className="text-3xl font-black text-mk-text">Create a Market</h1>
           <p className="mt-2 text-slate-500 text-sm">Ask a question, launch with UGX 5,000. Your market goes live after a quick admin review.</p>
 
           {/* 2% creator earnings callout */}
@@ -382,7 +382,7 @@ export default function CreateMarketPage() {
                 className={`flex flex-col items-center gap-1.5 rounded-xl border px-3 py-3 text-center transition-all ${
                   activeTemplate === t.id
                     ? 'border-violet-600 bg-violet-900/30 text-violet-300'
-                    : 'border-[#1e1e2e] bg-[#0d0d14] text-slate-500 hover:border-[#2a2a3e] hover:text-slate-300'
+                    : 'border-[#1e1e2e] bg-mk-card text-slate-500 hover:border-[#2a2a3e] hover:text-slate-300'
                 }`}
               >
                 <span className="text-xl">{t.icon}</span>
@@ -392,7 +392,7 @@ export default function CreateMarketPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-6 space-y-5">
+        <div className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-6 space-y-5">
 
           {/* Title */}
           <div>
@@ -403,7 +403,7 @@ export default function CreateMarketPage() {
               value={title} onChange={e => setTitle(e.target.value)}
               placeholder={TEMPLATES.find(t => t.id === activeTemplate)?.titlePlaceholder ?? 'e.g. Will Uganda Cranes beat Kenya Harambee Stars in August?'}
               maxLength={200}
-              className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors placeholder:text-slate-700"
+              className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-mk-text outline-none focus:border-violet-600 transition-colors placeholder:text-slate-700"
             />
             <p className="mt-1 text-right text-[10px] text-slate-700">{title.length}/200</p>
           </div>
@@ -416,13 +416,13 @@ export default function CreateMarketPage() {
                 <p className="mb-1 text-[10px] font-bold uppercase text-violet-500 tracking-wider">Side A</p>
                 <input value={optionA} onChange={e => setOptionA(e.target.value)}
                   placeholder="Yes" maxLength={80}
-                  className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-violet-200 outline-none focus:border-violet-600 transition-colors" />
+                  className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-violet-200 outline-none focus:border-violet-600 transition-colors" />
               </div>
               <div>
                 <p className="mb-1 text-[10px] font-bold uppercase text-amber-500 tracking-wider">Side B</p>
                 <input value={optionB} onChange={e => setOptionB(e.target.value)}
                   placeholder="No" maxLength={80}
-                  className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-amber-200 outline-none focus:border-amber-700 transition-colors" />
+                  className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-amber-200 outline-none focus:border-amber-700 transition-colors" />
               </div>
             </div>
           </div>
@@ -452,7 +452,7 @@ export default function CreateMarketPage() {
             <textarea value={description} onChange={e => setDescription(e.target.value)}
               placeholder="Add context or a news link…"
               rows={2} maxLength={500}
-              className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors resize-none placeholder:text-slate-700" />
+              className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-mk-text outline-none focus:border-violet-600 transition-colors resize-none placeholder:text-slate-700" />
           </div>
 
           {/* Resolution criteria */}
@@ -463,7 +463,7 @@ export default function CreateMarketPage() {
             <textarea value={resolutionCriteria} onChange={e => setResolutionCriteria(e.target.value)}
               placeholder="e.g. Resolves YES if the official FUFA result shows Vipers winning. Source: fufa.co.ug"
               rows={2} maxLength={500}
-              className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors resize-none placeholder:text-slate-700" />
+              className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-mk-text outline-none focus:border-violet-600 transition-colors resize-none placeholder:text-slate-700" />
             <p className="mt-1 text-xs text-slate-700">A clear rule and source reduces disputes and helps people trust your market.</p>
           </div>
 
@@ -474,7 +474,7 @@ export default function CreateMarketPage() {
             </label>
             <input type="date" value={closesAt} onChange={e => setClosesAt(e.target.value)}
               min={new Date().toISOString().split('T')[0]}
-              className="rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-slate-400 outline-none focus:border-violet-600 transition-colors [color-scheme:dark]" />
+              className="rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-slate-400 outline-none focus:border-violet-600 transition-colors [color-scheme:dark]" />
             <p className="mt-1 text-xs text-slate-700">Leave blank for an open-ended market (admin settles).</p>
           </div>
 
@@ -485,7 +485,7 @@ export default function CreateMarketPage() {
             className={`w-full flex items-center justify-between rounded-xl border px-4 py-3.5 transition-all ${
               isPrivate
                 ? 'border-amber-700/60 bg-amber-900/15'
-                : 'border-[#1e1e2e] bg-[#111118] hover:border-[#2a2a3e]'
+                : 'border-[#1e1e2e] bg-mk-card hover:border-[#2a2a3e]'
             }`}
           >
             <div className="flex items-center gap-3">
@@ -512,7 +512,7 @@ export default function CreateMarketPage() {
           <div className="flex items-start gap-3">
             <span className="text-2xl mt-0.5">💡</span>
             <div>
-              <p className="text-sm font-black text-white">Launch with UGX 5,000</p>
+              <p className="text-sm font-black text-mk-text">Launch with UGX 5,000</p>
               <p className="mt-0.5 text-xs text-slate-400 leading-relaxed">
                 You place UGX 5,000 as the first bet (your choice of side). Your market goes live after a quick admin review — usually within a few hours.
               </p>

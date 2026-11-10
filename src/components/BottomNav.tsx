@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
+import ThemeToggle from '@/components/ThemeToggle'
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -60,7 +61,7 @@ function NavTab({
 }) {
   const cls = [
     'relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 transition-all duration-150 active:scale-90',
-    active ? 'text-white' : 'text-mk-muted',
+    active ? 'text-mk-text' : 'text-mk-muted',
   ].join(' ')
 
   const inner = (
@@ -79,7 +80,7 @@ function NavTab({
       </span>
       <span className={[
         'relative z-10 max-w-full truncate px-1 text-[10px] font-bold transition-colors duration-150',
-        labelClass ?? (active ? 'text-white' : 'opacity-60'),
+        labelClass ?? (active ? 'text-mk-text' : 'opacity-60'),
       ].join(' ')}>
         {label}
       </span>
@@ -206,7 +207,7 @@ export default function BottomNav() {
       {/* ── Bottom bar ─────────────────────────────────────────────────────── */}
       <nav
         className="fixed bottom-0 left-0 right-0 z-bottom-nav sm:hidden border-t border-mk-border backdrop-blur-xl"
-        style={{ background: 'rgba(0,0,0,0.96)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        style={{ background: 'rgb(var(--mk-bg-rgb) / 0.96)', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex h-14 items-stretch">
           <NavTab href="/" label="Home" active={isActive('/')}>
@@ -271,7 +272,7 @@ export default function BottomNav() {
                     className={[
                       'flex items-center gap-4 px-5 py-4 text-sm font-semibold transition-colors',
                       pathname.startsWith(href)
-                        ? 'text-white bg-mk-raised'
+                        ? 'text-mk-text bg-mk-raised'
                         : 'text-mk-secondary hover:bg-mk-raised hover:text-mk-text',
                     ].join(' ')}
                   >
@@ -282,6 +283,7 @@ export default function BottomNav() {
                     )}
                   </Link>
                 ))}
+                <ThemeToggle withLabel />
               </div>
             </motion.div>
           </>

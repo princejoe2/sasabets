@@ -165,7 +165,7 @@ export default function FAQPage() {
       <div className="border-b border-mk-border bg-mk-card px-4 pt-10 pb-8">
         <div className="mx-auto max-w-3xl">
           <p className="mb-2 text-xs font-bold uppercase tracking-widest text-mk-muted">Help Centre</p>
-          <h1 className="text-4xl font-black tracking-tight text-white">
+          <h1 className="text-4xl font-black tracking-tight text-mk-text">
             Frequently Asked <span className="text-mk-accent">Questions</span>
           </h1>
           <p className="mt-3 text-mk-muted">
@@ -186,7 +186,7 @@ export default function FAQPage() {
                   key={item.q}
                   className="rounded-2xl border border-mk-border bg-mk-card p-5"
                 >
-                  <h3 className="mb-2 font-bold text-white">{item.q}</h3>
+                  <h3 className="mb-2 font-bold text-mk-text">{item.q}</h3>
                   <p className="text-sm leading-relaxed text-mk-muted">{item.a}</p>
                 </div>
               ))}
@@ -196,7 +196,7 @@ export default function FAQPage() {
 
         {/* CTA */}
         <div className="rounded-2xl border border-mk-border bg-mk-raised p-6 text-center">
-          <p className="mb-1 font-bold text-white">Still have questions?</p>
+          <p className="mb-1 font-bold text-mk-text">Still have questions?</p>
           <p className="mb-5 text-sm text-mk-muted">Our support team reads every message.</p>
           <div className="flex flex-wrap justify-center gap-3">
             <Link

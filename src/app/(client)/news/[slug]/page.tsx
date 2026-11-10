@@ -100,7 +100,7 @@ export default async function NewsPostPage({ params }: { params: Promise<{ slug:
             <span className="text-xs text-slate-600">By {post.author ?? 'Sabula 256'}</span>
           </div>
 
-          <h1 className="text-3xl font-black leading-tight text-white sm:text-4xl">{post.title}</h1>
+          <h1 className="text-3xl font-black leading-tight text-mk-text sm:text-4xl">{post.title}</h1>
           {post.excerpt && (
             <p className="mt-4 text-lg text-slate-400 leading-relaxed">{post.excerpt}</p>
           )}
@@ -108,12 +108,12 @@ export default async function NewsPostPage({ params }: { params: Promise<{ slug:
           <hr className="my-8 border-[#1e1e2e]" />
 
           <div
-            className="space-y-4 [&_h1]:text-2xl [&_h1]:font-black [&_h1]:text-white [&_h1]:mt-6 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-white [&_h2]:mt-6 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-slate-200 [&_h3]:mt-4 [&_p]:text-slate-300 [&_p]:leading-relaxed [&_strong]:text-white [&_em]:text-slate-300 [&_a]:text-violet-400 [&_a:hover]:text-violet-300 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:text-slate-300 [&_li]:leading-relaxed [&_blockquote]:border-l-2 [&_blockquote]:border-violet-600 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-slate-400"
+            className="space-y-4 [&_h1]:text-2xl [&_h1]:font-black [&_h1]:text-mk-text [&_h1]:mt-6 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-mk-text [&_h2]:mt-6 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-slate-200 [&_h3]:mt-4 [&_p]:text-slate-300 [&_p]:leading-relaxed [&_strong]:text-mk-text [&_em]:text-slate-300 [&_a]:text-violet-400 [&_a:hover]:text-violet-300 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:text-slate-300 [&_li]:leading-relaxed [&_blockquote]:border-l-2 [&_blockquote]:border-violet-600 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-slate-400"
             dangerouslySetInnerHTML={{ __html: htmlContent }}
           />
 
           <div className="mt-12 rounded-2xl border border-violet-800/30 bg-violet-900/10 p-6 text-center">
-            <p className="font-bold text-white">Want to predict what happens next?</p>
+            <p className="font-bold text-mk-text">Want to predict what happens next?</p>
             <p className="mt-1 text-sm text-slate-400">Join the market, back your side, and win on MTN or Airtel Mobile Money.</p>
             <Link
               href="/markets"

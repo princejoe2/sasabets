@@ -63,17 +63,17 @@ export default function SupportPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-3xl font-black text-white">Support</h1>
+      <h1 className="text-3xl font-black text-mk-text">Support</h1>
       <p className="mt-1 text-slate-500">Have an issue or a question? Send us a message.</p>
 
       {/* Form */}
-      <form onSubmit={submit} className="mt-6 space-y-4 rounded-2xl border border-[#1a1a28] bg-[#0d0d18] p-5">
+      <form onSubmit={submit} className="mt-6 space-y-4 rounded-2xl border border-mk-border bg-mk-card p-5">
         <div>
           <label className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Subject</label>
           <input
             value={subject} onChange={e => setSubject(e.target.value)}
             placeholder="What is this about?"
-            className="mt-1 w-full rounded-xl border border-[#2a2a3e] bg-[#0a0a12] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-600 transition-colors"
+            className="mt-1 w-full rounded-xl border border-[#2a2a3e] bg-mk-surface px-3 py-2.5 text-sm text-mk-text outline-none focus:border-violet-600 transition-colors"
           />
         </div>
         <div>
@@ -81,7 +81,7 @@ export default function SupportPage() {
           <textarea
             value={message} onChange={e => setMessage(e.target.value)}
             rows={5} placeholder="Describe your issue…"
-            className="mt-1 w-full rounded-xl border border-[#2a2a3e] bg-[#0a0a12] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-600 transition-colors resize-none"
+            className="mt-1 w-full rounded-xl border border-[#2a2a3e] bg-mk-surface px-3 py-2.5 text-sm text-mk-text outline-none focus:border-violet-600 transition-colors resize-none"
           />
         </div>
         {msg && (
@@ -101,13 +101,13 @@ export default function SupportPage() {
       <div className="mt-8">
         <h2 className="mb-3 text-xs font-black uppercase tracking-widest text-slate-600">Your Messages</h2>
         {complaints.length === 0 ? (
-          <div className="rounded-2xl border border-[#1a1a28] bg-[#0d0d18] py-10 text-center text-sm text-slate-600">
+          <div className="rounded-2xl border border-mk-border bg-mk-card py-10 text-center text-sm text-slate-600">
             You have not sent any messages yet.
           </div>
         ) : (
           <div className="space-y-3">
             {complaints.map(c => (
-              <div key={c.id} className="rounded-2xl border border-[#1a1a28] bg-[#0d0d18] p-5">
+              <div key={c.id} className="rounded-2xl border border-mk-border bg-mk-card p-5">
                 <div className="flex items-start justify-between gap-3">
                   <p className="font-bold text-slate-200">{c.subject}</p>
                   <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase ${STATUS_STYLE[c.status] ?? ''}`}>

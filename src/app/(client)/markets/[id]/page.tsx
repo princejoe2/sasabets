@@ -80,9 +80,9 @@ export default async function MarketPage({
     const urlToken = sp.t ?? ''
     if (!verifyAccessToken(meta, urlToken)) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-black px-4 text-center">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-mk-bg px-4 text-center">
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-amber-800/40 bg-amber-900/20 text-4xl">🔒</div>
-          <h1 className="text-2xl font-black text-white">Private Market</h1>
+          <h1 className="text-2xl font-black text-mk-text">Private Market</h1>
           <p className="mt-3 max-w-xs text-sm text-mk-muted leading-relaxed">
             This market is invite-only. You need the creator&apos;s secret link.
           </p>
@@ -93,9 +93,9 @@ export default async function MarketPage({
 
   if (market.status === 'pending_approval' && (!user || market.created_by !== user.id)) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-black px-4 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-mk-bg px-4 text-center">
         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-amber-800/40 bg-amber-900/20 text-4xl">🕐</div>
-        <h1 className="text-2xl font-black text-white">Market Under Review</h1>
+        <h1 className="text-2xl font-black text-mk-text">Market Under Review</h1>
         <p className="mt-3 text-sm text-mk-muted">Awaiting admin approval.</p>
       </div>
     )
@@ -213,7 +213,7 @@ export default async function MarketPage({
         accessToken={sp.t ?? null}
         creatorInfo={creatorInfo}
       />
-      <div className="mx-auto max-w-7xl px-4 pb-2 flex justify-end bg-black">
+      <div className="mx-auto max-w-7xl px-4 pb-2 flex justify-end bg-mk-bg">
         <FollowButton marketId={id} initialFollowing={isFollowing} isLoggedIn={!!user} />
       </div>
     </>

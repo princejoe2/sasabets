@@ -67,7 +67,7 @@ export default function AchievementBadges() {
               className={`group relative flex flex-col items-center gap-1 rounded-2xl border p-3 transition-all cursor-default ${
                 newlyEarned.includes(a.id)
                   ? 'border-amber-700/50 bg-amber-950/30 ring-2 ring-amber-400/40'
-                  : 'border-[#1e1e2e] bg-[#0a0a0f] hover:border-violet-700/50 hover:bg-violet-950/20'
+                  : 'border-[#1e1e2e] bg-mk-surface hover:border-violet-700/50 hover:bg-violet-950/20'
               }`}
             >
               <span className="text-2xl">{a.icon}</span>

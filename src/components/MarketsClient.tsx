@@ -253,7 +253,7 @@ function ForecastCard({ market }: { market: Mkt }) {
               <span style={{ fontSize: 8, fontWeight: 900, letterSpacing: 1, color: 'var(--fc-text-secondary)' }}>VS</span>
               <div style={{
                 width: 32, height: 32, borderRadius: 7, overflow: 'hidden',
-                background: team2Img ? undefined : '#252930',
+                background: team2Img ? undefined : 'var(--mk-raised)',
                 backgroundImage: team2Img ? `url(${team2Img})` : undefined,
                 backgroundSize: 'cover', backgroundPosition: 'center',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -267,7 +267,7 @@ function ForecastCard({ market }: { market: Mkt }) {
               width: 34, height: 34, borderRadius: 8,
               background: avatarBg,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.7)',
+              fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.78)',
               flexShrink: 0, letterSpacing: '-0.02em',
             }}>
               {initials}
@@ -531,7 +531,7 @@ export default function MarketsClient({
                 {count > 0 && (
                   <span style={{
                     fontSize: '10px', fontWeight: 700,
-                    background: active ? 'rgba(255,255,255,0.12)' : 'rgba(128,128,128,0.1)',
+                    background: active ? 'rgb(var(--mk-text-rgb) / 0.12)' : 'rgba(128,128,128,0.1)',
                     color: active ? 'var(--fc-text-primary)' : 'var(--fc-text-secondary)',
                     borderRadius: 4, padding: '1px 5px',
                   }}>
@@ -559,7 +559,7 @@ export default function MarketsClient({
               Watchlist
               <span style={{
                 fontSize: '10px', fontWeight: 700,
-                background: showWatchlist ? 'rgba(255,255,255,0.12)' : 'rgba(128,128,128,0.1)',
+                background: showWatchlist ? 'rgb(var(--mk-text-rgb) / 0.12)' : 'rgba(128,128,128,0.1)',
                 color: showWatchlist ? 'var(--fc-text-primary)' : 'var(--fc-text-secondary)',
                 borderRadius: 4, padding: '1px 5px',
               }}>{wlCount}</span>
@@ -708,7 +708,7 @@ export default function MarketsClient({
         flexWrap: 'wrap',
       }}>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 800, color: '#c4b5fd', marginBottom: 3 }}>
+          <div className="text-violet-300" style={{ fontSize: 13, fontWeight: 800, marginBottom: 3 }}>
             Got a prediction? Make it a market.
           </div>
           <div style={{ fontSize: 11.5, color: 'var(--fc-text-secondary)', lineHeight: 1.5 }}>

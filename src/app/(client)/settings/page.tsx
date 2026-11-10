@@ -98,7 +98,7 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-mk-surface">
       {/* Header */}
       <div className="border-b border-[#1e1e2e] bg-gradient-to-b from-violet-950/30 to-transparent px-4 py-10">
         <div className="mx-auto max-w-2xl flex items-center gap-5">
@@ -107,7 +107,7 @@ export default async function SettingsPage() {
           </div>
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-violet-500">Settings</p>
-            <h1 className="text-2xl font-black text-white mt-0.5">
+            <h1 className="text-2xl font-black text-mk-text mt-0.5">
               {fullName || user?.email || 'Account'}
             </h1>
           </div>
@@ -121,14 +121,14 @@ export default async function SettingsPage() {
             <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-slate-600 px-1">
               {section.title}
             </p>
-            <div className="overflow-hidden rounded-2xl border border-[#1e1e2e] bg-[#13131a]">
+            <div className="overflow-hidden rounded-2xl border border-[#1e1e2e] bg-mk-raised">
               {section.rows.map((row, i) => {
                 const badge = badges[row.href]
                 return (
                   <Link
                     key={row.label}
                     href={row.href}
-                    className={`flex items-center gap-4 px-5 py-4 transition-colors hover:bg-white/[0.03] ${
+                    className={`flex items-center gap-4 px-5 py-4 transition-colors hover:bg-mk-text/[0.03] ${
                       i < section.rows.length - 1 ? 'border-b border-[#1e1e2e]' : ''
                     }`}
                   >

@@ -24,11 +24,11 @@ export default async function NewsPage() {
   const all = posts ?? []
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
-      <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-10">
+    <div className="min-h-screen bg-mk-surface">
+      <div className="border-b border-[#1e1e2e] bg-mk-card px-4 py-10">
         <div className="mx-auto max-w-4xl">
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-violet-400">Sabula 256</p>
-          <h1 className="text-4xl font-black text-white">News & Insights</h1>
+          <h1 className="text-4xl font-black text-mk-text">News & Insights</h1>
           <p className="mt-2 text-slate-500">Uganda sports, politics, and economy — the events behind the markets.</p>
         </div>
       </div>
@@ -44,7 +44,7 @@ export default async function NewsPage() {
                 <Link
                   key={post.slug}
                   href={`/news/${post.slug}`}
-                  className="group overflow-hidden rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] transition-colors hover:border-violet-600/40"
+                  className="group overflow-hidden rounded-2xl border border-[#1e1e2e] bg-mk-card transition-colors hover:border-violet-600/40"
                 >
                   {post.cover_image_url && (
                     // eslint-disable-next-line @next/next/no-img-element

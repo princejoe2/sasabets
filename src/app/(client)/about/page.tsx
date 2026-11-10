@@ -78,7 +78,7 @@ export default async function AboutPage() {
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-violet-700/40 bg-violet-900/25 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-violet-400">
             Uganda&apos;s Prediction Market
           </div>
-          <h1 className="mb-5 text-5xl font-black tracking-tight text-white lg:text-6xl">
+          <h1 className="mb-5 text-5xl font-black tracking-tight text-mk-text lg:text-6xl">
             Predict. <span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">Get Paid.</span>
           </h1>
           <p className="mx-auto max-w-2xl text-lg leading-relaxed text-slate-400">
@@ -89,11 +89,11 @@ export default async function AboutPage() {
               Browse Markets →
             </Link>
             {user ? (
-              <Link href="/create" className="rounded-xl border border-mk-border bg-mk-card px-7 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-white">
+              <Link href="/create" className="rounded-xl border border-mk-border bg-mk-card px-7 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-mk-text">
                 Create a Market
               </Link>
             ) : (
-              <Link href="/auth" className="rounded-xl border border-mk-border bg-mk-card px-7 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-white">
+              <Link href="/auth" className="rounded-xl border border-mk-border bg-mk-card px-7 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-mk-text">
                 Create Account
               </Link>
             )}
@@ -105,7 +105,7 @@ export default async function AboutPage() {
       <section className="border-b border-mk-border bg-mk-card">
         <div className="mx-auto max-w-4xl px-4 py-20">
           <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-mk-muted">Our story</p>
-          <h2 className="mb-10 text-center text-4xl font-black text-white">
+          <h2 className="mb-10 text-center text-4xl font-black text-mk-text">
             Why we built <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">Sabula 256</span>
           </h2>
           <div className="space-y-5 text-base leading-relaxed text-mk-muted">
@@ -129,7 +129,7 @@ export default async function AboutPage() {
       <section className="border-b border-mk-border bg-mk-bg">
         <div className="mx-auto max-w-5xl px-4 py-20">
           <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-mk-muted">The model</p>
-          <h2 className="mb-12 text-center text-4xl font-black text-white">
+          <h2 className="mb-12 text-center text-4xl font-black text-mk-text">
             How the <span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">parimutuel</span> model works
           </h2>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -139,8 +139,8 @@ export default async function AboutPage() {
                 className="rounded-2xl border border-mk-border bg-mk-card p-6"
                 style={{ borderColor: `${color}22` }}
               >
-                <p className="mb-3 font-mono text-4xl font-black" style={{ color, opacity: 0.4 }}>{step}</p>
-                <h3 className="mb-2 font-black text-white">{title}</h3>
+                <p className="mk-ink mb-3 font-mono text-4xl font-black" style={{ color, opacity: 0.4 }}>{step}</p>
+                <h3 className="mb-2 font-black text-mk-text">{title}</h3>
                 <p className="text-sm leading-relaxed text-mk-muted">{body}</p>
               </div>
             ))}
@@ -160,7 +160,7 @@ export default async function AboutPage() {
       <section className="border-b border-mk-border bg-mk-card">
         <div className="mx-auto max-w-5xl px-4 py-20">
           <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-mk-muted">What we stand for</p>
-          <h2 className="mb-12 text-center text-4xl font-black text-white">
+          <h2 className="mb-12 text-center text-4xl font-black text-mk-text">
             Built on <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">principles</span>
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -177,7 +177,7 @@ export default async function AboutPage() {
                   {icon}
                 </div>
                 <div>
-                  <h3 className="mb-1.5 font-black" style={{ color }}>{title}</h3>
+                  <h3 className="mk-ink mb-1.5 font-black" style={{ color }}>{title}</h3>
                   <p className="text-sm leading-relaxed text-mk-muted">{body}</p>
                 </div>
               </div>
@@ -191,13 +191,13 @@ export default async function AboutPage() {
         <div className="mx-auto max-w-4xl px-4 py-20">
           <div className="rounded-2xl border border-mk-border bg-mk-card p-8 text-center">
             <p className="mb-3 text-3xl">🛡️</p>
-            <h2 className="mb-3 text-2xl font-black text-white">Responsible Gambling</h2>
+            <h2 className="mb-3 text-2xl font-black text-mk-text">Responsible Gambling</h2>
             <p className="mx-auto mb-6 max-w-xl text-sm leading-relaxed text-mk-muted">
               Prediction markets are exciting, but they carry real financial risk. We enforce responsible gambling tools including deposit limits, self-exclusion, and cooling-off periods. Sabula 256 is for users aged <strong className="text-mk-text">18 and above only</strong>.
             </p>
             <Link
               href="/responsible-gambling"
-              className="inline-block rounded-xl border border-mk-border bg-mk-raised px-6 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-white"
+              className="inline-block rounded-xl border border-mk-border bg-mk-raised px-6 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-mk-text"
             >
               View Safe Play Tools →
             </Link>
@@ -209,7 +209,7 @@ export default async function AboutPage() {
       <section className="bg-mk-card">
         <div className="mx-auto max-w-4xl px-4 py-20 text-center">
           <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-mk-muted">Get in touch</p>
-          <h2 className="mb-4 text-4xl font-black text-white">Questions or feedback?</h2>
+          <h2 className="mb-4 text-4xl font-black text-mk-text">Questions or feedback?</h2>
           <p className="mb-8 text-mk-muted">
             We read every message. Reach out if you have questions, encounter a problem, or want to propose something.
           </p>
@@ -222,7 +222,7 @@ export default async function AboutPage() {
             </Link>
             <Link
               href="/faq"
-              className="rounded-xl border border-mk-border bg-mk-raised px-7 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-white"
+              className="rounded-xl border border-mk-border bg-mk-raised px-7 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-mk-text"
             >
               Read the FAQ
             </Link>

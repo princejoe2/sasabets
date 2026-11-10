@@ -88,25 +88,25 @@ export function AreaChart({
           )}
           <XAxis
             dataKey={index}
-            tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.35)' }}
+            tick={{ fontSize: 10, fill: 'rgb(var(--mk-text-rgb) / 0.35)' }}
             axisLine={false}
             tickLine={false}
             interval="preserveStartEnd"
           />
           <YAxis
             width={yAxisWidth}
-            tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.35)' }}
+            tick={{ fontSize: 10, fill: 'rgb(var(--mk-text-rgb) / 0.35)' }}
             axisLine={false}
             tickLine={false}
             tickFormatter={valueFormatter ? (v) => (typeof v === 'number' && isFinite(v) ? valueFormatter(v) : '') : undefined}
           />
           <Tooltip
             content={<CustomTooltip valueFormatter={valueFormatter} categories={categories} />}
-            cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
+            cursor={{ stroke: 'rgb(var(--mk-text-rgb) / 0.1)', strokeWidth: 1 }}
           />
           {showLegend && (
             <Legend
-              wrapperStyle={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', paddingTop: 8 }}
+              wrapperStyle={{ fontSize: 11, color: 'rgb(var(--mk-text-rgb) / 0.5)', paddingTop: 8 }}
               iconType="circle"
               iconSize={8}
             />

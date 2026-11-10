@@ -52,7 +52,7 @@ export default function StreakTracker() {
           <div className="flex items-center gap-3 rounded-2xl border border-orange-200 bg-white px-5 py-3 shadow-xl shadow-orange-100/50 dark:border-orange-800/40 dark:bg-slate-900 dark:shadow-black/30">
             <span className="text-2xl">🔥</span>
             <div>
-              <p className="text-sm font-black text-slate-900 dark:text-white">{toast.msg}</p>
+              <p className="text-sm font-black text-slate-900 dark:text-mk-text">{toast.msg}</p>
               {toast.bonus > 0 && (
                 <p className="text-xs font-semibold text-emerald-600">
                   +UGX {toast.bonus.toLocaleString()} added to your wallet

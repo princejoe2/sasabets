@@ -57,13 +57,13 @@ export default function CreateProposalPage() {
   if (authed === null) return <div className="flex min-h-screen items-center justify-center"><p className="text-slate-500">Loading…</p></div>
 
   if (done) return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-mk-surface px-4">
       <div className="max-w-sm text-center space-y-4">
         <div className="text-6xl">💡</div>
-        <h2 className="text-2xl font-black text-white">Proposal submitted!</h2>
+        <h2 className="text-2xl font-black text-mk-text">Proposal submitted!</h2>
         <p className="text-slate-400">Thanks for the idea. Our team will review it and if approved, it becomes a live market. You'll be notified.</p>
         <div className="flex gap-3 pt-2">
-          <Link href="/proposals" className="flex-1 rounded-xl border border-[#2a2a3e] py-3 text-sm font-semibold text-slate-300 hover:text-white text-center transition-colors">
+          <Link href="/proposals" className="flex-1 rounded-xl border border-[#2a2a3e] py-3 text-sm font-semibold text-slate-300 hover:text-mk-text text-center transition-colors">
             View proposals
           </Link>
           <button onClick={() => { setDone(false); setTitle(''); setDescription(''); setOptionA(''); setOptionB(''); setCloses(''); setCategory('') }}
@@ -76,14 +76,14 @@ export default function CreateProposalPage() {
   )
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
-      <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-10">
+    <div className="min-h-screen bg-mk-surface">
+      <div className="border-b border-[#1e1e2e] bg-mk-card px-4 py-10">
         <div className="mx-auto max-w-xl">
           <Link href="/proposals" className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-300 transition-colors">
             ← Back to proposals
           </Link>
           <p className="mb-1 text-xs font-black uppercase tracking-widest text-violet-500">Community</p>
-          <h1 className="text-3xl font-black text-white">Submit a Proposal</h1>
+          <h1 className="text-3xl font-black text-mk-text">Submit a Proposal</h1>
           <p className="mt-2 text-slate-500">Suggest a question the Sabula 256 community should predict on.</p>
         </div>
       </div>
@@ -93,7 +93,7 @@ export default function CreateProposalPage() {
           <div className="rounded-xl border border-red-800/40 bg-red-900/20 px-4 py-3 text-sm text-red-400">{error}</div>
         )}
 
-        <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-6 space-y-5">
+        <div className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-6 space-y-5">
 
           {/* Title */}
           <div>
@@ -101,7 +101,7 @@ export default function CreateProposalPage() {
             <input value={title} onChange={e => setTitle(e.target.value)}
               placeholder="e.g. Will Uganda Cranes qualify for AFCON 2027?"
               maxLength={200}
-              className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors" />
+              className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-mk-text outline-none focus:border-violet-600 transition-colors" />
             <p className="mt-1 text-right text-[10px] text-slate-700">{title.length}/200</p>
           </div>
 
@@ -111,7 +111,7 @@ export default function CreateProposalPage() {
             <textarea value={description} onChange={e => setDescription(e.target.value)}
               placeholder="Add context, a news link, or why this matters…"
               rows={3} maxLength={500}
-              className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors resize-none" />
+              className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-mk-text outline-none focus:border-violet-600 transition-colors resize-none" />
           </div>
 
           {/* Category */}
@@ -138,14 +138,14 @@ export default function CreateProposalPage() {
                 <input value={optionA} onChange={e => setOptionA(e.target.value)}
                   placeholder="e.g. Yes"
                   maxLength={80}
-                  className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-violet-200 outline-none focus:border-violet-600 transition-colors" />
+                  className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-violet-200 outline-none focus:border-violet-600 transition-colors" />
               </div>
               <div>
                 <p className="mb-1 text-[10px] font-bold uppercase text-amber-500 tracking-wider">Side B</p>
                 <input value={optionB} onChange={e => setOptionB(e.target.value)}
                   placeholder="e.g. No"
                   maxLength={80}
-                  className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-amber-200 outline-none focus:border-amber-700 transition-colors" />
+                  className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-amber-200 outline-none focus:border-amber-700 transition-colors" />
               </div>
             </div>
           </div>
@@ -154,7 +154,7 @@ export default function CreateProposalPage() {
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600">Suggested closing date (optional)</label>
             <input type="date" value={closes} onChange={e => setCloses(e.target.value)}
-              className="rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-slate-400 outline-none focus:border-violet-600 transition-colors" />
+              className="rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-slate-400 outline-none focus:border-violet-600 transition-colors" />
             <p className="mt-1 text-xs text-slate-700">When should predictions stop? Admin decides the final date.</p>
           </div>
 

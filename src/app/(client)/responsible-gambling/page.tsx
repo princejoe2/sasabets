@@ -94,11 +94,11 @@ export default function ResponsibleGamblingPage() {
   const isExcluded = excludedUntil && new Date(excludedUntil) > new Date()
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
-      <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-10">
+    <div className="min-h-screen bg-mk-surface">
+      <div className="border-b border-[#1e1e2e] bg-mk-card px-4 py-10">
         <div className="mx-auto max-w-2xl">
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-emerald-500">Safety tools</p>
-          <h1 className="text-3xl font-black text-white">Responsible Gambling</h1>
+          <h1 className="text-3xl font-black text-mk-text">Responsible Gambling</h1>
           <p className="mt-2 text-slate-500">Set limits to keep your play in check. These tools are here to help you stay in control.</p>
         </div>
       </div>
@@ -123,7 +123,7 @@ export default function ResponsibleGamblingPage() {
         )}
 
         {/* Daily deposit limit */}
-        <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-6 space-y-4">
+        <div className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-6 space-y-4">
           <div>
             <h2 className="font-bold text-slate-200">Daily Deposit Limit</h2>
             <p className="mt-1 text-sm text-slate-500">
@@ -158,7 +158,7 @@ export default function ResponsibleGamblingPage() {
 
         {/* Self-exclusion */}
         {!isExcluded && (
-          <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-6 space-y-4">
+          <div className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-6 space-y-4">
             <div>
               <h2 className="font-bold text-slate-200">Self-Exclusion</h2>
               <p className="mt-1 text-sm text-slate-500">
@@ -206,7 +206,7 @@ export default function ResponsibleGamblingPage() {
                   </button>
                   <button
                     onClick={() => { setConfirmExclude(false); setExcludeDays(null) }}
-                    className="flex-1 rounded-xl border border-[#2a2a3e] py-2.5 text-sm text-slate-400 hover:text-white transition-colors"
+                    className="flex-1 rounded-xl border border-[#2a2a3e] py-2.5 text-sm text-slate-400 hover:text-mk-text transition-colors"
                   >
                     Cancel
                   </button>
@@ -217,7 +217,7 @@ export default function ResponsibleGamblingPage() {
         )}
 
         {/* Help resources */}
-        <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-5 text-sm text-slate-500 space-y-1">
+        <div className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-5 text-sm text-slate-500 space-y-1">
           <p className="font-bold text-slate-400">Need help?</p>
           <p>Gambling should be fun. If you feel it is affecting your life, please reach out:</p>
           <p>• Uganda: <strong className="text-slate-300">Mental Health Uganda</strong> — 0800 222 177 (toll-free)</p>

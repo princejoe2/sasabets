@@ -79,7 +79,7 @@ export default function DashboardPage() {
       <div className="border-b border-mk-border bg-mk-card px-4 py-10">
         <div className="mx-auto max-w-4xl">
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-violet-400">Creator</p>
-          <h1 className="text-4xl font-black text-white">My Dashboard</h1>
+          <h1 className="text-4xl font-black text-mk-text">My Dashboard</h1>
           <p className="mt-2 text-slate-500">Your markets, earnings, and performance.</p>
           <div className="mt-5 flex items-start gap-3 rounded-xl border border-emerald-800/35 bg-emerald-900/10 px-4 py-3 max-w-lg">
             <span className="text-lg leading-none mt-0.5">💰</span>
@@ -158,7 +158,7 @@ export default function DashboardPage() {
                   key={f}
                   onClick={() => setFilter(f)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-bold capitalize transition-colors ${
-                    filter === f ? 'bg-violet-600 text-white' : 'border border-mk-border text-mk-muted hover:text-white'
+                    filter === f ? 'bg-violet-600 text-white' : 'border border-mk-border text-mk-muted hover:text-mk-text'
                   }`}
                 >
                   {f} {f !== 'all' && `(${f === 'open' ? openCount : settledCount})`}
@@ -207,7 +207,7 @@ export default function DashboardPage() {
                       </div>
                       <Link
                         href={`/markets/${m.id}`}
-                        className="shrink-0 rounded-lg border border-mk-border px-3 py-1.5 text-xs text-mk-muted hover:text-white hover:border-violet-600 transition-colors"
+                        className="shrink-0 rounded-lg border border-mk-border px-3 py-1.5 text-xs text-mk-muted hover:text-mk-text hover:border-violet-600 transition-colors"
                       >
                         View →
                       </Link>

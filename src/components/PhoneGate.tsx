@@ -98,10 +98,10 @@ export default function PhoneGate() {
           {/* Violet header */}
           <div className="relative bg-violet-600 px-6 py-6 text-center">
             {/* Phone icon */}
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-mk-text/20">
               <svg
                 viewBox="0 0 24 24"
-                className="h-8 w-8 text-white"
+                className="h-8 w-8 text-mk-text"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={1.8}
@@ -111,7 +111,7 @@ export default function PhoneGate() {
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.07 11.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3 .82h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 5.61 5.61l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 15z" />
               </svg>
             </div>
-            <h2 className="text-xl font-black text-white">Add your phone number</h2>
+            <h2 className="text-xl font-black text-mk-text">Add your phone number</h2>
           </div>
 
           {/* Body */}
@@ -139,7 +139,7 @@ export default function PhoneGate() {
                 placeholder="0712 345 678"
                 autoComplete="tel"
                 inputMode="tel"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:border-slate-700 dark:bg-slate-800 dark:text-mk-text"
               />
               {error && (
                 <p className="mt-2 text-sm text-red-500">{error}</p>

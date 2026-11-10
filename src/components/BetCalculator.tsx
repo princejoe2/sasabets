@@ -48,19 +48,19 @@ export default function BetCalculator() {
 
   return (
     <div
-      className="rounded-2xl border border-violet-800/30 bg-[#0d0d14] p-6 sm:p-7"
+      className="rounded-2xl border border-violet-800/30 bg-mk-card p-6 sm:p-7"
       style={{ boxShadow: '0 0 60px rgba(139,92,246,0.1), 0 0 120px rgba(139,92,246,0.04)' }}
     >
       <div className="mb-5 flex items-center gap-2.5">
         <span className="text-2xl">🧮</span>
         <div>
-          <h3 className="font-black text-white">Bet Calculator</h3>
+          <h3 className="font-black text-mk-text">Bet Calculator</h3>
           <p className="text-xs text-slate-500">See your potential winnings before you play</p>
         </div>
       </div>
 
       {/* Sample market label */}
-      <div className="mb-4 rounded-xl border border-[#2a2a3e] bg-[#13131a] px-4 py-3">
+      <div className="mb-4 rounded-xl border border-[#2a2a3e] bg-mk-raised px-4 py-3">
         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Sample market</p>
         <p className="mt-0.5 text-sm font-bold text-slate-300">{SAMPLE.title}</p>
       </div>
@@ -85,7 +85,7 @@ export default function BetCalculator() {
               <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color }}>
                 {isA ? 'Side A' : 'Side B'}
               </p>
-              <p className="text-sm font-black" style={{ color: sel ? '#f1f5f9' : '#94a3b8' }}>{opt.label}</p>
+              <p className="text-sm font-black" style={{ color: sel ? 'var(--mk-text)' : '#94a3b8' }}>{opt.label}</p>
               <p className="mt-2 text-[10px] text-slate-500">{pct}% of pool</p>
               <div className="mt-2 h-1 w-full rounded-full bg-[#1e1e2e]">
                 <div
@@ -117,7 +117,7 @@ export default function BetCalculator() {
               step={1000}
               value={stake}
               onChange={e => setStake(Math.max(0, parseInt(e.target.value) || 0))}
-              className="w-full rounded-xl border border-[#2a2a3e] bg-[#13131a] py-3 pl-14 pr-4 text-right font-black text-white transition-colors focus:border-violet-600 focus:outline-none"
+              className="w-full rounded-xl border border-[#2a2a3e] bg-mk-raised py-3 pl-14 pr-4 text-right font-black text-mk-text transition-colors focus:border-violet-600 focus:outline-none"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -125,7 +125,7 @@ export default function BetCalculator() {
               <button
                 key={v}
                 onClick={() => setStake(v)}
-                className="rounded-lg border border-[#2a2a3e] bg-[#13131a] px-2.5 py-1 text-[10px] font-bold text-slate-400 transition-colors hover:border-violet-600 hover:text-violet-400"
+                className="rounded-lg border border-[#2a2a3e] bg-mk-raised px-2.5 py-1 text-[10px] font-bold text-slate-400 transition-colors hover:border-violet-600 hover:text-violet-400"
               >
                 {v >= 1_000 ? `${v / 1_000}K` : v}
               </button>

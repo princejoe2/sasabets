@@ -191,7 +191,7 @@ function Accordion({ faq }: { faq: { q: string; a: string } }) {
     <div className="border-b border-[#1e1e2e] last:border-0">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left text-sm font-semibold text-slate-200 transition-colors hover:text-white"
+        className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left text-sm font-semibold text-slate-200 transition-colors hover:text-mk-text"
       >
         <span>{faq.q}</span>
         <span
@@ -214,13 +214,13 @@ export default function HelpPage() {
   const [active, setActive] = useState<string | null>(null)
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-mk-surface">
 
       {/* ── Header ── */}
-      <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-12">
+      <div className="border-b border-[#1e1e2e] bg-mk-card px-4 py-12">
         <div className="mx-auto max-w-3xl text-center">
           <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">Help Centre</p>
-          <h1 className="mb-3 text-4xl font-black text-white">
+          <h1 className="mb-3 text-4xl font-black text-mk-text">
             How can we <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">help you?</span>
           </h1>
           <p className="text-slate-500">
@@ -238,7 +238,7 @@ export default function HelpPage() {
       </div>
 
       {/* ── Section nav ── */}
-      <div className="sticky top-[61px] z-10 border-b border-[#1e1e2e] bg-[#0d0d14]/95 backdrop-blur-xl">
+      <div className="sticky top-[61px] z-10 border-b border-[#1e1e2e] bg-mk-card/95 backdrop-blur-xl">
         <div className="mx-auto max-w-4xl overflow-x-auto px-4">
           <div className="flex gap-1 py-2 scrollbar-none">
             {SECTIONS.map(s => (
@@ -273,9 +273,9 @@ export default function HelpPage() {
               >
                 {section.icon}
               </div>
-              <h2 className="text-xl font-black" style={{ color: section.color }}>{section.title}</h2>
+              <h2 className="mk-ink text-xl font-black" style={{ color: section.color }}>{section.title}</h2>
             </div>
-            <div className="overflow-hidden rounded-2xl border border-[#1e1e2e] bg-[#0d0d14]">
+            <div className="overflow-hidden rounded-2xl border border-[#1e1e2e] bg-mk-card">
               {section.faqs.map(faq => (
                 <Accordion key={faq.q} faq={faq} />
               ))}
@@ -284,8 +284,8 @@ export default function HelpPage() {
         ))}
 
         {/* ── Bottom CTA ── */}
-        <div className="rounded-2xl border border-[#2a2a3e] bg-[#0d0d14] p-8 text-center">
-          <p className="mb-2 text-xl font-black text-white">Still stuck?</p>
+        <div className="rounded-2xl border border-[#2a2a3e] bg-mk-card p-8 text-center">
+          <p className="mb-2 text-xl font-black text-mk-text">Still stuck?</p>
           <p className="mb-5 text-sm text-slate-500">
             Our support team is available to help with any questions not covered here.
           </p>
@@ -298,7 +298,7 @@ export default function HelpPage() {
             </Link>
             <Link
               href="/markets"
-              className="rounded-xl border border-[#2a2a3e] bg-[#111118] px-6 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:text-white"
+              className="rounded-xl border border-[#2a2a3e] bg-mk-card px-6 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:text-mk-text"
             >
               Browse Markets
             </Link>

@@ -131,7 +131,7 @@ export default function MarketLineChart({ marketId, outcomes }: Props) {
             <XAxis
               dataKey="t"
               tickFormatter={fmtX}
-              tick={{ fontSize: 10, fill: '#6B6B6B' }}
+              tick={{ fontSize: 10, fill: 'var(--mk-muted)' }}
               axisLine={false}
               tickLine={false}
               interval="preserveStartEnd"
@@ -142,12 +142,12 @@ export default function MarketLineChart({ marketId, outcomes }: Props) {
               domain={[0, 100]}
               ticks={[0, 25, 50, 75, 100]}
               tickFormatter={(v: number) => `${v}%`}
-              tick={{ fontSize: 10, fill: '#6B6B6B' }}
+              tick={{ fontSize: 10, fill: 'var(--mk-muted)' }}
               axisLine={false}
               tickLine={false}
               width={36}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#444', strokeWidth: 1 }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--mk-border)', strokeWidth: 1 }} />
             {(data.options ?? []).map(name => {
               const outcome = outcomes.find(o => o.name === name)
               const color   = OUTCOME_COLORS[(outcome?.color_index ?? 0) % OUTCOME_COLORS.length]

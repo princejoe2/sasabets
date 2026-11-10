@@ -205,7 +205,7 @@ export default function MarketCard({ market }: { market: Market }) {
       onMouseLeave={onMouseLeave}
       className="card-shine group relative flex flex-col h-full overflow-hidden rounded-2xl cursor-pointer active:scale-[0.98]"
       style={{
-        background: '#13131a',
+        background: 'var(--mk-raised)',
         border: `1.5px solid ${urgencyBorderColor}`,
         boxShadow: `${urgencyGlow ? urgencyGlow + ', ' : ''}0 2px 12px rgba(0,0,0,0.25)`,
         willChange: 'transform',
@@ -272,7 +272,7 @@ export default function MarketCard({ market }: { market: Market }) {
               <div className="flex items-center justify-between mb-1 px-1">
                 <div className="flex items-center gap-1.5">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-base font-black text-white tabular-nums">
+                  <span className="text-base font-black text-mk-text tabular-nums">
                     {livePrice !== null ? `$${livePrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '—'}
                   </span>
                   {pct !== null && (
@@ -358,7 +358,7 @@ export default function MarketCard({ market }: { market: Market }) {
 
               <div
                 className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black text-slate-500"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                style={{ background: 'rgb(var(--mk-text-rgb) / 0.06)', border: '1px solid rgb(var(--mk-text-rgb) / 0.1)' }}
               >
                 vs
               </div>
@@ -402,7 +402,7 @@ export default function MarketCard({ market }: { market: Market }) {
                 )}
                 {/* Live dot */}
                 {effectivelyOpen && (
-                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#13131a]" />
+                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-mk-border" />
                 )}
               </div>
 
@@ -534,10 +534,10 @@ export default function MarketCard({ market }: { market: Market }) {
                   <div
                     onClick={e => e.stopPropagation()}
                     className="absolute bottom-8 left-0 z-20 flex gap-2 rounded-xl p-2 shadow-xl"
-                    style={{ background: '#13131a', border: '1px solid #2a2a3e' }}
+                    style={{ background: 'var(--mk-raised)', border: '1px solid #2a2a3e' }}
                   >
                     <a href={waLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="flex items-center gap-1 rounded-lg bg-[#25D366] px-2.5 py-1.5 text-[11px] font-bold text-white">WhatsApp</a>
-                    <a href={twLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="flex items-center gap-1 rounded-lg bg-black px-2.5 py-1.5 text-[11px] font-bold text-white">𝕏</a>
+                    <a href={twLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="flex items-center gap-1 rounded-lg bg-mk-bg px-2.5 py-1.5 text-[11px] font-bold text-mk-text">𝕏</a>
                   </div>
                 )}
               </div>

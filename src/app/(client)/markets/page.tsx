@@ -42,7 +42,7 @@ export default async function MarketsPage({
       <div className="border-b border-mk-border bg-mk-card px-4 pt-8 pb-6">
         <div className="mx-auto max-w-6xl">
           <h1 className="text-4xl font-black tracking-tight">
-            <span className="text-white">Prediction </span>
+            <span className="text-mk-text">Prediction </span>
             <span className="text-violet-400">Markets</span>
           </h1>
           <p className="mt-2 text-mk-muted">

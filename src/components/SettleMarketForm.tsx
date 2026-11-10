@@ -103,7 +103,7 @@ export default function SettleMarketForm({ market, onDone }: { market: Market; o
   const uploading = evidence.some(e => e.status === 'uploading')
 
   return (
-    <div className="rounded-xl border border-emerald-800 bg-[#13131a] p-6 space-y-4">
+    <div className="rounded-xl border border-emerald-800 bg-mk-raised p-6 space-y-4">
       <div className="flex items-center gap-2">
         <h3 className="font-semibold text-emerald-400">Settle: {market.title}</h3>
         {isUserCreated && (
@@ -141,7 +141,7 @@ export default function SettleMarketForm({ market, onDone }: { market: Market; o
           onChange={e => setNote(e.target.value)}
           placeholder="Add context or source for the audit trail…"
           rows={2}
-          className="w-full rounded-lg border border-[#1e1e2e] bg-[#111118] px-3 py-2 text-sm text-slate-300 outline-none focus:border-emerald-700 resize-none placeholder:text-slate-700"
+          className="w-full rounded-lg border border-[#1e1e2e] bg-mk-card px-3 py-2 text-sm text-slate-300 outline-none focus:border-emerald-700 resize-none placeholder:text-slate-700"
         />
       </div>
 
@@ -186,7 +186,7 @@ export default function SettleMarketForm({ market, onDone }: { market: Market; o
           <div className="grid grid-cols-3 gap-2">
             {evidence.map(img => (
               <div key={img.id}>
-                <div className="relative aspect-square overflow-hidden rounded-lg border border-[#1e1e2e] bg-[#0d0d14]">
+                <div className="relative aspect-square overflow-hidden rounded-lg border border-[#1e1e2e] bg-mk-card">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={img.previewUrl} alt="evidence preview" className="h-full w-full object-cover" />
                   {img.status === 'uploading' && (
@@ -204,7 +204,7 @@ export default function SettleMarketForm({ market, onDone }: { market: Market; o
                   )}
                   <button
                     onClick={() => setEvidence(prev => prev.filter(e => e.id !== img.id))}
-                    className="absolute left-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/70 text-slate-300 hover:text-white text-[11px] leading-none"
+                    className="absolute left-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/70 text-slate-300 hover:text-mk-text text-[11px] leading-none"
                   >
                     ×
                   </button>
@@ -215,7 +215,7 @@ export default function SettleMarketForm({ market, onDone }: { market: Market; o
                   onChange={e => setEvidence(prev => prev.map(ev => ev.id === img.id ? { ...ev, caption: e.target.value } : ev))}
                   placeholder="What does this show?"
                   maxLength={120}
-                  className="mt-1 w-full rounded border border-[#1e1e2e] bg-[#111118] px-1.5 py-1 text-[10px] text-slate-400 outline-none focus:border-emerald-700 placeholder:text-slate-700"
+                  className="mt-1 w-full rounded border border-[#1e1e2e] bg-mk-card px-1.5 py-1 text-[10px] text-slate-400 outline-none focus:border-emerald-700 placeholder:text-slate-700"
                 />
               </div>
             ))}

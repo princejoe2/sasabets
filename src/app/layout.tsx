@@ -78,7 +78,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: '#000000',
-  colorScheme: 'dark',
+  colorScheme: 'dark light',
 }
 
 const ORG_JSONLD = {
@@ -116,14 +116,14 @@ const ORG_JSONLD = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`dark ${supreme.variable} ${chubbo.variable} ${inter.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${supreme.variable} ${chubbo.variable} ${inter.variable}`}>
       <head>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSONLD) }}
         />
       </head>
-      <body className="min-h-screen bg-black text-[#F5F5F5] antialiased">
+      <body className="min-h-screen bg-mk-bg text-mk-text antialiased">
         <ThemeProvider>
           <RouteProgressBar />
           <CursorEffects />

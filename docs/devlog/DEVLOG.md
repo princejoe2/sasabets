@@ -174,3 +174,28 @@ Playwright at 320/360/375/390/430: scrollWidth equals viewport width at every si
 Not verified: the logged-in balance and badge (the test user is gone since the July wipe).
 ESLint config is broken (circular config error), which was already the case before this
 session. Next: check the logged-in bar on a real phone.
+
+## 2026-11-10 (later) — Caching + light/dark mode
+
+**Caching:** The homepage was taking 1.7–7.6 s to first byte and never hit the cache. Each
+request did middleware `getUser` → layout `getUser` + profile → page `getSession` → a full
+markets scan (every market ever) + an unused profiles count. Now there's `lib/cached-markets.ts`
+(`unstable_cache`, 30 s, tag `markets`) holding all open markets plus the 60 most recent closed
+ones, shared by `/` and `/markets`. Anonymous visitors skip all auth round-trips (middleware and
+layout check for the `sb-*-auth-token` cookie first). `is_admin` is cached per user for 5 min.
+Locally the cached TTFB went from 3.1 s to 0.09 s. Side effect: the homepage no longer shows
+`pending_approval` markets, matching `/markets`.
+
+**Light/dark mode:** next-themes was hard-locked to dark (`forcedTheme`). Tokens are now RGB
+channels (`--mk-*-rgb`) under `:root, .dark` with an `html.light` override, and Tailwind `mk-*`
+colours point at them (opacity modifiers still work). A codemod converted ~380 hardcoded neutral
+colours across ~55 client files (text-white → text-mk-text unless on a coloured background,
+neutral `bg-[#111]` → tokens, inline neutral hex/rgba → vars). A generated light-mode remap
+handles the pale dark-mode shades (`text-*-300/400` → `-700`, `bg-*-950/900` → `-50`). A
+`.mk-ink` class darkens bright inline accent text. The switch sits in the navbar (sm+) and the
+mobile Me sheet. Dark is the default, the choice persists in localStorage, and `/admin` is
+forced dark. Playwright contrast scan: 14 public pages are clean in both themes, apart from
+filter-darkened accents and some faint `slate-700` hints in dark mode that were already there.
+
+Known, already there: market pages render a second header (GlobalMarketHeader) under the navbar on
+mobile, and its category row wraps "Politics". Worth fixing next.

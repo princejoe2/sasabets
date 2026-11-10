@@ -78,7 +78,7 @@ const SocialFlipNode = ({
                         animate={{ opacity: 1, y: -50, scale: 1, x: "-50%" }}
                         exit={{ opacity: 0, y: 10, scale: 0.8, x: "-50%" }}
                         transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="absolute left-1/2 z-50 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-white shadow-xl dark:bg-white dark:text-neutral-900"
+                        className="absolute left-1/2 z-50 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-mk-text shadow-xl dark:bg-white dark:text-neutral-900"
                     >
                         {item.label}
                         {/* Arrow */}
@@ -115,7 +115,7 @@ const SocialFlipNode = ({
                 {/* Back - Icon */}
                 <div
                     className={cn(
-                        "absolute inset-0 flex items-center justify-center rounded-lg bg-black text-lg text-white dark:bg-white dark:text-black",
+                        "absolute inset-0 flex items-center justify-center rounded-lg bg-mk-bg text-lg text-mk-text dark:bg-white dark:text-black",
                         backClassName
                     )}
                     style={{
@@ -154,7 +154,7 @@ export default function SocialFlipButton({
     return (
         <div className={cn("flex items-center justify-center gap-4 p-4", className)}>
             <div
-                className="group relative flex max-w-full items-center justify-center gap-1 sm:gap-2 rounded-2xl glass-border bg-white p-2 sm:p-4 shadow-sm dark:bg-black"
+                className="group relative flex max-w-full items-center justify-center gap-1 sm:gap-2 rounded-2xl glass-border bg-white p-2 sm:p-4 shadow-sm dark:bg-mk-bg"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => {
                     setIsHovered(false);

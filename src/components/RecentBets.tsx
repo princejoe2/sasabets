@@ -71,7 +71,7 @@ export default function RecentBets({ marketId, optionLabels }: Props) {
   }, [marketId])
 
   return (
-    <div className="rounded-xl border border-[#1e1e2e] bg-[#0d0d14] p-4">
+    <div className="rounded-xl border border-[#1e1e2e] bg-mk-card p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">
@@ -109,7 +109,7 @@ export default function RecentBets({ marketId, optionLabels }: Props) {
               <div
                 key={bet.id}
                 className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs"
-                style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.018)' : 'transparent' }}
+                style={{ background: i % 2 === 0 ? 'rgb(var(--mk-text-rgb) / 0.018)' : 'transparent' }}
               >
                 {/* Colour dot for the option */}
                 <span

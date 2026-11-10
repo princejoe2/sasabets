@@ -51,7 +51,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // On 2FA setup/verify pages: skip TOTP enforcement, render without sidebar
   if (TOTP_EXEMPT.includes(pathname)) {
-    return <>{children}</>
+    return <div className="dark contents">{children}</div>
   }
 
   // Enforce TOTP for all other admin pages
@@ -88,7 +88,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const staffPermissions = (profile.staff_permissions as string[] | null) ?? null
 
   return (
-    <div className="flex min-h-screen bg-[#08080e]">
+    <div className="dark flex min-h-screen bg-[#08080e] text-[#F5F5F5]">
       <AdminSidebar
         adminPhone={profile.phone}
         floatBalance={marzBalance.available}

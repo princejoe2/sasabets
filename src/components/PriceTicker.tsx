@@ -61,7 +61,7 @@ export default function PriceTicker({ coins }: { coins: CoinData[] }) {
         const gid    = `spk-${coin.id}`
 
         return (
-          <div key={coin.id} className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d18] p-3 sm:p-4">
+          <div key={coin.id} className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-3 sm:p-4">
             {/* Header */}
             <div className="flex items-start justify-between mb-1">
               <div className="flex items-center gap-1.5">
@@ -72,7 +72,7 @@ export default function PriceTicker({ coins }: { coins: CoinData[] }) {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm font-black text-white tabular-nums">
+                <p className="text-sm font-black text-mk-text tabular-nums">
                   ${coin.current_price.toLocaleString(undefined, { maximumFractionDigits: coin.current_price > 100 ? 0 : 2 })}
                 </p>
                 <p className="text-[11px] font-bold tabular-nums leading-tight" style={{ color }}>

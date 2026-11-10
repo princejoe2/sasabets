@@ -67,7 +67,7 @@ export default function OddsChart({
 
   if (points.length < 2) {
     return (
-      <div className="flex items-center justify-center h-14 rounded-xl border border-[#1e1e2e] bg-[#0d0d14] text-xs text-slate-700">
+      <div className="flex items-center justify-center h-14 rounded-xl border border-[#1e1e2e] bg-mk-card text-xs text-slate-700">
         Chart appears once bets are placed
       </div>
     )
@@ -128,9 +128,9 @@ export default function OddsChart({
   const clipId = `cc-${marketId.slice(0, 8)}`
 
   return (
-    <div className="rounded-xl border border-[#1e1e2e] bg-[#0d0d14] overflow-hidden">
+    <div className="rounded-xl border border-[#1e1e2e] bg-mk-card overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a28]">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-mk-border">
         <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Probability</span>
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5 text-xs">

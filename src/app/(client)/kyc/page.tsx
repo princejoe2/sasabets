@@ -82,12 +82,12 @@ export default function KycPage() {
   const activeStep = getActiveStep(kycStatus)
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-mk-surface">
       {/* Header */}
-      <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-10">
+      <div className="border-b border-[#1e1e2e] bg-mk-card px-4 py-10">
         <div className="mx-auto max-w-xl">
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-violet-500">Account verification</p>
-          <h1 className="text-3xl font-black text-white">Identity Verification (KYC)</h1>
+          <h1 className="text-3xl font-black text-mk-text">Identity Verification (KYC)</h1>
           <p className="mt-2 text-slate-500">Required for withdrawals above UGX 5,000,000. Your information is kept strictly confidential.</p>
         </div>
       </div>
@@ -95,7 +95,7 @@ export default function KycPage() {
       <div className="mx-auto max-w-xl px-4 py-10 space-y-6">
 
         {/* Progress Stepper */}
-        <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-6">
+        <div className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-6">
           <div className="flex items-start gap-0">
             {STEPS.map((step, idx) => {
               const done    = activeStep > idx
@@ -110,7 +110,7 @@ export default function KycPage() {
                   <div className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold transition-all ${
                     done    ? 'border-emerald-500 bg-emerald-500 text-white'
                     : current ? 'border-amber-500 bg-amber-500/20 text-amber-400'
-                    : 'border-[#2a2a3e] bg-[#0a0a0f] text-slate-600'
+                    : 'border-[#2a2a3e] bg-mk-surface text-slate-600'
                   }`}>
                     {done ? (
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -186,7 +186,7 @@ export default function KycPage() {
 
         {/* Submission form: shown for none or rejected */}
         {(kycStatus === 'none' || kycStatus === 'rejected') && (
-          <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-6 space-y-5">
+          <div className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-6 space-y-5">
             <div>
               <h2 className="font-bold text-slate-200">Submit your ID</h2>
               <p className="mt-1 text-xs text-slate-500">Accepted documents: National ID, Passport, Driver&apos;s Licence, Refugee ID</p>
@@ -198,13 +198,13 @@ export default function KycPage() {
                 <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">First Name *</label>
                 <input value={firstName} onChange={e => setFirstName(e.target.value)}
                   placeholder="e.g. Joel"
-                  className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors" />
+                  className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-mk-text outline-none focus:border-violet-600 transition-colors" />
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">Last Name</label>
                 <input value={lastName} onChange={e => setLastName(e.target.value)}
                   placeholder="e.g. Lukwago"
-                  className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors" />
+                  className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-mk-text outline-none focus:border-violet-600 transition-colors" />
               </div>
             </div>
 
@@ -226,11 +226,11 @@ export default function KycPage() {
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">ID Number *</label>
               <input value={idNumber} onChange={e => setIdNumber(e.target.value)}
                 placeholder="Enter your ID number"
-                className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors font-mono" />
+                className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-mk-text outline-none focus:border-violet-600 transition-colors font-mono" />
             </div>
 
             {/* What happens next */}
-            <div className="rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 space-y-1.5">
+            <div className="rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-3 space-y-1.5">
               <p className="text-xs font-semibold text-slate-400">What happens next?</p>
               {[
                 'We verify your details against the national registry',

@@ -10,7 +10,7 @@ export default function ClientError({
   reset: () => void
 }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#040c06] text-[#e8f5e9]">
+    <div className="min-h-screen flex items-center justify-center bg-mk-surface text-mk-text">
       <div className="text-center p-8 max-w-md">
         <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
         <p className="text-gray-400 mb-6">

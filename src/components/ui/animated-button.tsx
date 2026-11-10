@@ -36,7 +36,7 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({
       }}
       // Set a CSS variable `--shine` that we override for dark mode via Tailwind.
       className={cn(
-        "group inline-flex items-center justify-center px-6 py-2 rounded-md relative overflow-hidden bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-[#222]",
+        "group inline-flex items-center justify-center px-6 py-2 rounded-md relative overflow-hidden bg-neutral-50 dark:bg-mk-bg border border-neutral-200 dark:border-mk-border",
         "text-neutral-900 dark:text-neutral-100 font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 disabled:pointer-events-none disabled:opacity-50",
         "[--shine:rgba(0,0,0,.66)] dark:[--shine:rgba(255,255,255,.66)]",
         className,

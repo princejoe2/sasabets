@@ -84,13 +84,13 @@ export default function ProposalsPageClient({
   const today = new Date().toISOString().split('T')[0]
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-mk-surface">
 
       {/* ── Hero ── */}
-      <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-12">
+      <div className="border-b border-[#1e1e2e] bg-mk-card px-4 py-12">
         <div className="mx-auto max-w-6xl">
           <p className="mb-1 text-xs font-black uppercase tracking-widest text-violet-500">Community</p>
-          <h1 className="text-4xl font-black text-white">Suggest a Market</h1>
+          <h1 className="text-4xl font-black text-mk-text">Suggest a Market</h1>
           <p className="mt-3 max-w-2xl text-slate-400">
             Have an idea for a prediction market? Submit it here. Our team reviews proposals daily
             and launches approved markets within 24 hours.
@@ -98,15 +98,15 @@ export default function ProposalsPageClient({
 
           {/* Stats chips */}
           <div className="mt-6 flex flex-wrap gap-3">
-            <div className="flex items-center gap-2.5 rounded-xl border border-[#2a2a3e] bg-[#111118] px-4 py-2.5">
+            <div className="flex items-center gap-2.5 rounded-xl border border-[#2a2a3e] bg-mk-card px-4 py-2.5">
               <span className="text-xl font-black text-violet-400">{stats.launched}</span>
               <span className="text-xs font-semibold text-slate-500">Markets launched</span>
             </div>
-            <div className="flex items-center gap-2.5 rounded-xl border border-[#2a2a3e] bg-[#111118] px-4 py-2.5">
+            <div className="flex items-center gap-2.5 rounded-xl border border-[#2a2a3e] bg-mk-card px-4 py-2.5">
               <span className="text-xl font-black text-emerald-400">&lt; 24h</span>
               <span className="text-xs font-semibold text-slate-500">Avg approval time</span>
             </div>
-            <div className="flex items-center gap-2.5 rounded-xl border border-[#2a2a3e] bg-[#111118] px-4 py-2.5">
+            <div className="flex items-center gap-2.5 rounded-xl border border-[#2a2a3e] bg-mk-card px-4 py-2.5">
               <span className="text-xl font-black text-amber-400">{stats.totalCommunity}</span>
               <span className="text-xs font-semibold text-slate-500">Community proposals</span>
             </div>
@@ -124,14 +124,14 @@ export default function ProposalsPageClient({
 
               {done ? (
                 /* ── Success state ── */
-                <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-8 text-center space-y-5">
+                <div className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-8 text-center space-y-5">
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-violet-700/40 bg-violet-900/30">
                     <svg className="h-8 w-8 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-white">Proposal submitted!</h3>
+                    <h3 className="text-xl font-black text-mk-text">Proposal submitted!</h3>
                     <p className="mt-2 text-sm text-slate-400">
                       Your proposal has been submitted. We'll review it within 24 hours and notify
                       the community once it goes live.
@@ -152,9 +152,9 @@ export default function ProposalsPageClient({
                 </div>
               ) : (
                 /* ── Proposal form ── */
-                <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-6 space-y-5">
+                <div className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-6 space-y-5">
                   <div>
-                    <h2 className="text-base font-black text-white">New proposal</h2>
+                    <h2 className="text-base font-black text-mk-text">New proposal</h2>
                     <p className="mt-0.5 text-xs text-slate-600">
                       Suggest a question the Sabula 256 community should predict on.
                     </p>
@@ -176,7 +176,7 @@ export default function ProposalsPageClient({
                       onChange={e => setTitle(e.target.value)}
                       placeholder="e.g. Will Uganda Cranes qualify for AFCON 2027?"
                       maxLength={120}
-                      className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-white outline-none transition-colors focus:border-violet-600 placeholder:text-slate-700"
+                      className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-mk-text outline-none transition-colors focus:border-violet-600 placeholder:text-slate-700"
                     />
                     <p className={`mt-1 text-right text-[10px] transition-colors ${title.length > 100 ? 'text-amber-500' : 'text-slate-700'}`}>
                       {title.length}/120
@@ -219,7 +219,7 @@ export default function ProposalsPageClient({
                           onChange={e => setOptionA(e.target.value)}
                           placeholder="e.g. Yes"
                           maxLength={80}
-                          className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-3 py-2.5 text-sm text-violet-200 outline-none transition-colors focus:border-violet-600 placeholder:text-slate-700"
+                          className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-3 py-2.5 text-sm text-violet-200 outline-none transition-colors focus:border-violet-600 placeholder:text-slate-700"
                         />
                       </div>
                       <div>
@@ -229,7 +229,7 @@ export default function ProposalsPageClient({
                           onChange={e => setOptionB(e.target.value)}
                           placeholder="e.g. No"
                           maxLength={80}
-                          className="w-full rounded-xl border border-[#1e1e2e] bg-[#111118] px-3 py-2.5 text-sm text-amber-200 outline-none transition-colors focus:border-amber-700 placeholder:text-slate-700"
+                          className="w-full rounded-xl border border-[#1e1e2e] bg-mk-card px-3 py-2.5 text-sm text-amber-200 outline-none transition-colors focus:border-amber-700 placeholder:text-slate-700"
                         />
                       </div>
                     </div>
@@ -246,7 +246,7 @@ export default function ProposalsPageClient({
                       placeholder="Add a news link, background context, or relevant details..."
                       rows={2}
                       maxLength={300}
-                      className="w-full resize-none rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-white outline-none transition-colors focus:border-violet-600 placeholder:text-slate-700"
+                      className="w-full resize-none rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-mk-text outline-none transition-colors focus:border-violet-600 placeholder:text-slate-700"
                     />
                     <p className={`mt-1 text-right text-[10px] transition-colors ${description.length > 260 ? 'text-amber-500' : 'text-slate-700'}`}>
                       {description.length}/300
@@ -264,7 +264,7 @@ export default function ProposalsPageClient({
                       placeholder="What makes this an interesting prediction market?"
                       rows={2}
                       maxLength={300}
-                      className="w-full resize-none rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-white outline-none transition-colors focus:border-violet-600 placeholder:text-slate-700"
+                      className="w-full resize-none rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-mk-text outline-none transition-colors focus:border-violet-600 placeholder:text-slate-700"
                     />
                   </div>
 
@@ -278,7 +278,7 @@ export default function ProposalsPageClient({
                       value={closes}
                       onChange={e => setCloses(e.target.value)}
                       min={today}
-                      className="rounded-xl border border-[#1e1e2e] bg-[#111118] px-4 py-3 text-sm text-slate-400 outline-none transition-colors focus:border-violet-600"
+                      className="rounded-xl border border-[#1e1e2e] bg-mk-card px-4 py-3 text-sm text-slate-400 outline-none transition-colors focus:border-violet-600"
                     />
                     <p className="mt-1 text-[10px] text-slate-700">Admin sets the final date.</p>
                   </div>

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import { SabulaNavLogo } from '@/components/SabulaLogo'
+import ThemeToggle from '@/components/ThemeToggle'
 
 // ─── Category definitions ─────────────────────────────────────────────────────
 
@@ -41,7 +42,7 @@ function CategoryRow({ activeCat }: { activeCat: string }) {
             className={[
               'relative shrink-0 snap-start px-3 py-1 text-sm font-bold rounded-r-pill whitespace-nowrap transition-all duration-150',
               active
-                ? 'text-white'
+                ? 'text-mk-text'
                 : cat.hot
                   ? 'text-red-400 hover:text-red-300'
                   : 'text-mk-muted hover:text-mk-secondary',
@@ -222,6 +223,9 @@ export default function Navbar() {
 
         {/* ── Right side ── */}
         <div ref={menuRef} className="ml-auto flex items-center gap-2 shrink-0">
+
+          {/* Light / dark switch — sm+ (phones get it in the bottom-bar "Me" sheet) */}
+          <span className="hidden sm:flex"><ThemeToggle /></span>
 
           {user ? (
             <>

@@ -7,7 +7,7 @@ export default function ClientLoading() {
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-5 h-48" />
+          <div key={i} className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-5 h-48" />
         ))}
       </div>
     </div>

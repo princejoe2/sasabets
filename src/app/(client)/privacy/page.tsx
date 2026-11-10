@@ -10,12 +10,12 @@ const COMPANY = 'Sabula 256'
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-mk-surface">
       {/* Header */}
-      <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-12">
+      <div className="border-b border-[#1e1e2e] bg-mk-card px-4 py-12">
         <div className="mx-auto max-w-3xl">
           <p className="mb-2 text-xs font-bold uppercase tracking-widest text-violet-500">Legal</p>
-          <h1 className="text-4xl font-black text-white">Privacy Policy</h1>
+          <h1 className="text-4xl font-black text-mk-text">Privacy Policy</h1>
           <p className="mt-3 text-slate-500">Effective date: {EFFECTIVE}</p>
         </div>
       </div>
@@ -108,7 +108,7 @@ export default function PrivacyPage() {
             <div className="mt-4 overflow-hidden rounded-xl border border-[#1e1e2e]">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#1e1e2e] bg-[#13131a]">
+                  <tr className="border-b border-[#1e1e2e] bg-mk-raised">
                     <th className="px-4 py-3 text-left font-bold text-slate-300">Purpose</th>
                     <th className="px-4 py-3 text-left font-bold text-slate-300">Legal Basis (DPPA)</th>
                   </tr>
@@ -189,7 +189,7 @@ export default function PrivacyPage() {
             <div className="mt-4 overflow-hidden rounded-xl border border-[#1e1e2e]">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#1e1e2e] bg-[#13131a]">
+                  <tr className="border-b border-[#1e1e2e] bg-mk-raised">
                     <th className="px-4 py-3 text-left font-bold text-slate-300">Data Category</th>
                     <th className="px-4 py-3 text-left font-bold text-slate-300">Retention Period</th>
                   </tr>
@@ -314,7 +314,7 @@ function Divider() {
 
 function H2({ n, children }: { n: string; children: React.ReactNode }) {
   return (
-    <h2 className="flex items-baseline gap-3 text-xl font-black text-white">
+    <h2 className="flex items-baseline gap-3 text-xl font-black text-mk-text">
       <span className="font-mono text-sm font-bold text-violet-500">{n}.</span>
       {children}
     </h2>

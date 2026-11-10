@@ -33,17 +33,17 @@ export default function Footer() {
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-600 text-sm font-black text-white">S</span>
           <span className="text-sm font-black">
-            <span className="text-violet-600">Sabula</span><span className="text-slate-900 dark:text-white"> 256</span>
+            <span className="text-violet-600">Sabula</span><span className="text-slate-900 dark:text-mk-text"> 256</span>
           </span>
           <span className="ml-2 text-xs text-slate-400 dark:text-slate-500">© {new Date().getFullYear()} Sabula 256. All rights reserved.</span>
         </div>
         <div className="flex flex-wrap items-center gap-5">
-          <Link href="/about"              className="text-xs text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-white">About</Link>
-          <Link href="/help"               className="text-xs text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-white">Help</Link>
-          <Link href="/terms"              className="text-xs text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-white">Terms</Link>
-          <Link href="/privacy"            className="text-xs text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-white">Privacy</Link>
-          <Link href="/responsible-gambling" className="text-xs text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-white">Responsible Play</Link>
-          <span className="text-xs text-slate-300 dark:text-slate-600">18+ only.</span>
+          <Link href="/about"              className="text-xs text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-mk-text">About</Link>
+          <Link href="/help"               className="text-xs text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-mk-text">Help</Link>
+          <Link href="/terms"              className="text-xs text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-mk-text">Terms</Link>
+          <Link href="/privacy"            className="text-xs text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-mk-text">Privacy</Link>
+          <Link href="/responsible-gambling" className="text-xs text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-mk-text">Responsible Play</Link>
+          <span className="text-xs text-slate-500 dark:text-slate-600">18+ only.</span>
         </div>
       </div>
     </footer>

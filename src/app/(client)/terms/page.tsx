@@ -13,12 +13,12 @@ const RAKE = 8
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-mk-surface">
       {/* Header */}
-      <div className="border-b border-[#1e1e2e] bg-[#0d0d14] px-4 py-12">
+      <div className="border-b border-[#1e1e2e] bg-mk-card px-4 py-12">
         <div className="mx-auto max-w-3xl">
           <p className="mb-2 text-xs font-bold uppercase tracking-widest text-violet-500">Legal</p>
-          <h1 className="text-4xl font-black text-white">Terms &amp; Conditions</h1>
+          <h1 className="text-4xl font-black text-mk-text">Terms &amp; Conditions</h1>
           <p className="mt-3 text-slate-500">Effective date: {EFFECTIVE}</p>
         </div>
       </div>
@@ -327,7 +327,7 @@ export default function TermsPage() {
 
 function H2({ n, children }: { n: string; children: React.ReactNode }) {
   return (
-    <h2 className="flex items-baseline gap-3 text-xl font-black text-white">
+    <h2 className="flex items-baseline gap-3 text-xl font-black text-mk-text">
       <span className="font-mono text-sm font-bold text-violet-500">{n}.</span>
       {children}
     </h2>

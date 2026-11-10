@@ -34,7 +34,7 @@ export default function WinCelebration({ marketTitle, payout, onClose }: Props) 
         >
           {/* Trophy */}
           <div className="text-7xl mb-4">🏆</div>
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">You won!</h2>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-mk-text">You won!</h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 truncate px-4">{marketTitle}</p>
           <div className="mt-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 py-4">
             <p className="text-3xl font-black text-emerald-600">+UGX {payout.toLocaleString()}</p>

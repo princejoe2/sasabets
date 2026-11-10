@@ -190,7 +190,7 @@ export default function ProposalsList({
       {/* Header + Sort */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-black text-white">Community Proposals</h2>
+          <h2 className="text-lg font-black text-mk-text">Community Proposals</h2>
           <p className="mt-0.5 text-xs text-slate-600">
             {proposalsList.length} proposal{proposalsList.length !== 1 ? 's' : ''}
           </p>
@@ -203,7 +203,7 @@ export default function ProposalsList({
               className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${
                 sort === s
                   ? 'border-violet-600 bg-violet-900/30 text-violet-300'
-                  : 'border-[#1e1e2e] text-slate-500 hover:text-white'
+                  : 'border-[#1e1e2e] text-slate-500 hover:text-mk-text'
               }`}
             >
               {s === 'votes' ? 'Most voted' : 'Newest'}
@@ -214,7 +214,7 @@ export default function ProposalsList({
 
       {/* Empty state */}
       {sorted.length === 0 && (
-        <div className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-12 text-center">
+        <div className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-12 text-center">
           <p className="mb-3 text-4xl">💡</p>
           <p className="font-bold text-slate-400">No proposals yet</p>
           <p className="mt-1 text-sm text-slate-600">Be the first to suggest a prediction market!</p>
@@ -232,7 +232,7 @@ export default function ProposalsList({
         return (
           <div
             key={p.id}
-            className="rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] p-4 transition-colors hover:border-[#2a2a3e]"
+            className="rounded-2xl border border-[#1e1e2e] bg-mk-card p-4 transition-colors hover:border-[#2a2a3e]"
           >
             <div className="flex items-start gap-3">
 
@@ -266,7 +266,7 @@ export default function ProposalsList({
                 {/* Badge row */}
                 <div className="mb-2 flex flex-wrap items-center gap-1.5">
                   {cat && p.category && (
-                    <span className="flex items-center gap-1 rounded-full border border-[#2a2a3e] bg-[#111118] px-2 py-0.5 text-[10px] font-bold">
+                    <span className="flex items-center gap-1 rounded-full border border-[#2a2a3e] bg-mk-card px-2 py-0.5 text-[10px] font-bold">
                       <span>{cat.icon}</span>
                       <span className={cat.color + ' uppercase tracking-wider'}>{p.category}</span>
                     </span>
@@ -278,7 +278,7 @@ export default function ProposalsList({
                 </div>
 
                 {/* Title */}
-                <h3 className="text-sm font-bold leading-snug text-white">{p.title}</h3>
+                <h3 className="text-sm font-bold leading-snug text-mk-text">{p.title}</h3>
 
                 {/* Options */}
                 <div className="mt-2 flex items-center gap-2">

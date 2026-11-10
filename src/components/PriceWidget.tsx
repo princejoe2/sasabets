@@ -33,7 +33,7 @@ export default function PriceWidget() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] p-4 space-y-3 animate-pulse">
+      <div className="rounded-xl border border-[#1e1e2e] bg-mk-raised p-4 space-y-3 animate-pulse">
         <div className="h-3 w-24 rounded bg-[#1e1e2e]" />
         <div className="h-5 w-full rounded bg-[#1e1e2e]" />
         <div className="h-5 w-full rounded bg-[#1e1e2e]" />
@@ -44,7 +44,7 @@ export default function PriceWidget() {
   if (!btc && !fx) return null
 
   return (
-    <div className="rounded-xl border border-[#1e1e2e] bg-[#13131a] overflow-hidden">
+    <div className="rounded-xl border border-[#1e1e2e] bg-mk-raised overflow-hidden">
       <div className="border-b border-[#1e1e2e] px-4 py-2.5 flex items-center justify-between">
         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600">Live Prices</p>
         {lastRefresh && (

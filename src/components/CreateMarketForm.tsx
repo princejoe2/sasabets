@@ -112,12 +112,12 @@ function ImageUploader({ label, preview, shape = 'square', onFile }: {
                 style={{ borderRadius: 10 }}
               />
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ borderRadius: 10 }}>
-                <span className="text-white text-xs font-semibold">Click to change</span>
+                <span className="text-mk-text text-xs font-semibold">Click to change</span>
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2 py-4">
-              <div className={`w-10 h-10 bg-[#1a1a28] flex items-center justify-center text-xl ${shape === 'circle' ? 'rounded-full' : 'rounded-xl'}`}>📷</div>
+              <div className={`w-10 h-10 bg-mk-raised flex items-center justify-center text-xl ${shape === 'circle' ? 'rounded-full' : 'rounded-xl'}`}>📷</div>
               <span className="text-xs font-semibold text-slate-500">Upload image</span>
               <span className="text-[10px] text-slate-600">PNG · JPG · WebP · max 5 MB</span>
             </div>
@@ -163,7 +163,7 @@ function CardPreview({ title, category, marketType, party1Preview, team1Preview,
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: '#13131a', border: `1.5px solid ${borderColor}` }}>
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--mk-raised)', border: `1.5px solid ${borderColor}` }}>
       {urgencyLabel && urgencyLabel !== 'Closed' && (
         <div className="text-center py-1.5 text-[10px] font-black uppercase tracking-wider"
           style={{ color: '#fb923c', background: 'rgba(249,115,22,0.1)', borderBottom: '1px solid rgba(249,115,22,0.2)' }}>
@@ -187,7 +187,7 @@ function CardPreview({ title, category, marketType, party1Preview, team1Preview,
               <div className="flex flex-col items-center gap-1.5 flex-1">
                 {team1Preview
                   ? <img src={team1Preview} className="w-14 h-14 rounded-full object-cover" style={{ border: `2px solid ${cat.color}40` }} />
-                  : <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: '#1a1a28', border: '2px solid #2a2a3e' }}>🏆</div>
+                  : <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: 'var(--mk-raised)', border: '2px solid #2a2a3e' }}>🏆</div>
                 }
                 <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400 truncate max-w-[76px] text-center">{team1Name || 'Team A'}</span>
                 <span className="rounded-full px-2.5 py-0.5 text-xs font-black" style={{ background: 'rgba(167,139,250,0.12)', color: '#a78bfa' }}>—</span>
@@ -196,7 +196,7 @@ function CardPreview({ title, category, marketType, party1Preview, team1Preview,
               <div className="flex flex-col items-center gap-1.5 flex-1">
                 {team2Preview
                   ? <img src={team2Preview} className="w-14 h-14 rounded-full object-cover" style={{ border: `2px solid ${cat.color}40` }} />
-                  : <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: '#1a1a28', border: '2px solid #2a2a3e' }}>🏆</div>
+                  : <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: 'var(--mk-raised)', border: '2px solid #2a2a3e' }}>🏆</div>
                 }
                 <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400 truncate max-w-[76px] text-center">{team2Name || 'Team B'}</span>
                 <span className="rounded-full px-2.5 py-0.5 text-xs font-black" style={{ background: 'rgba(251,191,36,0.10)', color: '#fbbf24' }}>—</span>
@@ -213,9 +213,9 @@ function CardPreview({ title, category, marketType, party1Preview, team1Preview,
                   ? <img src={party1Preview} className="w-full h-full object-cover" />
                   : <span>{cat.icon}</span>
                 }
-                <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#13131a]" />
+                <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-mk-border" />
               </div>
-              <h3 className="text-[13px] font-bold leading-snug flex-1 mt-0.5" style={{ color: title ? '#f1f5f9' : '#475569' }}>
+              <h3 className="text-[13px] font-bold leading-snug flex-1 mt-0.5" style={{ color: title ? 'var(--mk-text)' : '#475569' }}>
                 {title || 'Your question will appear here…'}
               </h3>
             </div>
@@ -526,11 +526,11 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
                 <input
                   value={team1Name} onChange={e => setTeam1Name(e.target.value)}
                   placeholder="Team / party name"
-                  className="w-full rounded-xl border border-violet-900/40 bg-[#0d0d14] px-3 py-2 text-sm font-semibold text-violet-200 outline-none focus:border-violet-500 transition-colors placeholder:text-slate-600"
+                  className="w-full rounded-xl border border-violet-900/40 bg-mk-card px-3 py-2 text-sm font-semibold text-violet-200 outline-none focus:border-violet-500 transition-colors placeholder:text-slate-600"
                 />
               </div>
 
-              <div className="mt-7 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#2a2a3e] bg-[#13131a] text-xs font-black text-slate-500">VS</div>
+              <div className="mt-7 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#2a2a3e] bg-mk-raised text-xs font-black text-slate-500">VS</div>
 
               <div className="space-y-2">
                 <ImageUploader
@@ -541,7 +541,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
                 <input
                   value={team2Name} onChange={e => setTeam2Name(e.target.value)}
                   placeholder="Team / party name"
-                  className="w-full rounded-xl border border-amber-900/40 bg-[#0d0d14] px-3 py-2 text-sm font-semibold text-amber-200 outline-none focus:border-amber-600 transition-colors placeholder:text-slate-600"
+                  className="w-full rounded-xl border border-amber-900/40 bg-mk-card px-3 py-2 text-sm font-semibold text-amber-200 outline-none focus:border-amber-600 transition-colors placeholder:text-slate-600"
                 />
               </div>
             </div>
@@ -560,7 +560,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
             value={title}
             onChange={e => { setTitle(e.target.value); titleManual.current = true }}
             placeholder="Will Uganda qualify for AFCON 2026?"
-            className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors"
+            className="w-full rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-3 text-sm text-mk-text outline-none focus:border-violet-600 transition-colors"
           />
         </div>
 
@@ -607,7 +607,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
           <textarea
             value={description} onChange={e => setDescription(e.target.value)} rows={2}
             placeholder="Add context about the market, sources, or settlement criteria…"
-            className="w-full resize-none rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors"
+            className="w-full resize-none rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-3 text-sm text-mk-text outline-none focus:border-violet-600 transition-colors"
           />
         </div>
 
@@ -622,15 +622,15 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
               <div className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-violet-500">Side A</div>
               <input value={optA} onChange={e => setOptA(e.target.value)}
                 placeholder={marketType === 'dual' ? 'Team 1 name' : 'e.g. Yes / Uganda / KCCA FC'}
-                className="w-full rounded-xl border border-violet-900/40 bg-[#0d0d14] px-4 py-3 text-sm font-semibold text-violet-200 outline-none focus:border-violet-500 transition-colors placeholder:text-slate-600"
+                className="w-full rounded-xl border border-violet-900/40 bg-mk-card px-4 py-3 text-sm font-semibold text-violet-200 outline-none focus:border-violet-500 transition-colors placeholder:text-slate-600"
               />
             </div>
-            <div className="mt-5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#2a2a3e] bg-[#13131a] text-xs font-black text-slate-500">VS</div>
+            <div className="mt-5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#2a2a3e] bg-mk-raised text-xs font-black text-slate-500">VS</div>
             <div>
               <div className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-amber-500">Side B</div>
               <input value={optB} onChange={e => setOptB(e.target.value)}
                 placeholder={marketType === 'dual' ? 'Team 2 name' : 'e.g. No / Kenya / Express FC'}
-                className="w-full rounded-xl border border-amber-900/40 bg-[#0d0d14] px-4 py-3 text-sm font-semibold text-amber-200 outline-none focus:border-amber-600 transition-colors placeholder:text-slate-600"
+                className="w-full rounded-xl border border-amber-900/40 bg-mk-card px-4 py-3 text-sm font-semibold text-amber-200 outline-none focus:border-amber-600 transition-colors placeholder:text-slate-600"
               />
             </div>
           </div>
@@ -643,14 +643,14 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
             Closes at <span className="normal-case font-normal text-slate-600">(optional)</span>
           </label>
           <input type="datetime-local" value={closesAt} onChange={e => setClosesAt(e.target.value)}
-            className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-3 text-sm text-white outline-none focus:border-violet-600 transition-colors"
+            className="w-full rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-3 text-sm text-mk-text outline-none focus:border-violet-600 transition-colors"
           />
         </div>
 
         {/* Auto-verification */}
         <div className="rounded-xl border border-[#1e1e2e] overflow-hidden">
           <button type="button" onClick={() => setShowVer(v => !v)}
-            className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-[#0d0d14] transition-colors">
+            className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-mk-card transition-colors">
             <div className="flex items-center gap-2">
               <span className="text-sm">⚡</span>
               <span className="text-sm font-bold text-slate-300">Auto-verification</span>
@@ -664,7 +664,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
           </button>
 
           {showVer && (
-            <div className="border-t border-[#1e1e2e] bg-[#0a0a0f] p-4 space-y-4">
+            <div className="border-t border-[#1e1e2e] bg-mk-surface p-4 space-y-4">
               <p className="text-[11px] text-slate-600">Choose how this market gets settled. Markets with a verifiable API source can settle automatically when they close.</p>
 
               <div className="grid grid-cols-5 gap-1.5">
@@ -686,7 +686,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
                   <div>
                     <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Asset</label>
                     <select value={verAsset} onChange={e => setVerAsset(e.target.value)}
-                      className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-2.5 text-sm text-white outline-none focus:border-violet-600">
+                      className="w-full rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-2.5 text-sm text-mk-text outline-none focus:border-violet-600">
                       {CRYPTO_ASSETS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
                     </select>
                   </div>
@@ -694,7 +694,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
                     <div>
                       <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Side A wins when price is</label>
                       <select value={verOptAWins} onChange={e => setVerOptAWins(e.target.value as 'above' | 'below')}
-                        className="w-full rounded-xl border border-violet-900/40 bg-[#0d0d14] px-4 py-2.5 text-sm font-semibold text-violet-200 outline-none focus:border-violet-500">
+                        className="w-full rounded-xl border border-violet-900/40 bg-mk-card px-4 py-2.5 text-sm font-semibold text-violet-200 outline-none focus:border-violet-500">
                         <option value="above">Above</option>
                         <option value="below">Below</option>
                       </select>
@@ -704,7 +704,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
                       <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Threshold (USD)</label>
                       <input type="number" value={verThreshold} onChange={e => setVerThreshold(e.target.value)}
                         placeholder="100000"
-                        className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-2.5 text-sm text-white outline-none focus:border-violet-600"
+                        className="w-full rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-2.5 text-sm text-mk-text outline-none focus:border-violet-600"
                       />
                     </div>
                   </div>
@@ -722,7 +722,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
                   <div>
                     <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Currency pair</label>
                     <select value={verPair} onChange={e => setVerPair(e.target.value)}
-                      className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-2.5 text-sm text-white outline-none focus:border-violet-600">
+                      className="w-full rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-2.5 text-sm text-mk-text outline-none focus:border-violet-600">
                       {FX_PAIRS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
                     </select>
                   </div>
@@ -730,7 +730,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
                     <div>
                       <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Side A wins when rate is</label>
                       <select value={verOptAWins} onChange={e => setVerOptAWins(e.target.value as 'above' | 'below')}
-                        className="w-full rounded-xl border border-violet-900/40 bg-[#0d0d14] px-4 py-2.5 text-sm font-semibold text-violet-200 outline-none focus:border-violet-500">
+                        className="w-full rounded-xl border border-violet-900/40 bg-mk-card px-4 py-2.5 text-sm font-semibold text-violet-200 outline-none focus:border-violet-500">
                         <option value="above">Above</option>
                         <option value="below">Below</option>
                       </select>
@@ -739,7 +739,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
                       <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Threshold (per $1 USD)</label>
                       <input type="number" value={verThreshold} onChange={e => setVerThreshold(e.target.value)}
                         placeholder={verPair === 'ugx' ? '3700' : verPair === 'kes' ? '130' : '2500'}
-                        className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-2.5 text-sm text-white outline-none focus:border-violet-600"
+                        className="w-full rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-2.5 text-sm text-mk-text outline-none focus:border-violet-600"
                       />
                     </div>
                   </div>
@@ -757,7 +757,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
                     <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Polymarket Condition ID</label>
                     <input value={verCondId} onChange={e => setVerCondId(e.target.value)}
                       placeholder="0x1234…abcd"
-                      className="w-full rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-2.5 font-mono text-xs text-white outline-none focus:border-violet-600"
+                      className="w-full rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-2.5 font-mono text-xs text-mk-text outline-none focus:border-violet-600"
                     />
                   </div>
                   {verCondId
@@ -776,7 +776,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
                         value={fbQuery} onChange={e => setFbQuery(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && searchFootball()}
                         placeholder="e.g. Uganda vs Kenya, KCCA, AFCON…"
-                        className="flex-1 rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] px-4 py-2.5 text-sm text-white outline-none focus:border-violet-600"
+                        className="flex-1 rounded-xl border border-[#1e1e2e] bg-mk-surface px-4 py-2.5 text-sm text-mk-text outline-none focus:border-violet-600"
                       />
                       <button type="button" onClick={searchFootball} disabled={fbLoading}
                         className="rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-bold hover:bg-violet-600 disabled:opacity-50 transition-colors">
@@ -786,7 +786,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
                   </div>
 
                   {fbResults.length > 0 && !fbEvent && (
-                    <div className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-[#1e1e2e] bg-[#0d0d14] p-2">
+                    <div className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-[#1e1e2e] bg-mk-card p-2">
                       {fbResults.map(ev => (
                         <button key={ev.id} type="button" onClick={() => { setFbEvent(ev); setFbResults([]) }}
                           className="w-full rounded-lg px-3 py-2.5 text-left hover:bg-[#1e1e2e] transition-colors">
@@ -798,7 +798,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
                   )}
 
                   {fbEvent && (
-                    <div className="space-y-3 rounded-xl border border-emerald-800/30 bg-[#0a1309] p-3">
+                    <div className="space-y-3 rounded-xl border border-emerald-800/30 bg-mk-surface p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="text-sm font-bold text-emerald-400">{fbEvent.name}</p>
@@ -811,7 +811,7 @@ export default function CreateMarketForm({ onCreated, prefill, editMarket }: Pro
                           Side A (<span className="text-violet-400">{optA || 'opt_a'}</span>) wins when
                         </label>
                         <select value={optAOutcome} onChange={e => setOptAOutcome(e.target.value as typeof optAOutcome)}
-                          className="w-full rounded-xl border border-violet-900/40 bg-[#0d0d14] px-4 py-2.5 text-sm font-semibold text-violet-200 outline-none focus:border-violet-500">
+                          className="w-full rounded-xl border border-violet-900/40 bg-mk-card px-4 py-2.5 text-sm font-semibold text-violet-200 outline-none focus:border-violet-500">
                           <option value="home_win">{fbEvent.homeTeam} wins (Home)</option>
                           <option value="away_win">{fbEvent.awayTeam} wins (Away)</option>
                           <option value="draw">Draw</option>

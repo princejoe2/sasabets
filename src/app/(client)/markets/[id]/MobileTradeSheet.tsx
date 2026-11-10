@@ -60,7 +60,7 @@ export default function MobileTradeSheet({
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             className="fixed bottom-0 left-0 right-0 z-sheet lg:hidden overflow-y-auto"
             style={{
-              background:             '#111111',
+              background:             'var(--mk-card)',
               borderRadius:           '20px 20px 0 0',
               maxHeight:              '90dvh',
               paddingBottom:          'env(safe-area-inset-bottom)',

@@ -27,7 +27,7 @@ export default function BetDistribution({ options, totalPool, rake, highlightOpt
   })
 
   return (
-    <div className="rounded-xl border border-[#1e1e2e] bg-[#0d0d14] p-4 space-y-3">
+    <div className="rounded-xl border border-[#1e1e2e] bg-mk-card p-4 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">
@@ -49,7 +49,7 @@ export default function BetDistribution({ options, totalPool, rake, highlightOpt
               width: `${pct}%`,
               background: color,
               opacity: highlightOptionId && highlightOptionId !== opt.id ? 0.3 : 1,
-              borderRight: idx < segments.length - 1 ? '2px solid #0a0a0f' : undefined,
+              borderRight: idx < segments.length - 1 ? '2px solid var(--mk-border)' : undefined,
             }}
           />
         ))}

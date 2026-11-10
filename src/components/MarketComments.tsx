@@ -112,9 +112,9 @@ export default function MarketComments({
   const oldest = comments[comments.length - 1]
 
   return (
-    <div className="rounded-xl border border-[#1e1e2e] bg-[#0d0d14] overflow-hidden">
+    <div className="rounded-xl border border-[#1e1e2e] bg-mk-card overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2 border-b border-[#1a1a28] px-4 py-3">
+      <div className="flex items-center gap-2 border-b border-mk-border px-4 py-3">
         <span className="text-sm font-bold text-slate-300">Discussion</span>
         <span className="rounded-full bg-[#1e1e2e] px-2 py-0.5 text-[10px] font-bold text-slate-500">
           {comments.length}{hasMore ? '+' : ''}
@@ -136,7 +136,7 @@ export default function MarketComments({
         {comments.map((c) => (
           <div
             key={c.id}
-            className="group flex gap-3 border-b border-[#141420] px-4 py-3 last:border-0"
+            className="group flex gap-3 border-b border-mk-border px-4 py-3 last:border-0"
           >
             {/* Avatar */}
             <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#1e1e2e] text-[10px] font-black text-slate-400">
@@ -182,7 +182,7 @@ export default function MarketComments({
 
       {/* Input area */}
       {isLoggedIn ? (
-        <div className="border-t border-[#1a1a28] p-4 space-y-2">
+        <div className="border-t border-mk-border p-4 space-y-2">
           {error && (
             <p className="text-xs text-red-400 bg-red-900/15 rounded-lg px-3 py-2">{error}</p>
           )}
@@ -199,7 +199,7 @@ export default function MarketComments({
               placeholder="Share your analysis… (Enter to post)"
               maxLength={500}
               rows={2}
-              className="flex-1 resize-none rounded-xl border border-[#1e1e2e] bg-[#13131a] px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 outline-none focus:border-violet-700 transition-colors"
+              className="flex-1 resize-none rounded-xl border border-[#1e1e2e] bg-mk-raised px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 outline-none focus:border-violet-700 transition-colors"
             />
             <button
               onClick={postComment}
@@ -212,7 +212,7 @@ export default function MarketComments({
           <div className="text-right text-[10px] text-slate-700">{text.length}/500</div>
         </div>
       ) : (
-        <div className="border-t border-[#1a1a28] px-4 py-3 text-center text-xs text-slate-600">
+        <div className="border-t border-mk-border px-4 py-3 text-center text-xs text-slate-600">
           <a href="/auth" className="text-violet-500 hover:text-violet-400 transition-colors">
             Log in
           </a>{' '}

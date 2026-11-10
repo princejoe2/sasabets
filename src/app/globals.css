@@ -3,37 +3,80 @@
 @tailwind utilities;
 
 /* ── Design tokens ──────────────────────────────────────────────────────────── */
-:root {
+/* Colours are stored as RGB channels (--mk-*-rgb) so Tailwind opacity modifiers
+   (bg-mk-accent/10) work, and so light mode only has to override the channels.
+   Dark is the default; html.light flips everything. `.dark` re-asserts dark on a
+   subtree (used by the admin panel, which is always dark). */
+:root, .dark {
+  --mk-bg-rgb:        0 0 0;
+  --mk-surface-rgb:   10 10 10;
+  --mk-card-rgb:      17 17 17;
+  --mk-raised-rgb:    26 26 26;
+  --mk-border-rgb:    34 34 34;
+  --mk-divider-rgb:   26 26 26;
+  --mk-text-rgb:      245 245 245;
+  --mk-secondary-rgb: 161 161 161;
+  --mk-muted-rgb:     107 107 107;
+  --mk-yes-rgb:       34 197 94;
+  --mk-yes-text-rgb:  74 222 128;
+  --mk-no-rgb:        239 68 68;
+  --mk-no-text-rgb:   248 113 113;
+  --mk-accent-rgb:    255 159 67;
+  --mk-card-border:   rgba(255, 255, 255, 0.08);
+  --mk-yes-bg:        rgba(34, 197, 94, 0.12);
+  --mk-no-bg:         rgba(239, 68, 68, 0.12);
+  --mk-accent-bg:     rgba(255, 159, 67, 0.12);
+  --mk-shadow:        0 8px 24px rgba(0, 0, 0, 0.18);
+  color-scheme: dark;
+}
+
+html.light {
+  --mk-bg-rgb:        244 245 247;
+  --mk-surface-rgb:   250 250 251;
+  --mk-card-rgb:      255 255 255;
+  --mk-raised-rgb:    238 240 243;
+  --mk-border-rgb:    224 227 232;
+  --mk-divider-rgb:   234 236 240;
+  --mk-text-rgb:      13 15 20;
+  --mk-secondary-rgb: 75 82 96;
+  --mk-muted-rgb:     107 114 128;
+  --mk-yes-rgb:       22 163 74;
+  --mk-yes-text-rgb:  21 128 61;
+  --mk-no-rgb:        220 38 38;
+  --mk-no-text-rgb:   185 28 28;
+  --mk-accent-rgb:    240 138 36;
+  --mk-card-border:   rgba(0, 0, 0, 0.08);
+  --mk-yes-bg:        rgba(22, 163, 74, 0.10);
+  --mk-no-bg:         rgba(220, 38, 38, 0.09);
+  --mk-accent-bg:     rgba(240, 138, 36, 0.12);
+  --mk-shadow:        0 8px 24px rgba(15, 23, 42, 0.08);
+  color-scheme: light;
+}
+
+:root, .dark, html.light {
   /* Surfaces */
-  --mk-bg:          #000000;
-  --mk-surface:     #0A0A0A;
-  --mk-card:        #111111;
-  --mk-raised:      #1A1A1A;
+  --mk-bg:          rgb(var(--mk-bg-rgb));
+  --mk-surface:     rgb(var(--mk-surface-rgb));
+  --mk-card:        rgb(var(--mk-card-rgb));
+  --mk-raised:      rgb(var(--mk-raised-rgb));
 
   /* Borders */
-  --mk-border:      #222222;
-  --mk-card-border: rgba(255, 255, 255, 0.08);
-  --mk-divider:     #1A1A1A;
+  --mk-border:      rgb(var(--mk-border-rgb));
+  --mk-divider:     rgb(var(--mk-divider-rgb));
 
   /* Text */
-  --mk-text:        #F5F5F5;
-  --mk-secondary:   #A1A1A1;
-  --mk-muted:       #6B6B6B;
+  --mk-text:        rgb(var(--mk-text-rgb));
+  --mk-secondary:   rgb(var(--mk-secondary-rgb));
+  --mk-muted:       rgb(var(--mk-muted-rgb));
 
-  /* YES */
-  --mk-yes:         #22C55E;
-  --mk-yes-bg:      rgba(34, 197, 94, 0.12);
-  --mk-yes-text:    #4ADE80;
-
-  /* NO */
-  --mk-no:          #EF4444;
-  --mk-no-bg:       rgba(239, 68, 68, 0.12);
-  --mk-no-text:     #F87171;
+  /* YES / NO */
+  --mk-yes:         rgb(var(--mk-yes-rgb));
+  --mk-yes-text:    rgb(var(--mk-yes-text-rgb));
+  --mk-no:          rgb(var(--mk-no-rgb));
+  --mk-no-text:     rgb(var(--mk-no-text-rgb));
 
   /* Accent — brand orange */
-  --mk-accent:      #FF9F43;
-  --mk-accent-bg:   rgba(255, 159, 67, 0.12);
-
+  --mk-accent:      rgb(var(--mk-accent-rgb));
   /* Candidate palette (assigned permanently by color_index) */
   --mk-c0: #F5B83D;
   --mk-c1: #EC4899;
@@ -83,10 +126,9 @@
   --foreground: var(--mk-text);
 }
 
-/* ── Always-dark base ───────────────────────────────────────────────────────── */
+/* ── Base (theme-aware) ─────────────────────────────────────────────────────── */
 html {
-  color-scheme: dark;
-  background: #000000;
+  background: var(--mk-bg);
 }
 
 body {
@@ -147,7 +189,7 @@ img { max-width: 100%; height: auto; }
   transition: border-color var(--dur-base), box-shadow var(--dur-base), transform var(--dur-base);
 }
 .mcard:hover {
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: rgb(var(--mk-text-rgb) / 0.18);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   transform: translateY(-2px);
 }
@@ -185,7 +227,7 @@ img { max-width: 100%; height: auto; }
 }
 
 .cat-tab {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgb(var(--mk-text-rgb) / 0.04);
   border: 1px solid var(--mk-border);
   color: var(--mk-secondary);
   border-radius: var(--r-pill);
@@ -218,7 +260,7 @@ img { max-width: 100%; height: auto; }
   position: absolute;
   top: 0; left: -80%;
   width: 60%; height: 100%;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.04) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgb(var(--mk-text-rgb) / 0.04) 50%, transparent 100%);
   transform: skewX(-15deg);
   transition: none;
   pointer-events: none;
@@ -402,3 +444,156 @@ img { max-width: 100%; height: auto; }
     scroll-behavior: auto;
   }
 }
+
+/* ── Light-mode remap (generated) ───────────────────────────────────────────
+   Pages were designed on black, so they use pale -100…-400 text shades and very
+   dark -900/-950 tinted panels. In light mode swap those for readable equivalents. */
+html.light .text-slate-50,
+html.light .text-slate-100,
+html.light .text-slate-200,
+html.light .text-slate-300 { color: #334155; }
+html.light .text-slate-400 { color: #64748b; }
+html.light [class*="bg-slate-950"], html.light [class*="bg-slate-900"] { background-color: #f8fafc; }
+html.light [class*="border-slate-900"], html.light [class*="border-slate-800"] { border-color: #f1f5f9; }
+html.light .text-gray-50,
+html.light .text-gray-100,
+html.light .text-gray-200,
+html.light .text-gray-300 { color: #374151; }
+html.light .text-gray-400 { color: #6b7280; }
+html.light [class*="bg-gray-950"], html.light [class*="bg-gray-900"] { background-color: #f9fafb; }
+html.light [class*="border-gray-900"], html.light [class*="border-gray-800"] { border-color: #f3f4f6; }
+html.light .text-zinc-50,
+html.light .text-zinc-100,
+html.light .text-zinc-200,
+html.light .text-zinc-300 { color: #3f3f46; }
+html.light .text-zinc-400 { color: #6b7280; }
+html.light [class*="bg-zinc-950"], html.light [class*="bg-zinc-900"] { background-color: #fafafa; }
+html.light [class*="border-zinc-900"], html.light [class*="border-zinc-800"] { border-color: #f4f4f5; }
+html.light .text-neutral-50,
+html.light .text-neutral-100,
+html.light .text-neutral-200,
+html.light .text-neutral-300 { color: #404040; }
+html.light .text-neutral-400 { color: #6b7280; }
+html.light [class*="bg-neutral-950"], html.light [class*="bg-neutral-900"] { background-color: #fafafa; }
+html.light [class*="border-neutral-900"], html.light [class*="border-neutral-800"] { border-color: #f5f5f5; }
+html.light .text-stone-50,
+html.light .text-stone-100,
+html.light .text-stone-200,
+html.light .text-stone-300 { color: #44403c; }
+html.light .text-stone-400 { color: #6b7280; }
+html.light [class*="bg-stone-950"], html.light [class*="bg-stone-900"] { background-color: #fafaf9; }
+html.light [class*="border-stone-900"], html.light [class*="border-stone-800"] { border-color: #f5f5f4; }
+html.light .text-red-100,
+html.light .text-red-200,
+html.light .text-red-300,
+html.light .text-red-400 { color: #b91c1c; }
+html.light [class*="bg-red-950"], html.light [class*="bg-red-900"] { background-color: #fef2f2; }
+html.light [class*="border-red-900"], html.light [class*="border-red-800"] { border-color: #fee2e2; }
+html.light .text-orange-100,
+html.light .text-orange-200,
+html.light .text-orange-300,
+html.light .text-orange-400 { color: #c2410c; }
+html.light [class*="bg-orange-950"], html.light [class*="bg-orange-900"] { background-color: #fff7ed; }
+html.light [class*="border-orange-900"], html.light [class*="border-orange-800"] { border-color: #ffedd5; }
+html.light .text-amber-100,
+html.light .text-amber-200,
+html.light .text-amber-300,
+html.light .text-amber-400 { color: #b45309; }
+html.light [class*="bg-amber-950"], html.light [class*="bg-amber-900"] { background-color: #fffbeb; }
+html.light [class*="border-amber-900"], html.light [class*="border-amber-800"] { border-color: #fef3c7; }
+html.light .text-yellow-100,
+html.light .text-yellow-200,
+html.light .text-yellow-300,
+html.light .text-yellow-400 { color: #a16207; }
+html.light [class*="bg-yellow-950"], html.light [class*="bg-yellow-900"] { background-color: #fefce8; }
+html.light [class*="border-yellow-900"], html.light [class*="border-yellow-800"] { border-color: #fef9c3; }
+html.light .text-lime-100,
+html.light .text-lime-200,
+html.light .text-lime-300,
+html.light .text-lime-400 { color: #4d7c0f; }
+html.light [class*="bg-lime-950"], html.light [class*="bg-lime-900"] { background-color: #f7fee7; }
+html.light [class*="border-lime-900"], html.light [class*="border-lime-800"] { border-color: #ecfccb; }
+html.light .text-green-100,
+html.light .text-green-200,
+html.light .text-green-300,
+html.light .text-green-400 { color: #15803d; }
+html.light [class*="bg-green-950"], html.light [class*="bg-green-900"] { background-color: #f0fdf4; }
+html.light [class*="border-green-900"], html.light [class*="border-green-800"] { border-color: #dcfce7; }
+html.light .text-emerald-100,
+html.light .text-emerald-200,
+html.light .text-emerald-300,
+html.light .text-emerald-400 { color: #047857; }
+html.light [class*="bg-emerald-950"], html.light [class*="bg-emerald-900"] { background-color: #ecfdf5; }
+html.light [class*="border-emerald-900"], html.light [class*="border-emerald-800"] { border-color: #d1fae5; }
+html.light .text-teal-100,
+html.light .text-teal-200,
+html.light .text-teal-300,
+html.light .text-teal-400 { color: #0f766e; }
+html.light [class*="bg-teal-950"], html.light [class*="bg-teal-900"] { background-color: #f0fdfa; }
+html.light [class*="border-teal-900"], html.light [class*="border-teal-800"] { border-color: #ccfbf1; }
+html.light .text-cyan-100,
+html.light .text-cyan-200,
+html.light .text-cyan-300,
+html.light .text-cyan-400 { color: #0e7490; }
+html.light [class*="bg-cyan-950"], html.light [class*="bg-cyan-900"] { background-color: #ecfeff; }
+html.light [class*="border-cyan-900"], html.light [class*="border-cyan-800"] { border-color: #cffafe; }
+html.light .text-sky-100,
+html.light .text-sky-200,
+html.light .text-sky-300,
+html.light .text-sky-400 { color: #0369a1; }
+html.light [class*="bg-sky-950"], html.light [class*="bg-sky-900"] { background-color: #f0f9ff; }
+html.light [class*="border-sky-900"], html.light [class*="border-sky-800"] { border-color: #e0f2fe; }
+html.light .text-blue-100,
+html.light .text-blue-200,
+html.light .text-blue-300,
+html.light .text-blue-400 { color: #1d4ed8; }
+html.light [class*="bg-blue-950"], html.light [class*="bg-blue-900"] { background-color: #eff6ff; }
+html.light [class*="border-blue-900"], html.light [class*="border-blue-800"] { border-color: #dbeafe; }
+html.light .text-indigo-100,
+html.light .text-indigo-200,
+html.light .text-indigo-300,
+html.light .text-indigo-400 { color: #4338ca; }
+html.light [class*="bg-indigo-950"], html.light [class*="bg-indigo-900"] { background-color: #eef2ff; }
+html.light [class*="border-indigo-900"], html.light [class*="border-indigo-800"] { border-color: #e0e7ff; }
+html.light .text-violet-100,
+html.light .text-violet-200,
+html.light .text-violet-300,
+html.light .text-violet-400 { color: #6d28d9; }
+html.light [class*="bg-violet-950"], html.light [class*="bg-violet-900"] { background-color: #f5f3ff; }
+html.light [class*="border-violet-900"], html.light [class*="border-violet-800"] { border-color: #ede9fe; }
+html.light .text-purple-100,
+html.light .text-purple-200,
+html.light .text-purple-300,
+html.light .text-purple-400 { color: #7e22ce; }
+html.light [class*="bg-purple-950"], html.light [class*="bg-purple-900"] { background-color: #faf5ff; }
+html.light [class*="border-purple-900"], html.light [class*="border-purple-800"] { border-color: #f3e8ff; }
+html.light .text-fuchsia-100,
+html.light .text-fuchsia-200,
+html.light .text-fuchsia-300,
+html.light .text-fuchsia-400 { color: #a21caf; }
+html.light [class*="bg-fuchsia-950"], html.light [class*="bg-fuchsia-900"] { background-color: #fdf4ff; }
+html.light [class*="border-fuchsia-900"], html.light [class*="border-fuchsia-800"] { border-color: #fae8ff; }
+html.light .text-pink-100,
+html.light .text-pink-200,
+html.light .text-pink-300,
+html.light .text-pink-400 { color: #be185d; }
+html.light [class*="bg-pink-950"], html.light [class*="bg-pink-900"] { background-color: #fdf2f8; }
+html.light [class*="border-pink-900"], html.light [class*="border-pink-800"] { border-color: #fce7f3; }
+html.light .text-rose-100,
+html.light .text-rose-200,
+html.light .text-rose-300,
+html.light .text-rose-400 { color: #be123c; }
+html.light [class*="bg-rose-950"], html.light [class*="bg-rose-900"] { background-color: #fff1f2; }
+html.light [class*="border-rose-900"], html.light [class*="border-rose-800"] { border-color: #ffe4e6; }
+
+/* Candidate palette: deeper variants so labels read on white */
+html.light {
+  --mk-c0: #B7791F; --mk-c1: #DB2777; --mk-c2: #2563EB; --mk-c3: #16A34A;
+  --mk-c4: #9333EA; --mk-c5: #EA580C; --mk-c6: #0D9488; --mk-c7: #CA8A04;
+}
+
+/* Bright accent text set via inline colour (section titles, candidate labels):
+   in light mode darken it so it reads on white. No-op in dark mode. */
+html.light .mk-ink { filter: brightness(0.62) saturate(1.25); }
+html.light .text-amber-500, html.light .text-yellow-500, html.light .text-lime-500,
+html.light .text-cyan-500, html.light .text-emerald-500 { filter: brightness(0.75) saturate(1.2); }

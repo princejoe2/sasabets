@@ -73,7 +73,7 @@ export default function OutcomeList({
               />
             ) : (
               <div
-                className="h-10 w-10 rounded-full shrink-0 flex items-center justify-center text-sm font-bold"
+                className="mk-ink h-10 w-10 rounded-full shrink-0 flex items-center justify-center text-sm font-bold"
                 style={{ background: `${color}20`, color }}
               >
                 {initials}
@@ -87,7 +87,7 @@ export default function OutcomeList({
 
             {/* Probability */}
             <div className="tabular text-right shrink-0 w-12">
-              <p className="text-2xl font-bold leading-none" style={{ color }}>{pct.toFixed(0)}%</p>
+              <p className="mk-ink text-2xl font-bold leading-none" style={{ color }}>{pct.toFixed(0)}%</p>
             </div>
 
             {/* YES button */}

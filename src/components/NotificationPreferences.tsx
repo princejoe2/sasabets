@@ -69,7 +69,7 @@ export default function NotificationPreferences() {
   if (loading) return null
 
   return (
-    <div className="rounded-2xl border border-[#1e1e2e] bg-[#13131a]">
+    <div className="rounded-2xl border border-[#1e1e2e] bg-mk-raised">
       {/* Header */}
       <div className="border-b border-[#1e1e2e] px-5 py-4">
         <h3 className="font-bold text-slate-200">Email notifications</h3>
