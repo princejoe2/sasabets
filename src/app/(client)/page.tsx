@@ -1,4 +1,5 @@
-import { createPublicClient, createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { getPublicMarkets } from '@/lib/cached-markets'
 import MarketsClient from '@/components/MarketsClient'
 import type { Metadata } from 'next'
 
@@ -13,21 +14,6 @@ export const metadata: Metadata = {
 }
 
 export const revalidate = 30
-
-type Mkt = {
-  id: string; title: string; description: string | null
-  total_pool: number; options: Array<{ id: string; label: string; total_pool: number }>
-  closes_at: string | null; created_at: string; status: string; rake_pct: number
-  metadata?: Record<string, unknown>
-}
-
-function normalise(m: Mkt) {
-  return {
-    ...m,
-    options:  m.options  as Array<{ id: string; label: string; total_pool: number }>,
-    metadata: (m.metadata ?? {}) as Record<string, unknown>,
-  }
-}
 
 const jsonLd = [
   {
@@ -58,35 +44,21 @@ const jsonLd = [
 ]
 
 export default async function HomePage() {
-  const supabase     = createPublicClient()
-  const authClient   = await createClient()
-  const { data: { session } } = await authClient.auth.getSession()
-
-  const marketsResult = await supabase
-    .from('markets')
-    .select('id, title, description, total_pool, options, closes_at, status, rake_pct, created_at, metadata')
-    .or('metadata->>private.is.null,metadata->>private.neq.true')
-    .order('created_at', { ascending: false })
-  const profilesResult = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true })
-
-  const markets = marketsResult.data
-  const userCount = profilesResult.count
-
-  const all       = markets ?? []
+  // getSession only reads the cookie (no network call); markets come from the shared 30 s cache
+  const authClient = await createClient()
+  const [{ data: { session } }, all] = await Promise.all([
+    authClient.auth.getSession(),
+    getPublicMarkets(),
+  ])
   const openCount = all.filter(m => m.status === 'open').length
-  const totalPool = all.reduce((s, m) => s + Number(m.total_pool), 0)
 
   return (
     <div className="min-h-screen page-enter" style={{ background: 'var(--fc-cat-bg)' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <MarketsClient
-        markets={all.map(normalise)}
+        markets={all}
         openCount={openCount}
         initialCat="all"
-        totalPool={totalPool}
-        userCount={userCount ?? 0}
         isLoggedIn={!!session}
       />
     </div>

@@ -81,10 +81,14 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // No Supabase auth cookie → anonymous visitor; skip the network round-trip to Supabase Auth.
+  const hasAuthCookie = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.includes('auth-token'))
   let user = null
   try {
-    const { data } = await supabase.auth.getUser()
-    user = data.user
+    if (hasAuthCookie) {
+      const { data } = await supabase.auth.getUser()
+      user = data.user
+    }
   } catch {
     // Supabase unreachable — allow request through, protected routes will redirect on render
   }

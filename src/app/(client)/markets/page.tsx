@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import MarketsClient from '@/components/MarketsClient'
+import { getPublicMarkets } from '@/lib/cached-markets'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -27,26 +28,12 @@ export default async function MarketsPage({
 }) {
   const resolvedSearchParams = await searchParams
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const { data: markets } = await supabase
-    .from('markets')
-    .select('id, title, description, total_pool, options, closes_at, status, rake_pct, created_at, metadata, is_featured')
-    .or('metadata->>private.is.null,metadata->>private.neq.true')
-    .neq('status', 'pending_approval')
-    .order('created_at', { ascending: false })
-
-  const all = markets ?? []
+  // getSession only reads the cookie; markets come from the shared 30 s cache
+  const [{ data: { session } }, all] = await Promise.all([
+    supabase.auth.getSession(),
+    getPublicMarkets(),
+  ])
   const openCount = all.filter(m => m.status === 'open').length
-
-  type Mkt = NonNullable<typeof markets>[0]
-  function normalise(m: Mkt) {
-    return {
-      ...m,
-      options:     m.options     as Array<{ id: string; label: string; total_pool: number }>,
-      metadata:    (m.metadata ?? {}) as Record<string, unknown>,
-      is_featured: m.is_featured ?? false,
-    }
-  }
 
   const initialCat = (resolvedSearchParams?.cat ?? 'all') as string
 
@@ -64,7 +51,7 @@ export default async function MarketsPage({
         </div>
       </div>
 
-      <MarketsClient markets={all.map(normalise)} openCount={openCount} initialCat={initialCat} isLoggedIn={!!session} />
+      <MarketsClient markets={all}openCount={openCount} initialCat={initialCat} isLoggedIn={!!session} />
     </div>
   )
 }
