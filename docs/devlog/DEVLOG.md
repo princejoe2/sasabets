@@ -251,3 +251,9 @@ proxied records, so it does nothing here.
 Dismiss the two CNAME insights and AI Labyrinth in Security Center as accepted. Turnstile on
 signup/login is optional. Watch the DMARC aggregate reports in the support inbox for a couple of
 weeks; if nothing legitimate fails, move to `p=reject`. Revoke the API token used for this pass.
+
+## 2026-11-15 — www domain fix and open SEO decisions
+
+Fixed `www.sabula256.com`, which was serving an expired TLS certificate because it wasn't attached to the Vercel project. The main domain `sabula256.com` was also only a manual alias, not a project domain, so both are now added to the `sasabets` project: the apex as a normal production domain, and `www` as a 308 permanent redirect to the apex (path preserved). Verified that `www` returns 308 to `https://sabula256.com/...`, that a new certificate is valid until Feb 2027, and that the apex still returns 200. Since the apex is now a project domain, it follows each production deploy automatically.
+
+Decisions from the 2026-11-14 SEO pass: the minimum age stays at 18+ (owner's call), and the 8 SEO commits keep their Claude Fable 5.2 co-author line (no history rewrite).
