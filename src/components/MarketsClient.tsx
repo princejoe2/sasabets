@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useWatchlist } from '@/hooks/useWatchlist'
 import { createClient } from '@/lib/supabase/client'
+import { detectCat, CATS, type Category } from '@/lib/market-categories'
 
 /* ─── Types ──────────────────────────────────────────────────── */
 type Mkt = {
@@ -20,26 +21,7 @@ type Mkt = {
   is_featured?: boolean
 }
 
-type Category = 'all' | 'updown' | 'football' | 'politics' | 'economy' | 'entertainment' | 'tech' | 'infrastructure' | 'agriculture' | 'default'
 type Sort     = 'random' | 'pool' | 'closing' | 'newest'
-
-/* ─── Category detection ─────────────────────────────────────── */
-const VALID_CATS: Category[] = ['football','politics','economy','entertainment','tech','infrastructure','agriculture','updown','default']
-
-function detectCat(title: string, desc = '', metadata?: Record<string, unknown>): Exclude<Category, 'all'> {
-  if (metadata?.type === 'updown' || metadata?.type === 'price_level') return 'updown'
-  const stored = metadata?.category as string | undefined
-  if (stored && VALID_CATS.includes(stored as Category)) return stored as Exclude<Category, 'all'>
-  const t = (title + ' ' + desc).toLowerCase()
-  if (/football|soccer|premier.?league|fufa|kcca.*fc|vipers|express.?fc|cranes|afcon|scorer|derby|sc.villa|bul.fc|world.?cup|golden.?boot|messi|haaland|mbapp|bellingham|ronaldo|england.*group|group.?l|norway.*wc|wc.*final|africa.*semi|wc.*semi/.test(t)) return 'football'
-  if (/president|election|parliament|political|bobi.?wine|museveni|besigye|social.?media.?tax|vote|contest|treason|muhoozi|lukwago|speaker|nabbanja|minister|mp.be|nup.mp|vetting|ayebare|oboth|foreign.?affair/.test(t)) return 'politics'
-  if (/oil.?production|exchange.?rate|ugx.*usd|usd.*ugx|bank.*branch|share.?price|startup.?fund|largest.?fund|mtn.?uganda.?(share|profit|report)|robusta|farmgate|coffee|bitcoin|btc|crypto|gdp|shilling|profit|economy|eacop|pipeline|dividend|inflation/.test(t)) return 'economy'
-  if (/music|artist|album|song|festival|nyege|afrimma|eddy.?kenzo|chameleone|fik.?fameica|pallaso|winnie.?nwagi|headline|ai.?product|openai|google.?deep|concert/.test(t)) return 'entertainment'
-  if (/5g|mobile.?money|airtel.?money|mtn.?momo|telecom|users.?in.?uganda|startup|digital.?currency|cbdc/.test(t)) return 'tech'
-  if (/expressway|railway|sgr|road.?repair|kampala.*jinja|infrastructure/.test(t)) return 'infrastructure'
-  if (/rainfall|rain|agriculture|crop|climate|long.?rains/.test(t)) return 'agriculture'
-  return 'default'
-}
 
 function seededShuffle<T>(arr: T[], seed: number): T[] {
   const copy = [...arr]
@@ -51,20 +33,6 @@ function seededShuffle<T>(arr: T[], seed: number): T[] {
   }
   return copy
 }
-
-/* ─── Category config (no emoji — clean text only) ──────────── */
-const CATS: { id: Category; label: string }[] = [
-  { id: 'all',            label: 'All'            },
-  { id: 'updown',         label: 'Up/Down'        },
-  { id: 'football',       label: 'Football'       },
-  { id: 'politics',       label: 'Politics'       },
-  { id: 'economy',        label: 'Economy'        },
-  { id: 'entertainment',  label: 'Entertainment'  },
-  { id: 'tech',           label: 'Technology'     },
-  { id: 'infrastructure', label: 'Infrastructure' },
-  { id: 'agriculture',    label: 'Agriculture'    },
-  { id: 'default',        label: 'Other'          },
-]
 
 /* neutral dark avatar backgrounds — subtle tonal differences only */
 const CAT_AVATAR_BG: Record<string, string> = {
@@ -383,6 +351,7 @@ export default function MarketsClient({
   markets,
   openCount: _oc,
   initialCat = 'all',
+  initialSearch = '',
   totalPool: _tp = 0,
   userCount: _uc = 0,
   isLoggedIn = true,
@@ -390,6 +359,7 @@ export default function MarketsClient({
   markets: Mkt[]
   openCount: number
   initialCat?: string
+  initialSearch?: string
   totalPool?: number
   userCount?: number
   isLoggedIn?: boolean
@@ -397,7 +367,7 @@ export default function MarketsClient({
   const router   = useRouter()
   const supabase = createClient()
 
-  const [search,        setSearch]        = useState('')
+  const [search,        setSearch]        = useState(initialSearch)
   const [cat,           setCat]           = useState<Category>((initialCat as Category) ?? 'all')
   const [sort,          setSort]          = useState<Sort>('random')
   const [showClosed,    setShowClosed]    = useState(false)

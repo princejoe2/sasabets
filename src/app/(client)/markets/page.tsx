@@ -1,30 +1,30 @@
 import { createClient } from '@/lib/supabase/server'
 import MarketsClient from '@/components/MarketsClient'
 import { getPublicMarkets } from '@/lib/cached-markets'
-import type { Metadata } from 'next'
+import { CATEGORY_PAGES } from '@/lib/market-categories'
+import Link from 'next/link'
+import { pageMeta } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Browse Markets – Uganda Politics, Football & More',
-  description: 'Browse live prediction markets on Uganda politics, FUFA football, economy and more — or create your own. Win on MTN or Airtel Mobile Money.',
+export const metadata = pageMeta({
+  title: "Uganda Prediction Markets – Football, Politics & Economy",
+  description: "Browse live prediction markets on Ugandan football, politics, the economy and entertainment. Crowd-set odds, stakes from UGX 1,000, winnings paid via MTN or Airtel Mobile Money.",
+  path: "/markets",
   keywords: [
-    'Uganda prediction market', 'Uganda football prediction', 'Uganda elections betting',
-    'MTN mobile money prediction', 'FUFA Uganda betting', 'create prediction market',
-    'community prediction market Uganda',
-  ],
-  alternates: { canonical: 'https://sabula256.com/markets' },
-  openGraph: {
-    title: 'Browse Markets | Sabula 256',
-    description: 'Live prediction markets on Uganda politics, football, economy and more — or create your own. Win via Mobile Money.',
-    url: 'https://sabula256.com/markets',
-  },
-}
+    "Uganda prediction market",
+    "Uganda football predictions",
+    "Uganda election predictions",
+    "prediction markets Uganda",
+    "Mobile Money predictions",
+    "community prediction market Uganda"
+  ]
+})
 
 export const revalidate = 30
 
 export default async function MarketsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ cat?: string }>
+  searchParams?: Promise<{ cat?: string; q?: string }>
 }) {
   const resolvedSearchParams = await searchParams
   const supabase = await createClient()
@@ -36,6 +36,7 @@ export default async function MarketsPage({
   const openCount = all.filter(m => m.status === 'open').length
 
   const initialCat = (resolvedSearchParams?.cat ?? 'all') as string
+  const initialSearch = (resolvedSearchParams?.q ?? '').slice(0, 100)
 
   return (
     <div className="min-h-screen bg-mk-bg page-enter">
@@ -48,10 +49,21 @@ export default async function MarketsPage({
           <p className="mt-2 text-mk-muted">
             {openCount} open now · Pick your outcome · Collect your winnings
           </p>
+          <nav aria-label="Market categories" className="mt-4 flex flex-wrap gap-2">
+            {CATEGORY_PAGES.map(c => (
+              <Link
+                key={c.slug}
+                href={`/markets/category/${c.slug}`}
+                className="rounded-full border border-mk-border bg-mk-raised px-3 py-1 text-xs font-semibold text-mk-secondary transition-colors hover:border-mk-accent/50 hover:text-mk-text"
+              >
+                {c.label}
+              </Link>
+            ))}
+          </nav>
         </div>
       </div>
 
-      <MarketsClient markets={all}openCount={openCount} initialCat={initialCat} isLoggedIn={!!session} />
+      <MarketsClient markets={all} openCount={openCount} initialCat={initialCat} initialSearch={initialSearch} isLoggedIn={!!session} />
     </div>
   )
 }

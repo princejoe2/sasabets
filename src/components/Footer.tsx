@@ -2,6 +2,25 @@ import Link from 'next/link'
 import SocialFlipButton from '@/components/ui/social-flip-button'
 import { FaFacebook, FaInstagram, FaWhatsapp, FaYoutube, FaTelegram, FaTiktok, FaEnvelope } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
+import { CATEGORY_PAGES } from '@/lib/market-categories'
+
+const FOOTER_LINK = 'text-xs text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-mk-text'
+const FOOTER_HEAD = 'mb-3 text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500'
+
+const EXPLORE_LINKS = [
+  { href: '/markets',     label: 'All markets' },
+  { href: '/updown',      label: 'Up/Down price markets' },
+  { href: '/leaderboard', label: 'Leaderboard' },
+  { href: '/proposals',   label: 'Suggest a market' },
+  { href: '/create',      label: 'Create a market' },
+]
+const LEARN_LINKS = [
+  { href: '/faq',                  label: 'How it works (FAQ)' },
+  { href: '/help',                 label: 'Help Centre' },
+  { href: '/news',                 label: 'News & guides' },
+  { href: '/about',                label: 'About Sabula 256' },
+  { href: '/responsible-gambling', label: 'Responsible play' },
+]
 
 const SOCIAL_ITEMS = [
   { letter: 'C', icon: <FaFacebook />,  label: 'Facebook',  href: '#' },
@@ -28,6 +47,33 @@ export default function Footer() {
           backClassName="bg-violet-600 text-white dark:bg-violet-500 dark:text-white"
         />
       </div>
+
+      <nav aria-label="Footer" className="mx-auto mb-8 grid max-w-6xl grid-cols-2 gap-8 border-t border-slate-200 pt-8 dark:border-slate-700 sm:grid-cols-3">
+        <div>
+          <p className={FOOTER_HEAD}>Markets by category</p>
+          <ul className="space-y-2">
+            {CATEGORY_PAGES.map(c => (
+              <li key={c.slug}><Link href={`/markets/category/${c.slug}`} className={FOOTER_LINK}>{c.label} predictions</Link></li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className={FOOTER_HEAD}>Explore</p>
+          <ul className="space-y-2">
+            {EXPLORE_LINKS.map(l => (
+              <li key={l.href}><Link href={l.href} className={FOOTER_LINK}>{l.label}</Link></li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className={FOOTER_HEAD}>Learn</p>
+          <ul className="space-y-2">
+            {LEARN_LINKS.map(l => (
+              <li key={l.href}><Link href={l.href} className={FOOTER_LINK}>{l.label}</Link></li>
+            ))}
+          </ul>
+        </div>
+      </nav>
 
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
         <div className="flex items-center gap-2">
