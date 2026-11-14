@@ -1,16 +1,37 @@
-import type { Metadata } from 'next'
+import { pageMeta, ldJson, breadcrumbLd } from '@/lib/seo'
+import { SECTIONS } from './faqs'
 
-export const metadata: Metadata = {
-  title: 'Help Centre',
-  description: 'How to create markets, place predictions, deposit and withdraw on Sabula 256 — Uganda\'s community prediction market. Get paid via MTN or Airtel Mobile Money.',
-  alternates: { canonical: 'https://sabula256.com/help' },
-  openGraph: {
-    title: 'Help Centre | Sabula 256',
-    description: 'How to create markets, predict, deposit and withdraw on Uganda\'s community prediction market.',
-    url: 'https://sabula256.com/help',
+export const metadata = pageMeta({
+  title: 'Help Centre – Deposits, Withdrawals & Payouts',
+  description: 'Step-by-step help for Sabula 256: creating an account, depositing and withdrawing with MTN or Airtel Mobile Money, placing predictions, odds, payouts and account security.',
+  path: '/help',
+})
+
+// FAQPage structured data generated from the same content the page renders.
+const JSONLD = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    '@id': 'https://sabula256.com/help',
+    mainEntity: SECTIONS.flatMap(section =>
+      section.faqs.map(faq => ({
+        '@type': 'Question',
+        name: faq.q,
+        acceptedAnswer: { '@type': 'Answer', text: faq.a },
+      })),
+    ),
   },
-}
+  breadcrumbLd([
+    { name: 'Home', path: '/' },
+    { name: 'Help Centre', path: '/help' },
+  ]),
+]
 
 export default function HelpLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(JSONLD) }} />
+      {children}
+    </>
+  )
 }

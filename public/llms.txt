@@ -13,7 +13,7 @@ Prediction markets are different from traditional betting shops because the odds
 ## How it works
 
 1. **Browse markets** — Open markets on football, politics, economy, entertainment, tech, infrastructure, agriculture, and more at sabula256.com/markets
-2. **Deposit** — Top up your wallet via MTN or Airtel Mobile Money (minimum UGX 2,000)
+2. **Deposit** — Top up your wallet via MTN or Airtel Mobile Money (minimum UGX 1,000)
 3. **Predict** — Pick an outcome and stake any amount (minimum UGX 1,000)
 4. **Wait for settlement** — When the event resolves, the admin settles the market by declaring the winning outcome
 5. **Collect** — Winners get their share of the full pool automatically. Withdraw to Mobile Money in minutes.
@@ -27,7 +27,7 @@ Anyone in Uganda aged 18 and above with an MTN or Airtel Mobile Money number. No
 - **Rake**: 8% of total pool, only charged on markets with pool ≥ UGX 50,000
 - **Creator share**: 2% of total pool credited to the market creator on qualifying markets
 - **Minimum bet**: UGX 1,000
-- **Minimum deposit**: UGX 2,000
+- **Minimum deposit**: UGX 1,000 (maximum UGX 200,000 per transaction)
 - **Minimum withdrawal**: UGX 5,000
 - **Maximum withdrawal**: UGX 1,000,000 per transaction
 - **KYC gate**: Required for cumulative 30-day withdrawals above UGX 5,000,000
@@ -67,6 +67,15 @@ Any registered user can create a prediction market:
 
 - Homepage: https://sabula256.com
 - Browse markets: https://sabula256.com/markets
+- Football prediction markets: https://sabula256.com/markets/category/football
+- Uganda politics prediction markets: https://sabula256.com/markets/category/politics
+- Uganda economy prediction markets: https://sabula256.com/markets/category/economy
+- Entertainment prediction markets: https://sabula256.com/markets/category/entertainment
+- Technology prediction markets: https://sabula256.com/markets/category/tech
+- Infrastructure prediction markets: https://sabula256.com/markets/category/infrastructure
+- Agriculture prediction markets: https://sabula256.com/markets/category/agriculture
+- News and guides: https://sabula256.com/news
+- Sitemap (all live and settled markets): https://sabula256.com/sitemap.xml
 - Up/Down game: https://sabula256.com/updown (quick binary predictions on price levels)
 - Create a market: https://sabula256.com/create
 - FAQ: https://sabula256.com/faq

@@ -1,16 +1,12 @@
-import type { Metadata } from 'next'
 import Link from 'next/link'
+import { pageMeta } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'FAQ – How Sabula 256 Works',
-  description: 'Answers to the most common questions about Sabula 256 — Uganda\'s prediction market. How to deposit, withdraw, create markets, and win real money via Mobile Money.',
-  alternates: { canonical: 'https://sabula256.com/faq' },
-  openGraph: {
-    title: 'FAQ – How Sabula 256 Works | Sabula 256',
-    description: 'How do prediction markets work? How do I deposit with Mobile Money? How are winnings calculated? All your Sabula 256 questions answered.',
-    url: 'https://sabula256.com/faq',
-  },
-}
+export const metadata = pageMeta({
+  title: "FAQ – How Prediction Markets Work on Sabula 256",
+  description: "How do prediction markets work? How do I deposit with MTN or Airtel Mobile Money, how are payouts calculated, and what are the fees? Sabula 256 questions answered.",
+  path: "/faq",
+  absoluteTitle: true
+})
 
 const FAQS = [
   {
@@ -68,7 +64,7 @@ const FAQS = [
     items: [
       {
         q: 'How do I deposit money?',
-        a: 'Go to Wallet → Deposit. Enter the amount and your MTN or Airtel Mobile Money number. You\'ll receive a payment prompt on your phone. Approve it and funds appear in your Sabula 256 wallet within seconds. Minimum deposit is UGX 2,000.',
+        a: 'Go to Wallet → Deposit. Enter the amount and your MTN or Airtel Mobile Money number. You\'ll receive a payment prompt on your phone. Approve it and funds appear in your Sabula 256 wallet within seconds. Minimum deposit is UGX 1,000.',
       },
       {
         q: 'How do I withdraw my winnings?',
