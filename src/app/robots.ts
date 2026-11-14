@@ -1,27 +1,31 @@
 import { MetadataRoute } from 'next'
 
+// Account, auth and API routes. These also carry `noindex` metadata (or redirect to
+// /auth for anonymous visitors); the disallow simply saves crawl budget.
+const disallow = [
+  '/admin', '/api/', '/auth/callback', '/auth/verify', '/auth/reset-password',
+  '/kyc', '/wallet', '/bets', '/profile', '/dashboard', '/settings', '/invite',
+]
+
+// Search engines + AI search / retrieval / training crawlers that are explicitly welcome.
+// A crawler that finds a group for its own user-agent ignores the `*` group, so each
+// group restates the same private-route disallows.
+const NAMED_BOTS = [
+  // Search engines
+  'Googlebot', 'Googlebot-Image', 'Bingbot', 'Applebot', 'DuckDuckBot', 'YandexBot',
+  // AI search / answer engines (live retrieval)
+  'OAI-SearchBot', 'ChatGPT-User', 'PerplexityBot', 'Perplexity-User',
+  'Claude-SearchBot', 'Claude-User', 'YouBot', 'Amazonbot', 'meta-externalagent',
+  // AI training crawlers
+  'GPTBot', 'ClaudeBot', 'anthropic-ai', 'Google-Extended', 'Applebot-Extended',
+  'CCBot', 'Bytespider', 'Diffbot', 'cohere-ai',
+]
+
 export default function robots(): MetadataRoute.Robots {
-  const disallow = ['/admin', '/api/', '/auth/callback', '/kyc', '/wallet', '/bets', '/profile']
   return {
     rules: [
-      // General crawlers
       { userAgent: '*', allow: '/', disallow },
-      // AI training + retrieval crawlers — explicitly allowed, same rules
-      { userAgent: 'GPTBot',              allow: '/', disallow },
-      { userAgent: 'OAI-SearchBot',       allow: '/', disallow },
-      { userAgent: 'ClaudeBot',           allow: '/', disallow },
-      { userAgent: 'anthropic-ai',        allow: '/', disallow },
-      { userAgent: 'PerplexityBot',       allow: '/', disallow },
-      { userAgent: 'CCBot',               allow: '/', disallow },
-      { userAgent: 'Google-Extended',     allow: '/', disallow },
-      { userAgent: 'Googlebot',           allow: '/', disallow },
-      { userAgent: 'Amazonbot',           allow: '/', disallow },
-      { userAgent: 'meta-externalagent',  allow: '/', disallow },
-      { userAgent: 'Applebot-Extended',   allow: '/', disallow },
-      { userAgent: 'Bytespider',          allow: '/', disallow },
-      { userAgent: 'Diffbot',             allow: '/', disallow },
-      { userAgent: 'YouBot',              allow: '/', disallow },
-      { userAgent: 'cohere-ai',           allow: '/', disallow },
+      { userAgent: NAMED_BOTS, allow: '/', disallow },
     ],
     sitemap: 'https://sabula256.com/sitemap.xml',
   }
