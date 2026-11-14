@@ -1,5 +1,17 @@
 import Link from 'next/link'
 import { createPublicClient } from '@/lib/supabase/server'
+import { pageMeta } from '@/lib/seo'
+
+export const metadata = pageMeta({
+  title: "Up/Down Markets – Predict Bitcoin & UGX Price Moves",
+  description: "Quick price predictions on Sabula 256: will Bitcoin, gold or the dollar rate close up or down? Pick a side, stake from UGX 1,000 and get paid via Mobile Money.",
+  path: "/updown",
+  keywords: [
+    "Bitcoin price prediction Uganda",
+    "USD UGX prediction",
+    "up down prediction market"
+  ]
+})
 
 interface UpDownMarket {
   id: string

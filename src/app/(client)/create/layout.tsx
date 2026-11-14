@@ -1,19 +1,15 @@
-import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Create a Prediction Market',
-  description: 'Ask any question, set two sides, stake UGX 5,000 and your market goes live instantly. Share the link — winners split the pool via MTN or Airtel Mobile Money.',
+export const metadata = pageMeta({
+  title: "Create a Prediction Market in Uganda",
+  description: "Ask any question, set two sides and stake UGX 5,000 to launch your own prediction market. Share the link — winners split the pool via MTN or Airtel Mobile Money.",
+  path: "/create",
   keywords: [
-    'create prediction market Uganda', 'make a betting market', 'start a prediction market',
-    'community market Uganda', 'Uganda mobile money prediction',
-  ],
-  alternates: { canonical: 'https://sabula256.com/create' },
-  openGraph: {
-    title: 'Create a Prediction Market | Sabula 256',
-    description: 'Ask any question, set two sides, stake UGX 5,000 and your market goes live instantly on Sabula 256.',
-    url: 'https://sabula256.com/create',
-  },
-}
+    "create prediction market Uganda",
+    "start a prediction market",
+    "community market Uganda"
+  ]
+})
 
 export default function CreateLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>

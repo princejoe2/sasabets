@@ -1,8 +1,10 @@
-export const metadata = {
-  title: 'Privacy Policy — Sabula 256',
-  description: 'Sabula 256 Privacy Policy — how we collect, use, and protect your personal data.',
-  alternates: { canonical: 'https://sabula256.com/privacy' },
-}
+import { pageMeta } from '@/lib/seo'
+
+export const metadata = pageMeta({
+  title: "Privacy Policy",
+  description: "How Sabula 256 collects, uses, stores and protects your personal data, including Mobile Money and identity verification information.",
+  path: "/privacy"
+})
 
 const EFFECTIVE = '21 June 2026'
 const CONTACT_EMAIL = 'support@sabula256.com'

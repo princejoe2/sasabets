@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
-export const metadata: Metadata = { title: 'Settings – Sabula 256' }
+export const metadata: Metadata = { title: 'Settings', robots: { index: false, follow: false } }
 
 const SECTIONS = [
   {

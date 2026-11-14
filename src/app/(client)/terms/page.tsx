@@ -1,8 +1,10 @@
-export const metadata = {
-  title: 'Terms & Conditions — Sabula 256',
-  description: 'Sabula 256 Terms and Conditions governing use of the platform.',
-  alternates: { canonical: 'https://sabula256.com/terms' },
-}
+import { pageMeta } from '@/lib/seo'
+
+export const metadata = pageMeta({
+  title: "Terms & Conditions",
+  description: "The terms governing use of Sabula 256: eligibility, deposits and withdrawals, how markets are settled, platform fees and account rules.",
+  path: "/terms"
+})
 
 const EFFECTIVE = '21 June 2026'
 const CONTACT_EMAIL = 'support@sabula256.com'

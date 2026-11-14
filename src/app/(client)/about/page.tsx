@@ -1,17 +1,13 @@
 import Link from 'next/link'
-import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
+import { pageMeta } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'About Sabula 256 — Uganda\'s Community Prediction Market',
-  description: 'Create your own prediction market or join one. Predict politics, football & economy on Sabula 256. Win on MTN or Airtel Mobile Money.',
-  alternates: { canonical: 'https://sabula256.com/about' },
-  openGraph: {
-    title: 'About Sabula 256 — Uganda\'s Community Prediction Market',
-    description: 'Create your own prediction market or join one. Predict politics, football & economy. Win on MTN or Airtel Mobile Money.',
-    url: 'https://sabula256.com/about',
-  },
-}
+export const metadata = pageMeta({
+  title: "About Sabula 256 – Uganda's Community Prediction Market",
+  description: "Sabula 256 is a Ugandan prediction market where the crowd sets the odds. Learn how the shared pool works, what we charge, and how winners are paid via Mobile Money.",
+  path: "/about",
+  absoluteTitle: true
+})
 
 const VALUES = [
   {

@@ -7,7 +7,7 @@ import { getMarzBalance } from '@/lib/marz'
 import { ROLE_ALLOWED_PATHS } from '@/lib/admin-roles'
 import type { StaffRole } from '@/lib/admin-roles'
 
-export const metadata = { title: 'Sabula 256 Control Panel' }
+export const metadata = { title: { absolute: 'Sabula 256 Control Panel' }, robots: { index: false, follow: false } }
 
 const TOTP_EXEMPT = ['/admin/setup-2fa', '/admin/verify-2fa']
 

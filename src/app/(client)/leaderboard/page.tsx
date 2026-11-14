@@ -1,13 +1,13 @@
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import type { Metadata } from 'next'
 import { LeaderboardRefresher } from '@/components/LeaderboardRefresher'
+import { pageMeta } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Leaderboard – Top Predictors',
-  description: 'See Uganda\'s top predictors on Sabula 256. Ranked by net profit and win rate. Create your own market to climb the ranks.',
-  alternates: { canonical: 'https://sabula256.com/leaderboard' },
-}
+export const metadata = pageMeta({
+  title: "Leaderboard – Uganda's Top Predictors",
+  description: "See Uganda's top predictors and market creators on Sabula 256, ranked by net profit and win rate — all time, this month and this week.",
+  path: "/leaderboard"
+})
 
 export const dynamic = 'force-dynamic'
 

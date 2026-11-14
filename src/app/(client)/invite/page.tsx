@@ -4,6 +4,7 @@ import ReferralCard from '@/components/ReferralCard'
 export const metadata: Metadata = {
   title: 'Invite Friends – Earn UGX on Sabula 256',
   description: 'Invite friends to Sabula 256 and earn a bonus when they make their first deposit.',
+  robots: { index: false, follow: false },
 }
 
 export default function InvitePage() {

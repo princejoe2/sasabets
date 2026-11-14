@@ -1,14 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import ProposalsPageClient from './ProposalsPageClient'
-import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/seo'
 
 export const revalidate = 60
 
-export const metadata: Metadata = {
-  title: 'Propose a Market — Sabula 256',
-  description: 'Vote on community-proposed prediction markets for Uganda politics, football, economy and more. Your votes shape what gets created on Sabula 256.',
-  alternates: { canonical: 'https://sabula256.com/proposals' },
-}
+export const metadata = pageMeta({
+  title: "Suggest a Market – Vote on Community Proposals",
+  description: "Suggest a prediction market and vote on proposals from other Ugandans — politics, football, economy and more. Popular ideas become live markets on Sabula 256.",
+  path: "/proposals"
+})
 
 export default async function ProposalsPage() {
   const supabase = await createClient()

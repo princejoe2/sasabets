@@ -1,10 +1,10 @@
-import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Responsible Gambling — Sabula 256',
-  description: 'Sabula 256 responsible gambling tools: deposit limits, self-exclusion, and support resources for Uganda.',
-  alternates: { canonical: 'https://sabula256.com/responsible-gambling' },
-}
+export const metadata = pageMeta({
+  title: "Responsible Gambling – Deposit Limits & Self-Exclusion",
+  description: "Stay in control on Sabula 256: set a daily deposit limit, take a cooling-off break or self-exclude, and find support resources in Uganda. 18+ only.",
+  path: "/responsible-gambling"
+})
 
 export default function RespGamblingLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>
