@@ -1,5 +1,12 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/server'
+import { pageMeta } from '@/lib/seo'
+
+export const metadata = pageMeta({
+  title: "News & Guides – Uganda Prediction Market Insights",
+  description: "Guides and news from Sabula 256: how prediction markets work, depositing with Mobile Money, and the Ugandan football, politics and economy stories behind the markets.",
+  path: "/news"
+})
 
 export const revalidate = 300
 
@@ -10,6 +17,7 @@ const CAT_COLORS: Record<string, string> = {
   entertainment: '#f472b6',
   tech:          '#22d3ee',
   general:       '#a78bfa',
+  guides:        '#fb923c',
 }
 
 export default async function NewsPage() {
@@ -25,17 +33,17 @@ export default async function NewsPage() {
 
   return (
     <div className="min-h-screen bg-mk-surface">
-      <div className="border-b border-[#1e1e2e] bg-mk-card px-4 py-10">
+      <div className="border-b border-mk-border bg-mk-card px-4 py-10">
         <div className="mx-auto max-w-4xl">
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-violet-400">Sabula 256</p>
-          <h1 className="text-4xl font-black text-mk-text">News & Insights</h1>
-          <p className="mt-2 text-slate-500">Uganda sports, politics, and economy — the events behind the markets.</p>
+          <h1 className="text-4xl font-black text-mk-text">News & Guides</h1>
+          <p className="mt-2 text-mk-secondary">How prediction markets work, plus the Ugandan sports, politics and economy stories behind the markets.</p>
         </div>
       </div>
 
       <div className="mx-auto max-w-4xl px-4 py-8">
         {all.length === 0 ? (
-          <div className="py-20 text-center text-slate-600">No posts yet. Check back soon.</div>
+          <div className="py-20 text-center text-mk-muted">No posts yet. Check back soon.</div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {all.map(post => {
@@ -44,13 +52,17 @@ export default async function NewsPage() {
                 <Link
                   key={post.slug}
                   href={`/news/${post.slug}`}
-                  className="group overflow-hidden rounded-2xl border border-[#1e1e2e] bg-mk-card transition-colors hover:border-violet-600/40"
+                  className="group overflow-hidden rounded-2xl border border-mk-border bg-mk-card transition-colors hover:border-violet-600/40"
                 >
                   {post.cover_image_url && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={post.cover_image_url}
                       alt={post.title}
+                      loading="lazy"
+                      decoding="async"
+                      width={640}
+                      height={352}
                       className="h-44 w-full object-cover"
                     />
                   )}
@@ -62,17 +74,17 @@ export default async function NewsPage() {
                       >
                         {post.category ?? 'general'}
                       </span>
-                      <span className="text-[10px] text-slate-600">
+                      <span className="text-[10px] text-mk-muted">
                         {new Date(post.published_at).toLocaleDateString('en-UG', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </span>
                     </div>
-                    <h2 className="font-black text-slate-100 leading-snug group-hover:text-violet-300 transition-colors">
+                    <h2 className="font-black text-mk-text leading-snug group-hover:text-violet-300 transition-colors">
                       {post.title}
                     </h2>
                     {post.excerpt && (
-                      <p className="mt-2 text-sm text-slate-500 leading-relaxed line-clamp-3">{post.excerpt}</p>
+                      <p className="mt-2 text-sm text-mk-secondary leading-relaxed line-clamp-3">{post.excerpt}</p>
                     )}
-                    <p className="mt-3 text-xs text-slate-600">By {post.author ?? 'Sabula 256'}</p>
+                    <p className="mt-3 text-xs text-mk-muted">By {post.author ?? 'Sabula 256'}</p>
                   </div>
                 </Link>
               )

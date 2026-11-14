@@ -37,6 +37,7 @@ export default function AdminNewsPage() {
       setMsg('Title, slug and content are required.'); return
     }
     setSaving(true); setMsg('')
+    const slug = form.slug.trim()
     const { error } = await supabase.from('news_posts').insert({
       title:           form.title.trim(),
       slug:            form.slug.trim(),
@@ -47,7 +48,15 @@ export default function AdminNewsPage() {
       author:          form.author.trim() || 'Sabula 256',
       published_at:    new Date().toISOString(),
     })
-    if (error) { setMsg(error.message) } else { setMsg('Published!'); setForm(EMPTY); load() }
+    if (error) { setMsg(error.message) } else {
+      setMsg('Published!'); setForm(EMPTY); load()
+      // Refresh the cached /news pages and ping IndexNow (best-effort).
+      fetch('/api/admin/news/published', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      }).catch(() => {})
+    }
     setSaving(false)
   }
 
@@ -99,7 +108,7 @@ export default function AdminNewsPage() {
               onChange={e => setForm(prev => ({ ...prev, category: e.target.value }))}
               className="w-full rounded-lg border border-[#2a2a3e] bg-[#131320] px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-violet-600"
             >
-              {['general', 'football', 'politics', 'economy', 'entertainment', 'tech'].map(c => (
+              {['general', 'guides', 'football', 'politics', 'economy', 'entertainment', 'tech'].map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
