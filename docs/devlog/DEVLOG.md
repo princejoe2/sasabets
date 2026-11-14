@@ -232,3 +232,22 @@ the category pages. Uganda's gaming law sets the minimum gambling age at 25 whil
 18+ throughout; that needs a decision from the business, not a copy edit. `/responsible-gambling`
 renders its H1 client-side only. A missing market still returns HTTP 200 (streamed 404), now with
 `noindex`. Category pages need a steady flow of markets and one news post a week to rank.
+
+## 2026-11-14 — Cloudflare Security Insights pass (3dd5a2b)
+
+**What:** Worked through the seven Cloudflare Security Insights for the account. Added
+`public/.well-known/security.txt` (contact support@sabula256.com, expires 2027-11-14) and deployed
+it to production. Changed the `_dmarc` TXT record from `p=none; rua=mailto:<personal gmail>` to
+`v=DMARC1; p=quarantine; rua=mailto:support@sabula256.com; adkim=r; aspf=r`.
+
+**Why:** Mail is already authenticated (Zoho MX + `zmail` DKIM, Resend `resend._domainkey`, SPF
+covering both), so `p=none` gave spoofers a free pass for no benefit, and Cloudflare flagged the
+report address because it sat on an outside domain. The "Unproxied CNAME" insights for the apex
+and `www` were left alone on purpose: both point at Vercel, which advises against the orange cloud
+(it interferes with Vercel's certificate issuance and stacks two CDNs). AI Labyrinth only works on
+proxied records, so it does nothing here.
+
+**Next:** Turn on 2FA for the Cloudflare login (the one Moderate insight only the owner can fix).
+Dismiss the two CNAME insights and AI Labyrinth in Security Center as accepted. Turnstile on
+signup/login is optional. Watch the DMARC aggregate reports in the support inbox for a couple of
+weeks; if nothing legitimate fails, move to `p=reject`. Revoke the API token used for this pass.
