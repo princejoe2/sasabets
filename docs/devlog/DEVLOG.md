@@ -199,3 +199,36 @@ filter-darkened accents and some faint `slate-700` hints in dark mode that were 
 
 Known, already there: market pages render a second header (GlobalMarketHeader) under the navbar on
 mobile, and its category row wraps "Politics". Worth fixing next.
+
+## 2026-11-14 — SEO overhaul
+
+**What:** A full pass on how search engines and AI crawlers see the site. Every public page now
+builds its metadata through `lib/seo.ts` (`pageMeta`), which restates the canonical, `og:url`,
+`og:image` and Twitter card per page. The audit found the root layout's canonical was being
+inherited by pages with no metadata of their own, so `/updown` and `/auth` declared the homepage
+as their canonical, and five pages had lost `og:image` because a page-level `openGraph` replaces
+the root one. The homepage had no H1. Market pages emitted an `Event` that marked settled markets
+as `EventCancelled` and listed payout multipliers as prices; they now emit `WebPage` + `Question`
+(with `acceptedAnswer` once settled) + `BreadcrumbList`, and the description leads with the real
+state. Unknown, private and non-public markets are `noindex`. New: seven category landing pages
+at `/markets/category/[slug]` with real intro copy, linked from `/markets` and a new footer link
+block; `FAQPage` JSON-LD on `/help` (answers are now in the server HTML); a sitemap that lists
+all public markets, including closed and settled ones, with last-activity `lastmod`; robots
+entries for Bingbot, Applebot and the AI search bots; `noindex` on all account pages. `news_posts`
+was empty, so five evergreen guides went in (how markets work, MoMo deposits, market vs betting,
+creating a market, responsible play), and publishing from `/admin/news` now pings IndexNow.
+
+**Why:** Google shows nothing for `site:sabula256.com` in web search, and the results for
+"prediction market Uganda" are Polymarket, Robinhood and broker affiliates — nobody local. The
+football and politics queries are owned by tipster sites, so the category pages are the way in.
+Two things turned up along the way: the hand-built market `og:image` URL
+(`/markets/<id>/opengraph-image`) has always 404'd because the route group gives the real route a
+hash suffix, so Next's own file-based image is used now; and `/help`, `/faq` and `llms.txt` said
+the minimum deposit was UGX 2,000 when the wallet and the API enforce 1,000.
+
+**Next:** `www.sabula256.com` serves an expired TLS certificate — fix the domain in Vercel so it
+redirects to the apex. Resubmit the sitemap in Search Console and Bing, and request indexing for
+the category pages. Uganda's gaming law sets the minimum gambling age at 25 while the site says
+18+ throughout; that needs a decision from the business, not a copy edit. `/responsible-gambling`
+renders its H1 client-side only. A missing market still returns HTTP 200 (streamed 404), now with
+`noindex`. Category pages need a steady flow of markets and one news post a week to rank.
