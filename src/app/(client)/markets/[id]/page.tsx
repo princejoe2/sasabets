@@ -58,7 +58,6 @@ export async function generateMetadata(
   const desc = clip(`${lead} ${baseDesc}`, 200)
 
   const canonical  = `${SITE_URL}/markets/${id}`
-  const ogImageUrl = `/markets/${id}/opengraph-image`
   const socialTitle = `${m.title} | Sabula 256`
   return {
     title: m.title,
@@ -66,9 +65,11 @@ export async function generateMetadata(
     alternates: { canonical },
     openGraph: {
       title: socialTitle, description: desc, siteName: 'Sabula 256', locale: 'en_UG', type: 'website', url: canonical,
-      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: m.title }],
     },
-    twitter: { card: 'summary_large_image', site: '@sabula256', title: socialTitle, description: desc, images: [ogImageUrl] },
+    // No explicit images: the sibling opengraph-image.tsx is injected by Next with its real
+    // (hash-suffixed, because of the (client) route group) URL. A hand-built
+    // /markets/<id>/opengraph-image URL 404s.
+    twitter: { card: 'summary_large_image', site: '@sabula256', title: socialTitle, description: desc },
   }
 }
 
@@ -226,7 +227,6 @@ export default async function MarketPage({
       publisher: { '@id': `${SITE_URL}/#organization` },
       datePublished: market.created_at,
       ...(modified ? { dateModified: modified } : {}),
-      primaryImageOfPage: { '@type': 'ImageObject', url: `${pageUrl}/opengraph-image`, width: 1200, height: 630 },
       mainEntity: {
         '@type': 'Question',
         name: market.title,

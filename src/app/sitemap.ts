@@ -53,7 +53,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: latest(m.created_at, m.last_bet_at, m.settled_at),
     changeFrequency: m.status === 'open' ? 'hourly' : m.status === 'closed' ? 'daily' : 'monthly',
     priority: m.status === 'open' ? 0.9 : m.status === 'closed' ? 0.6 : 0.4,
-    images: [`${BASE}/markets/${m.id}/opengraph-image`],
   }))
 
   const newsUrls: MetadataRoute.Sitemap = (newsPosts ?? []).map(p => ({
