@@ -32,6 +32,28 @@ async function loadBanCache() {
   } catch { /* allow through if DB unreachable */ }
 }
 
+// ── is_admin cache (per isolate, 5 min) — admins browsing client pages are sent to /admin ──
+const adminCache = new Map<string, { isAdmin: boolean; ts: number }>()
+const ADMIN_CACHE_TTL = 5 * 60_000
+
+async function isAdminUser(uid: string): Promise<boolean> {
+  const hit = adminCache.get(uid)
+  if (hit && Date.now() - hit.ts < ADMIN_CACHE_TTL) return hit.isAdmin
+  if (!SB_URL || !SB_SERVICE) return false
+  try {
+    const res = await fetch(
+      `${SB_URL}/rest/v1/profiles?select=is_admin&id=eq.${encodeURIComponent(uid)}&limit=1`,
+      { headers: { apikey: SB_SERVICE, Authorization: `Bearer ${SB_SERVICE}` }, cache: 'no-store' }
+    )
+    if (!res.ok) return false
+    const rows: { is_admin: boolean | null }[] = await res.json()
+    const isAdmin = !!rows[0]?.is_admin
+    if (adminCache.size > 500) adminCache.clear()
+    adminCache.set(uid, { isAdmin, ts: Date.now() })
+    return isAdmin
+  } catch { return false }
+}
+
 function getClientIp(req: NextRequest): string {
   return (
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -116,6 +138,18 @@ export async function middleware(request: NextRequest) {
 
   if (isProtected && !user) {
     return NextResponse.redirect(new URL('/auth', request.url))
+  }
+
+  // Admins are sent to the control panel when they open a client page (a UX redirect —
+  // admin pages and APIs enforce their own guards). Page navigations only.
+  if (
+    user && request.method === 'GET' &&
+    !path.startsWith('/admin') && !path.startsWith('/api') && !path.startsWith('/auth/') &&
+    !path.startsWith('/_next') && !path.includes('.') &&
+    (request.headers.get('accept') ?? '').includes('text/html') &&
+    await isAdminUser(user.id)
+  ) {
+    return NextResponse.redirect(new URL('/admin', request.url))
   }
 
   return supabaseResponse

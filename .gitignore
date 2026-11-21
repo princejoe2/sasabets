@@ -41,3 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 .superpowers/
+
+# never commit captured session tokens or pulled env files
+scripts/stress-tokens.json
+.env.local.test

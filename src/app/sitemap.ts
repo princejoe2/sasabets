@@ -2,7 +2,8 @@ import { MetadataRoute } from 'next'
 import { createAdminClient } from '@/lib/supabase/server'
 import { CATEGORY_PAGES, detectCat } from '@/lib/market-categories'
 
-export const dynamic = 'force-dynamic'
+// Rebuilt at most every 10 minutes (was force-dynamic: 3 DB queries on every crawler hit).
+export const revalidate = 600
 
 const BASE = 'https://sabula256.com'
 

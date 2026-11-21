@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
 import { pageMeta } from '@/lib/seo'
 
 export const metadata = pageMeta({
@@ -51,9 +50,7 @@ const HOW = [
   { step: '04', color: '#34d399', title: 'Market settles', body: 'When the event resolves, admin confirms the outcome. The pool is split among all winning predictors proportional to their stake.' },
 ]
 
-export default async function AboutPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export default function AboutPage() {
   return (
     <div className="min-h-screen bg-mk-bg">
 
@@ -84,15 +81,9 @@ export default async function AboutPage() {
             <Link href="/markets" className="rounded-xl bg-violet-600 px-7 py-3 text-sm font-bold text-white transition-colors hover:bg-violet-500">
               Browse Markets →
             </Link>
-            {user ? (
-              <Link href="/create" className="rounded-xl border border-mk-border bg-mk-card px-7 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-mk-text">
+            <Link href="/create" className="rounded-xl border border-mk-border bg-mk-card px-7 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-mk-text">
                 Create a Market
               </Link>
-            ) : (
-              <Link href="/auth" className="rounded-xl border border-mk-border bg-mk-card px-7 py-3 text-sm font-semibold text-mk-text transition-colors hover:border-violet-700/50 hover:text-mk-text">
-                Create Account
-              </Link>
-            )}
           </div>
         </div>
       </div>

@@ -3,6 +3,12 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  // Super-admin only. This endpoint sends a real WhatsApp message and used to be
+  // callable by anyone on the internet (it also echoed the instance id and token prefix).
+  const { guardAdmin } = await import('@/lib/admin-guard')
+  const g = await guardAdmin()
+  if ('error' in g) return g.error
+
   const instanceId = process.env.ULTRAMSG_INSTANCE_ID
   const token      = process.env.ULTRAMSG_TOKEN
 
@@ -22,8 +28,8 @@ export async function GET() {
       body:    params.toString(),
     })
     const text = await r.text()
-    return NextResponse.json({ ok: r.ok, status: r.status, response: text, url, instanceId, tokenPrefix: token.slice(0, 4) })
+    return NextResponse.json({ ok: r.ok, status: r.status, response: text })
   } catch (err) {
-    return NextResponse.json({ error: String(err), url, instanceId, tokenPrefix: token.slice(0, 4) })
+    return NextResponse.json({ error: String(err) })
   }
 }

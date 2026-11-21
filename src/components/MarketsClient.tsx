@@ -352,20 +352,36 @@ export default function MarketsClient({
   openCount: _oc,
   initialCat = 'all',
   initialSearch = '',
+  readUrlFilters = false,
   totalPool: _tp = 0,
   userCount: _uc = 0,
-  isLoggedIn = true,
+  isLoggedIn: isLoggedInProp,
 }: {
   markets: Mkt[]
   openCount: number
   initialCat?: string
   initialSearch?: string
+  /** Read ?cat= / ?q= from the URL after mount (lets the page itself stay static). */
+  readUrlFilters?: boolean
   totalPool?: number
   userCount?: number
+  /** Omit to detect the session in the browser (keeps the server HTML identical for everyone). */
   isLoggedIn?: boolean
 }) {
   const router   = useRouter()
   const supabase = createClient()
+
+  // Server HTML assumes "logged in" (no sign-up strip); anonymous visitors get the strip
+  // right after hydration. This keeps the page cacheable and avoids a flash for members.
+  const [detectedLoggedIn, setDetectedLoggedIn] = useState(true)
+  useEffect(() => {
+    if (isLoggedInProp !== undefined) return
+    let cancelled = false
+    supabase.auth.getSession().then(({ data }) => { if (!cancelled) setDetectedLoggedIn(!!data.session) })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedInProp])
+  const isLoggedIn = isLoggedInProp ?? detectedLoggedIn
 
   const [search,        setSearch]        = useState(initialSearch)
   const [cat,           setCat]           = useState<Category>((initialCat as Category) ?? 'all')
@@ -460,6 +476,15 @@ export default function MarketsClient({
     const qs = params.toString()
     router.replace(`${window.location.pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
   }, [router])
+
+  useEffect(() => {
+    if (!readUrlFilters) return
+    const params = new URLSearchParams(window.location.search)
+    const urlCat = params.get('cat')
+    if (urlCat && CATS.some(c => c.id === urlCat)) setCat(urlCat as Category)
+    const q = params.get('q')
+    if (q) setSearch(q.slice(0, 100))
+  }, [readUrlFilters])
 
   const hasFilters = !!(search.trim() || cat !== 'all')
 

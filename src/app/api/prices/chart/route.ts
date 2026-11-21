@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
       prices,
       current_price: infoData[id]?.usd ?? null,
       change_24h:    infoData[id]?.usd_24h_change ?? null,
-    })
+    }, { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } })
   } catch {
     return NextResponse.json({ error: 'Failed to fetch chart data' }, { status: 503 })
   }

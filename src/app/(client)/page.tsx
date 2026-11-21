@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { getPublicMarkets } from '@/lib/cached-markets'
 import MarketsClient from '@/components/MarketsClient'
 import { pageMeta } from '@/lib/seo'
@@ -30,12 +29,9 @@ const jsonLd = {
 }
 
 export default async function HomePage() {
-  // getSession only reads the cookie (no network call); markets come from the shared 30 s cache
-  const authClient = await createClient()
-  const [{ data: { session } }, all] = await Promise.all([
-    authClient.auth.getSession(),
-    getPublicMarkets(),
-  ])
+  // No cookies/session here on purpose: the page is statically rendered and revalidated
+  // every 30 s (ISR), so the HTML is served from the CDN. Login state is detected client-side.
+  const all = await getPublicMarkets()
   const openCount = all.filter(m => m.status === 'open').length
 
   return (
@@ -46,7 +42,6 @@ export default async function HomePage() {
         markets={all}
         openCount={openCount}
         initialCat="all"
-        isLoggedIn={!!session}
       />
     </div>
   )

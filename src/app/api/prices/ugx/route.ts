@@ -14,7 +14,7 @@ export async function GET() {
       kes: data.rates.KES as number,
       tzs: data.rates.TZS as number,
       updatedAt: data.time_last_update_utc as string,
-    })
+    }, { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=1500' } })
   } catch {
     return NextResponse.json({ error: 'Failed to fetch exchange rates' }, { status: 503 })
   }

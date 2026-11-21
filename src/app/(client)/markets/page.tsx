@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import MarketsClient from '@/components/MarketsClient'
 import { getPublicMarkets } from '@/lib/cached-markets'
 import { CATEGORY_PAGES } from '@/lib/market-categories'
@@ -21,22 +20,12 @@ export const metadata = pageMeta({
 
 export const revalidate = 30
 
-export default async function MarketsPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ cat?: string; q?: string }>
-}) {
-  const resolvedSearchParams = await searchParams
-  const supabase = await createClient()
-  // getSession only reads the cookie; markets come from the shared 30 s cache
-  const [{ data: { session } }, all] = await Promise.all([
-    supabase.auth.getSession(),
-    getPublicMarkets(),
-  ])
+export default async function MarketsPage() {
+  // Statically rendered + revalidated every 30 s so the CDN can serve it. ?cat= and ?q=
+  // are read in the browser by MarketsClient (reading searchParams or cookies here would
+  // make the page dynamic and uncacheable), as is the login state.
+  const all = await getPublicMarkets()
   const openCount = all.filter(m => m.status === 'open').length
-
-  const initialCat = (resolvedSearchParams?.cat ?? 'all') as string
-  const initialSearch = (resolvedSearchParams?.q ?? '').slice(0, 100)
 
   return (
     <div className="min-h-screen bg-mk-bg page-enter">
@@ -63,7 +52,7 @@ export default async function MarketsPage({
         </div>
       </div>
 
-      <MarketsClient markets={all} openCount={openCount} initialCat={initialCat} initialSearch={initialSearch} isLoggedIn={!!session} />
+      <MarketsClient markets={all} openCount={openCount} readUrlFilters />
     </div>
   )
 }

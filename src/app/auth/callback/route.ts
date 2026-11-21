@@ -5,7 +5,10 @@ import type { NextRequest } from 'next/server'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/markets'
+  // Only same-site paths: must start with a single "/" and contain no "\\" or "@", otherwise
+  // `${origin}${next}` can be turned into another host (e.g. next=@evil.com or //evil.com).
+  const rawNext = searchParams.get('next') ?? '/markets'
+  const next = /^\/(?![\/\\])[^\\@]*$/.test(rawNext) ? rawNext : '/markets'
 
   if (code) {
     const supabase = await createClient()
