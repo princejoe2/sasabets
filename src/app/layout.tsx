@@ -6,6 +6,7 @@ import ThemeProvider from '@/components/ThemeProvider'
 import PushNotificationPrompt from '@/components/PushNotificationPrompt'
 import RouteProgressBar from '@/components/RouteProgressBar'
 import { GoogleAnalytics } from '@next/third-parties/google'
+import { Analytics } from '@vercel/analytics/next'
 
 const BASE = 'https://sabula256.com'
 
@@ -146,6 +147,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PushNotificationPrompt />
         </ThemeProvider>
         <GoogleAnalytics gaId="G-29V6N9CY5C" />
+        <Analytics />
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
